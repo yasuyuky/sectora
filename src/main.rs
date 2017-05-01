@@ -123,7 +123,7 @@ fn main() {
     let client = GithubClient::new(client, config);
 
     if let Some(matches) = matches.subcommand_matches("key") {
-        client.print_user_public_key(matches.value_of("USER").unwrap());
+        client.print_user_public_key(matches.value_of("USER").unwrap()).unwrap();
     } else if let Some(_) = matches.subcommand_matches("passwd") {
         client.get_passwd().unwrap();
     } else if let Some(_) = matches.subcommand_matches("shadow") {
