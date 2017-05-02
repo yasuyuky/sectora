@@ -38,12 +38,15 @@ struct Config {
     #[serde(default="default_sh")]
     sh: String,
     group: Option<String>,
+    #[serde(default="default_cert_path")]
+    cert_path: String
 }
 
 fn default_endpoint() -> String { String::from("https://api.github.com") }
 fn default_home() -> String { String::from("/home/{}") }
 fn default_gid() -> u64 { 2000 }
 fn default_sh() -> String { String::from("/bin/bash") }
+fn default_cert_path() -> String { String::from("/etc/ssl/certs/ca-certificates.crt") }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Team {
@@ -117,6 +120,11 @@ fn main() {
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
     let config = toml::from_str::<Config>(contents.as_str()).unwrap();
+
+    match std::env::var("SSL_CERT_FILE") {
+        Ok(_) => (),
+        Err(_) => std::env::set_var("SSL_CERT_FILE", config.cert_path.clone()),
+    }
 
     // let client = Client::with_connector(HttpsConnector::new(TlsClient::new()));
     let client = reqwest::Client::new().unwrap();
