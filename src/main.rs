@@ -16,7 +16,7 @@ extern crate toml;
 // use hyper::mime::{Mime, TopLevel, SubLevel};
 
 extern crate reqwest;
-use reqwest::header::{Authorization,Accept};
+use reqwest::header::Authorization;
 
 extern crate serde;
 extern crate serde_json;
