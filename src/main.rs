@@ -161,13 +161,39 @@ impl GithubClient {
         GithubClient {client:client, conf:conf}
     }
 
-    fn get_url_content(&self, url:&String) -> Result<String,CliError> {
-        // println!("GET {}", url);
-        let token = String::from("token ") + self.conf.token.clone().as_str();
-        let res = self.client.get(url.as_str()).header(Authorization(token)).send();
+    fn get_content_from_cache(&self, url:&String) -> Result<String,CliError> {
+        let mut path = std::env::temp_dir();
+        path.push("ghteam-auth-cache");
+        path.push(url.as_str());
+        let mut f = File::open(path.to_str().unwrap())?;
         let mut content = String::new();
-        res?.read_to_string(&mut content)?;
+        f.read_to_string(&mut content)?;
         Ok(content)
+    }
+
+    fn store_content_to_cache(&self, url:&String, content:&String) -> Result<(),CliError> {
+        let mut path = std::env::temp_dir();
+        path.push("ghteam-auth-cache");
+        path.push(url.as_str());
+        let mut dirpath = path.clone(); dirpath.pop();
+        std::fs::create_dir_all(dirpath)?;
+        let mut f = File::create(path.to_str().unwrap())?;
+        f.write(content.as_bytes())?;
+        Ok(())
+    }
+
+    fn get_url_content(&self, url:&String) -> Result<String,CliError> {
+        match self.get_content_from_cache(url) {
+            Ok(content) => Ok(content),
+            Err(_) => {
+                let token = String::from("token ") + self.conf.token.clone().as_str();
+                let res = self.client.get(url.as_str()).header(Authorization(token)).send();
+                let mut content = String::new();
+                res?.read_to_string(&mut content)?;
+                self.store_content_to_cache(url,&content)?;
+                Ok(content)
+            }
+        }
     }
 
     fn print_user_public_key(&self, user:&str) -> Result<(), CliError> {
