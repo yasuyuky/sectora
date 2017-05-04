@@ -23,6 +23,8 @@ extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 
+extern crate glob;
+use glob::glob;
 
 #[derive(Deserialize, Debug)]
 struct Config {
@@ -138,6 +140,8 @@ fn main() {
         client.get_shadow().unwrap();
     } else if let Some(_) = matches.subcommand_matches("group") {
         client.get_group().unwrap();
+    } else if let Some(_) = matches.subcommand_matches("refresh") {
+        client.remove_all_caches().unwrap();
     } else if let Some(_) = matches.subcommand_matches("pam") {
         match std::env::var("PAM_USER") {
             Ok(user) => {
@@ -290,5 +294,18 @@ impl GithubClient {
         Ok(members)
     }
 
+    fn clear_all_caches(&self) -> Result<(), CliError> {
+        let mut path = std::env::temp_dir();
+        path.push("ghteam-auth-cache");
+        path.push("**");
+        path.push("*");
+        for entry in glob(&path.to_str().unwrap()).unwrap() {
+            match entry {
+                Ok(path) => {if path.is_file() {std::fs::remove_file(path)?}},
+                Err(e) => println!("{:?}", e),
+            }
+        }
+        Ok(())
+    }
 
 }
