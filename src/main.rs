@@ -141,7 +141,7 @@ fn main() {
     } else if let Some(_) = matches.subcommand_matches("group") {
         client.get_group().unwrap();
     } else if let Some(_) = matches.subcommand_matches("refresh") {
-        client.remove_all_caches().unwrap();
+        client.clear_all_caches().unwrap();
     } else if let Some(_) = matches.subcommand_matches("pam") {
         match std::env::var("PAM_USER") {
             Ok(user) => {
