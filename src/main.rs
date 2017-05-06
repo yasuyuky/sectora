@@ -165,7 +165,7 @@ impl GithubClient {
         GithubClient {client:client, conf:conf}
     }
 
-    fn get_content_from_cache(&self, url:&String) -> Result<String,CliError> {
+    fn load_content_from_cache(&self, url:&String) -> Result<String,CliError> {
         let mut path = std::env::temp_dir();
         path.push("ghteam-auth-cache");
         path.push(url.as_str());
@@ -186,14 +186,21 @@ impl GithubClient {
         Ok(())
     }
 
-    fn get_url_content(&self, url:&String) -> Result<String,CliError> {
-        match self.get_content_from_cache(url) {
-            Ok(content) => Ok(content),
+    fn get_content_from_url(&self, url:&String) -> Result<String,CliError> {
+        let token = String::from("token ") + self.conf.token.clone().as_str();
+        let res = self.client.get(url.as_str()).header(Authorization(token)).send();
+        let mut content = String::new();
+        res?.read_to_string(&mut content)?;
+        Ok(content)
+    }
+
+    fn get_content(&self, url:&String) -> Result<String,CliError> {
+        match self.load_content_from_cache(url) {
+            Ok(content) => {
+                Ok(content)
+            },
             Err(_) => {
-                let token = String::from("token ") + self.conf.token.clone().as_str();
-                let res = self.client.get(url.as_str()).header(Authorization(token)).send();
-                let mut content = String::new();
-                res?.read_to_string(&mut content)?;
+                let content = self.get_content_from_url(url)?;
                 self.store_content_to_cache(url,&content)?;
                 Ok(content)
             }
@@ -208,7 +215,7 @@ impl GithubClient {
 
     fn get_user_public_key(&self, user:&str) -> Result<String, CliError> {
         let url = format!("{}/users/{}/keys", self.conf.endpoint.clone(),user);
-        let content = self.get_url_content(&url);
+        let content = self.get_content(&url);
         let keys = serde_json::from_str::<Vec<PublicKey>>(content?.as_str())?;
         Ok(keys.iter().map(|k|{k.key.clone()}).collect::<Vec<String>>().join("\n"))
     }
@@ -280,7 +287,7 @@ impl GithubClient {
 
     fn get_teams(&self) -> Result<HashMap<String,Team>, CliError> {
         let url = format!("{}/orgs/{}/teams",self.conf.endpoint.clone(), self.conf.org.clone());
-        let content = self.get_url_content(&url)?;
+        let content = self.get_content(&url)?;
         let teams = serde_json::from_str::<Vec<Team>>(content.as_str())?;
         let mut team_map = HashMap::new();
         for team in teams { team_map.insert(team.name.clone(), team); }
@@ -289,7 +296,7 @@ impl GithubClient {
 
     fn get_members(&self, mid:u64) -> Result<Vec<Member>, CliError> {
         let url = format!("{}/teams/{}/members",self.conf.endpoint.clone(), mid);
-        let content = self.get_url_content(&url)?;
+        let content = self.get_content(&url)?;
         let members = serde_json::from_str::<Vec<Member>>(content.as_str())?;
         Ok(members)
     }
