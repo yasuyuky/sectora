@@ -40,6 +40,8 @@ struct Config {
     #[serde(default="default_sh")]
     sh: String,
     group: Option<String>,
+    #[serde(default="default_cache_duration")]
+    cache_duration: u64,
     #[serde(default="default_cert_path")]
     cert_path: String
 }
@@ -48,6 +50,7 @@ fn default_endpoint() -> String { String::from("https://api.github.com") }
 fn default_home() -> String { String::from("/home/{}") }
 fn default_gid() -> u64 { 2000 }
 fn default_sh() -> String { String::from("/bin/bash") }
+fn default_cache_duration() -> u64 { 3600 }
 fn default_cert_path() -> String { String::from("/etc/ssl/certs/ca-certificates.crt") }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -72,12 +75,14 @@ struct PublicKey {
 enum CliError {
     Serde(serde_json::Error),
     Reqwest(reqwest::Error),
-    Io(std::io::Error)
+    Io(std::io::Error),
+    SystemTime(std::time::SystemTimeError),
 }
 
 impl From<serde_json::Error> for CliError {fn from(err: serde_json::Error) -> CliError { CliError::Serde(err) }}
 impl From<reqwest::Error> for CliError {fn from(err: reqwest::Error) -> CliError { CliError::Reqwest(err) }}
 impl From<std::io::Error> for CliError {fn from(err: std::io::Error) -> CliError { CliError::Io(err) }}
+impl From<std::time::SystemTimeError> for CliError {fn from(err: std::time::SystemTimeError) -> CliError { CliError::SystemTime(err) }}
 
 fn main() {
 
@@ -165,14 +170,15 @@ impl GithubClient {
         GithubClient {client:client, conf:conf}
     }
 
-    fn load_content_from_cache(&self, url:&String) -> Result<String,CliError> {
+    fn load_content_from_cache(&self, url:&String) -> Result<(std::fs::Metadata,String),CliError> {
         let mut path = std::env::temp_dir();
         path.push("ghteam-auth-cache");
         path.push(url.as_str());
+        let metadata = std::fs::metadata(path.to_str().unwrap())?;
         let mut f = File::open(path.to_str().unwrap())?;
         let mut content = String::new();
         f.read_to_string(&mut content)?;
-        Ok(content)
+        Ok((metadata,content))
     }
 
     fn store_content_to_cache(&self, url:&String, content:&String) -> Result<(),CliError> {
@@ -191,19 +197,30 @@ impl GithubClient {
         let res = self.client.get(url.as_str()).header(Authorization(token)).send();
         let mut content = String::new();
         res?.read_to_string(&mut content)?;
+        self.store_content_to_cache(url,&content)?;
         Ok(content)
     }
 
     fn get_content(&self, url:&String) -> Result<String,CliError> {
         match self.load_content_from_cache(url) {
-            Ok(content) => {
-                Ok(content)
+            Ok((metadata,cache_content)) => {
+                match std::time::SystemTime::now().duration_since(metadata.modified()?) {
+                    Ok(caching_duration) => {
+                        if caching_duration.as_secs() > self.conf.cache_duration {
+                            match self.get_content_from_url(url) {
+                                Ok(content_from_url) => Ok(content_from_url),
+                                Err(_) => Ok(cache_content)
+                            }
+                        } else {
+                            Ok(cache_content)
+                        }
+                    },
+                    Err(_) => {
+                        Ok(cache_content)
+                    }
+                }
             },
-            Err(_) => {
-                let content = self.get_content_from_url(url)?;
-                self.store_content_to_cache(url,&content)?;
-                Ok(content)
-            }
+            Err(_) => self.get_content_from_url(url)
         }
     }
 
