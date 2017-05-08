@@ -220,7 +220,7 @@ impl GithubClient {
     }
 
     fn get_user_public_key(&self, user:&str) -> Result<String, CliError> {
-        let url = format!("{}/users/{}/keys", self.conf.endpoint.clone(),user);
+        let url = format!("{}/users/{}/keys", self.conf.endpoint, user);
         let content = self.get_content(&url);
         let keys = serde_json::from_str::<Vec<PublicKey>>(content?.as_str())?;
         Ok(keys.iter().map(|k|{k.key.clone()}).collect::<Vec<String>>().join("\n"))
@@ -292,7 +292,7 @@ impl GithubClient {
     }
 
     fn get_teams(&self) -> Result<HashMap<String,Team>, CliError> {
-        let url = format!("{}/orgs/{}/teams",self.conf.endpoint.clone(), self.conf.org.clone());
+        let url = format!("{}/orgs/{}/teams",self.conf.endpoint, self.conf.org);
         let content = self.get_content(&url)?;
         let teams = serde_json::from_str::<Vec<Team>>(content.as_str())?;
         let mut team_map = HashMap::new();
