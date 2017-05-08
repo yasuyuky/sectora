@@ -67,13 +67,11 @@ enum CliError {
     Serde(serde_json::Error),
     Reqwest(reqwest::Error),
     Io(std::io::Error),
-    SystemTime(std::time::SystemTimeError),
 }
 
 impl From<serde_json::Error> for CliError {fn from(err: serde_json::Error) -> CliError { CliError::Serde(err) }}
 impl From<reqwest::Error> for CliError {fn from(err: reqwest::Error) -> CliError { CliError::Reqwest(err) }}
 impl From<std::io::Error> for CliError {fn from(err: std::io::Error) -> CliError { CliError::Io(err) }}
-impl From<std::time::SystemTimeError> for CliError {fn from(err: std::time::SystemTimeError) -> CliError { CliError::SystemTime(err) }}
 
 fn main() {
 
