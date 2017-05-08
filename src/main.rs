@@ -6,15 +6,6 @@ extern crate clap;
 use clap::{Arg, App, SubCommand};
 extern crate toml;
 
-// extern crate hyper;
-// extern crate hyper_rustls;
-// use hyper::Client;
-// use hyper::net::HttpsConnector;
-// use hyper_rustls::TlsClient;
-// use hyper::header::Authorization;
-// use hyper::header::{Accept, qitem};
-// use hyper::mime::{Mime, TopLevel, SubLevel};
-
 extern crate reqwest;
 use reqwest::header::Authorization;
 
@@ -133,7 +124,6 @@ fn main() {
         Err(_) => std::env::set_var("SSL_CERT_FILE", config.cert_path.clone()),
     }
 
-    // let client = Client::with_connector(HttpsConnector::new(TlsClient::new()));
     let client = reqwest::Client::new().unwrap();
     let client = GithubClient::new(client, config);
 
@@ -160,7 +150,6 @@ fn main() {
 }
 
 struct GithubClient {
-    // client: hyper::Client,
     client: reqwest::Client,
     conf: Config
 }
