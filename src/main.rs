@@ -112,19 +112,8 @@ fn main() {
                                              .about("refresh cache"))
                       .get_matches();
 
-    let config = matches.value_of("config").unwrap_or("/etc/ghteam-auth.conf");
-    let mut file = File::open(config).unwrap();
-    let mut contents = String::new();
-    file.read_to_string(&mut contents).unwrap();
-    let config = toml::from_str::<Config>(contents.as_str()).unwrap();
-
-    match std::env::var("SSL_CERT_FILE") {
-        Ok(_) => (),
-        Err(_) => std::env::set_var("SSL_CERT_FILE", config.cert_path.clone()),
-    }
-
-    let client = reqwest::Client::new().unwrap();
-    let client = GithubClient::new(client, config);
+    let configpath = matches.value_of("config").unwrap_or("/etc/ghteam-auth.conf");
+    let client = create_github_client(configpath).unwrap();
 
     if let Some(matches) = matches.subcommand_matches("key") {
         client.print_user_public_key(matches.value_of("USER").unwrap()).unwrap();
@@ -146,6 +135,19 @@ fn main() {
         }
     }
 
+}
+
+fn create_github_client( configpath: &str ) -> Result<GithubClient, CliError> {
+    let mut file = File::open(configpath)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).unwrap();
+    let config = toml::from_str::<Config>(contents.as_str()).unwrap();
+    match std::env::var("SSL_CERT_FILE") {
+        Ok(_) => (),
+        Err(_) => std::env::set_var("SSL_CERT_FILE", config.cert_path.clone()),
+    }
+    let client = reqwest::Client::new()?;
+    Ok(GithubClient::new(client, config))
 }
 
 struct GithubClient {
