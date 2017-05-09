@@ -17,6 +17,7 @@ extern crate serde_derive;
 extern crate glob;
 use glob::glob;
 
+extern crate libc;
 #[derive(Deserialize, Debug)]
 struct Config {
     token: String,
@@ -319,4 +320,16 @@ impl GithubClient {
         Ok(())
     }
 
+}
+
+#[repr(C)]
+#[allow(missing_copy_implementations)]
+pub struct Passwd {
+    name:   *mut libc::c_char,
+    pass:   *mut libc::c_char,
+    uid:    libc::uid_t,
+    gid:    libc::gid_t,
+    gecos:  *mut libc::c_char,
+    home:   *mut libc::c_char,
+    sh:     *mut libc::c_char,
 }
