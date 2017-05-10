@@ -80,12 +80,6 @@ fn main() {
                       .version("0.1")
                       .author("Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>")
                       .about("")
-                      .arg(Arg::with_name("config")
-                               .short("c")
-                               .long("config")
-                               .value_name("FILE")
-                               .help("Sets a custom config file (toml)")
-                               .takes_value(true))
                       .arg(Arg::with_name("v")
                                .short("v")
                                .multiple(true)
@@ -112,8 +106,8 @@ fn main() {
                                              .about("refresh cache"))
                       .get_matches();
 
-    let configpath = matches.value_of("config").unwrap_or("/etc/ghteam-auth.conf");
-    let client = create_github_client(configpath).unwrap();
+    let configpath = std::env::var("GHTEAMAUTH_CONFIG").unwrap_or(String::from("/etc/ghteam-auth.conf"));
+    let client = create_github_client(configpath.as_str()).unwrap();
 
     if let Some(matches) = matches.subcommand_matches("key") {
         client.print_user_public_key(matches.value_of("USER").unwrap()).unwrap();
