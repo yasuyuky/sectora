@@ -228,18 +228,13 @@ impl GithubClient {
     }
 
     fn check_pam(&self, user:&String) -> Result<bool, CliError> {
-        let teams:HashMap<String,Team> = self.get_teams()?;
-        if let Some(team) = teams.get(&self.conf.team.clone()) {
-            for member in self.get_members(team.id)? {
-                if member.login==*user { return Ok(true) }
-            }
-        }
-        Ok(false)
+        let (_,members) = self.get_team_members()?;
+        Ok(members.contains_key(user))
     }
 
     fn print_passwd(&self) -> Result<(), CliError> {
         let (_,members) = self.get_team_members()?;
-        for member in members {
+        for member in members.values() {
             println!("{}", self.create_passwd_line(&member));
         }
         Ok(())
@@ -247,7 +242,7 @@ impl GithubClient {
 
     fn print_shadow(&self) -> Result<(), CliError> {
         let (_,members) = self.get_team_members()?;
-        for member in members {
+        for member in members.values() {
             println!("{}", self.create_shadow_line(&member));
         }
         Ok(())
@@ -274,12 +269,12 @@ impl GithubClient {
         format!("{login}:!!:::::::", login=member.login )
     }
 
-    fn create_group_line(&self, name:&String, id:u64, members:&Vec<Member>) -> String {
+    fn create_group_line(&self, name:&String, id:u64, members:&HashMap<String,Member>) -> String {
         format!("{name}:x:{id}:{members}", name=name, id=id,
-                members=members.iter().map(|m|{m.login.clone()}).collect::<Vec<String>>().join(","))
+                members=members.values().map(|m|{m.login.clone()}).collect::<Vec<String>>().join(","))
     }
 
-    fn get_team_members(&self) -> Result<(Team,Vec<Member>),CliError> {
+    fn get_team_members(&self) -> Result<(Team,HashMap<String,Member>),CliError> {
         let teams:HashMap<String,Team> = self.get_teams()?;
         if let Some(team) = teams.get(&self.conf.team.clone()) {
             Ok((team.clone(),self.get_members(team.id)?))
@@ -297,11 +292,13 @@ impl GithubClient {
         Ok(team_map)
     }
 
-    fn get_members(&self, mid:u64) -> Result<Vec<Member>, CliError> {
+    fn get_members(&self, mid:u64) -> Result<HashMap<String,Member>, CliError> {
         let url = format!("{}/teams/{}/members",self.conf.endpoint.clone(), mid);
         let content = self.get_content(&url)?;
         let members = serde_json::from_str::<Vec<Member>>(content.as_str())?;
-        Ok(members)
+        let mut member_map = HashMap::new();
+        for member in members { member_map.insert(member.login.clone(), member); }
+        Ok(member_map)
     }
 
     fn clear_all_caches(&self) -> Result<(), CliError> {
