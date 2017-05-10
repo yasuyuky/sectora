@@ -45,7 +45,7 @@ fn default_sh() -> String { String::from("/bin/bash") }
 fn default_cache_duration() -> u64 { 3600 }
 fn default_cert_path() -> String { String::from("/etc/ssl/certs/ca-certificates.crt") }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct Team {
     id: u64,
     name: String,
@@ -238,38 +238,25 @@ impl GithubClient {
     }
 
     fn print_passwd(&self) -> Result<(), CliError> {
-        let teams:HashMap<String,Team> = self.get_teams()?;
-        if let Some(team) = teams.get(&self.conf.team.clone()) {
-            for member in self.get_members(team.id)? {
-                println!("{}", self.create_passwd_line(&member));
-            }
-            Ok(())
-        } else {
-            Ok(())
+        let (_,members) = self.get_team_members()?;
+        for member in members {
+            println!("{}", self.create_passwd_line(&member));
         }
+        Ok(())
     }
 
     fn print_shadow(&self) -> Result<(), CliError> {
-        let teams:HashMap<String,Team> = self.get_teams()?;
-        if let Some(team) = teams.get(&self.conf.team.clone()) {
-            for member in self.get_members(team.id)? {
-                println!("{}", self.create_shadow_line(&member));
-            }
-            Ok(())
-        } else {
-            Ok(())
+        let (_,members) = self.get_team_members()?;
+        for member in members {
+            println!("{}", self.create_shadow_line(&member));
         }
+        Ok(())
     }
 
     fn print_group(&self) -> Result<(), CliError> {
-        let teams:HashMap<String,Team> = self.get_teams()?;
-        if let Some(team) = teams.get(&self.conf.team.clone()) {
-            let members = self.get_members(team.id)?;
-            println!("{}", self.create_group_line(&team.name, self.conf.gid, &members));
-            Ok(())
-        } else {
-            Ok(())
-        }
+        let (team,members) = self.get_team_members()?;
+        println!("{}", self.create_group_line(&team.name, self.conf.gid, &members));
+        Ok(())
     }
 
     fn create_passwd_line(&self, member:&Member) -> String {
@@ -290,6 +277,15 @@ impl GithubClient {
     fn create_group_line(&self, name:&String, id:u64, members:&Vec<Member>) -> String {
         format!("{name}:x:{id}:{members}", name=name, id=id,
                 members=members.iter().map(|m|{m.login.clone()}).collect::<Vec<String>>().join(","))
+    }
+
+    fn get_team_members(&self) -> Result<(Team,Vec<Member>),CliError> {
+        let teams:HashMap<String,Team> = self.get_teams()?;
+        if let Some(team) = teams.get(&self.conf.team.clone()) {
+            Ok((team.clone(),self.get_members(team.id)?))
+        } else {
+            Err(CliError::from(std::io::Error::new(std::io::ErrorKind::NotFound, "Team not found")))
+        }
     }
 
     fn get_teams(&self) -> Result<HashMap<String,Team>, CliError> {
