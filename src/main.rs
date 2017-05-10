@@ -17,6 +17,9 @@ extern crate serde_derive;
 extern crate glob;
 use glob::glob;
 
+#[macro_use]
+extern crate lazy_static;
+
 extern crate libc;
 #[derive(Deserialize, Debug)]
 struct Config {
@@ -74,6 +77,14 @@ impl From<serde_json::Error> for CliError {fn from(err: serde_json::Error) -> Cl
 impl From<reqwest::Error> for CliError {fn from(err: reqwest::Error) -> CliError { CliError::Reqwest(err) }}
 impl From<std::io::Error> for CliError {fn from(err: std::io::Error) -> CliError { CliError::Io(err) }}
 
+lazy_static! {
+    static ref CLIENT:GithubClient = create_github_client(
+        std::env::var("GHTEAMAUTH_CONFIG")
+                 .unwrap_or(String::from("/etc/ghteam-auth.conf"))
+                 .as_str()
+    ).unwrap();
+}
+
 fn main() {
 
     let matches = App::new("ghteam-auth")
@@ -106,23 +117,21 @@ fn main() {
                                              .about("refresh cache"))
                       .get_matches();
 
-    let configpath = std::env::var("GHTEAMAUTH_CONFIG").unwrap_or(String::from("/etc/ghteam-auth.conf"));
-    let client = create_github_client(configpath.as_str()).unwrap();
 
     if let Some(matches) = matches.subcommand_matches("key") {
-        client.print_user_public_key(matches.value_of("USER").unwrap()).unwrap();
+        CLIENT.print_user_public_key(matches.value_of("USER").unwrap()).unwrap();
     } else if let Some(_) = matches.subcommand_matches("passwd") {
-        client.print_passwd().unwrap();
+        CLIENT.print_passwd().unwrap();
     } else if let Some(_) = matches.subcommand_matches("shadow") {
-        client.print_shadow().unwrap();
+        CLIENT.print_shadow().unwrap();
     } else if let Some(_) = matches.subcommand_matches("group") {
-        client.print_group().unwrap();
+        CLIENT.print_group().unwrap();
     } else if let Some(_) = matches.subcommand_matches("refresh") {
-        client.clear_all_caches().unwrap();
+        CLIENT.clear_all_caches().unwrap();
     } else if let Some(_) = matches.subcommand_matches("pam") {
         match std::env::var("PAM_USER") {
             Ok(user) => {
-                if client.check_pam(&user).unwrap() { std::process::exit(0); }
+                if CLIENT.check_pam(&user).unwrap() { std::process::exit(0); }
                 else { std::process::exit(1) }
             }
             Err(e) => println!("couldn't interpret PAM_USER: {}", e),
