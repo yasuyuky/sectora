@@ -97,7 +97,7 @@ fn main() {
                                                       .index(1)
                                                       .help("user name")))
                       .subcommand(SubCommand::with_name("pam")
-                                             .about("get user public key")
+                                             .about("execute pam check")
                                              .arg(Arg::with_name("USER")
                                                       .required(false)
                                                       .index(1)
