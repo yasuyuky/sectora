@@ -118,11 +118,11 @@ fn main() {
     if let Some(matches) = matches.subcommand_matches("key") {
         client.print_user_public_key(matches.value_of("USER").unwrap()).unwrap();
     } else if let Some(_) = matches.subcommand_matches("passwd") {
-        client.get_passwd().unwrap();
+        client.print_passwd().unwrap();
     } else if let Some(_) = matches.subcommand_matches("shadow") {
-        client.get_shadow().unwrap();
+        client.print_shadow().unwrap();
     } else if let Some(_) = matches.subcommand_matches("group") {
-        client.get_group().unwrap();
+        client.print_group().unwrap();
     } else if let Some(_) = matches.subcommand_matches("refresh") {
         client.clear_all_caches().unwrap();
     } else if let Some(_) = matches.subcommand_matches("pam") {
@@ -237,7 +237,7 @@ impl GithubClient {
         Ok(false)
     }
 
-    fn get_passwd(&self) -> Result<(), CliError> {
+    fn print_passwd(&self) -> Result<(), CliError> {
         let teams:HashMap<String,Team> = self.get_teams()?;
         if let Some(team) = teams.get(&self.conf.team.clone()) {
             for member in self.get_members(team.id)? {
@@ -249,7 +249,7 @@ impl GithubClient {
         }
     }
 
-    fn get_shadow(&self) -> Result<(), CliError> {
+    fn print_shadow(&self) -> Result<(), CliError> {
         let teams:HashMap<String,Team> = self.get_teams()?;
         if let Some(team) = teams.get(&self.conf.team.clone()) {
             for member in self.get_members(team.id)? {
@@ -261,7 +261,7 @@ impl GithubClient {
         }
     }
 
-    fn get_group(&self) -> Result<(), CliError> {
+    fn print_group(&self) -> Result<(), CliError> {
         let teams:HashMap<String,Team> = self.get_teams()?;
         if let Some(team) = teams.get(&self.conf.team.clone()) {
             let members = self.get_members(team.id)?;
