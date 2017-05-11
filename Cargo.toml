@@ -4,8 +4,6 @@ version = "0.1.0"
 authors = ["Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"]
 
 [dependencies]
-hyper = "0.10.9"
-hyper-rustls = "0.3.3"
 clap = "2.19"
 toml = "0.4.0"
 reqwest = "0.5.1"
@@ -14,3 +12,13 @@ serde_derive = "1.0.2"
 serde_json = "1.0.1"
 glob = "0.2.11"
 libc = "0.2"
+lazy_static = "0.2.8"
+
+[[bin]]
+name = "ghteam-auth"
+path = "src/main.rs"
+
+[lib]
+name = "nss_ghteam"
+path = "src/main.rs"
+crate-type = ["dylib"]
