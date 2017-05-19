@@ -562,13 +562,9 @@ impl Group {
         }
         unsafe {
             self.mem = buf.buf.offset(buf.offset) as *mut *mut libc::c_char;
-        }
-        for (i,p) in ptrs.iter().enumerate() {
-            unsafe {
+            for (i,p) in ptrs.iter().enumerate() {
                 *(self.mem.offset(i as isize)) = *p;
             }
-        }
-        unsafe {
             *(self.mem.offset(ptrs.len() as isize)) = 0x0 as *mut libc::c_char;
         }
     }
