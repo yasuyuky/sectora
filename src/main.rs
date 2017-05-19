@@ -556,15 +556,20 @@ impl Group {
         self.name = buf.write_string(name);
         self.passwd = buf.write_string(passwd);
         self.gid = gid;
-        let mut pos : *mut *mut libc::c_char = self.mem;
+        let mut ptrs = Vec::<*mut libc::c_char>::new();
         for m in mem {
+            ptrs.push(buf.write_string(&m));
+        }
+        unsafe {
+            self.mem = buf.buf.offset(buf.offset) as *mut *mut libc::c_char;
+        }
+        for (i,p) in ptrs.iter().enumerate() {
             unsafe {
-                *pos = buf.write_string(&m);
-                pos = pos.offset(1);
+                *(self.mem.offset(i as isize)) = *p;
             }
         }
         unsafe {
-            *pos = std::ptr::null_mut();
+            *(self.mem.offset(ptrs.len() as isize)) = 0x0 as *mut libc::c_char;
         }
     }
 }
