@@ -20,5 +20,5 @@ path = "src/main.rs"
 
 [lib]
 name = "nss_ghteam"
-path = "src/main.rs"
+path = "src/lib.rs"
 crate-type = ["dylib"]
