@@ -162,10 +162,15 @@ impl GithubClient {
         GithubClient {client:client, conf:conf}
     }
 
-    fn load_content_from_cache(&self, url:&String) -> Result<(std::fs::Metadata,String),CliError> {
+    fn get_cache_path(url:&String) -> std::path::PathBuf {
         let mut path = std::env::temp_dir();
         path.push("ghteam-auth-cache");
         path.push(url.as_str());
+        path
+    }
+
+    fn load_content_from_cache(&self, url:&String) -> Result<(std::fs::Metadata,String),CliError> {
+        let path = Self::get_cache_path(url);
         let metadata = std::fs::metadata(path.to_str().unwrap())?;
         let mut f = File::open(path.to_str().unwrap())?;
         let mut content = String::new();
@@ -174,11 +179,8 @@ impl GithubClient {
     }
 
     fn store_content_to_cache(&self, url:&String, content:&String) -> Result<(),CliError> {
-        let mut path = std::env::temp_dir();
-        path.push("ghteam-auth-cache");
-        path.push(url.as_str());
-        let mut dirpath = path.clone(); dirpath.pop();
-        std::fs::create_dir_all(dirpath)?;
+        let path = Self::get_cache_path(url);
+        std::fs::create_dir_all(path.parent().unwrap())?;
         let mut f = File::create(path.to_str().unwrap())?;
         f.write(content.as_bytes())?;
         Ok(())
