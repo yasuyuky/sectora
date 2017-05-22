@@ -63,7 +63,7 @@ impl Buffer {
     }
 
     fn write_string(&mut self, s: &String) -> *mut libc::c_char {
-        let cs = CString::new(s.clone()).unwrap();
+        let cs = CString::new(s.as_str()).unwrap();
         self.write(cs.as_ptr(), s.len() + 1)
     }
 }

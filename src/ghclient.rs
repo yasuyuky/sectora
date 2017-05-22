@@ -58,7 +58,7 @@ impl GithubClient {
     }
 
     fn get_content_from_url(&self, url:&String) -> Result<String,CliError> {
-        let token = String::from("token ") + self.conf.token.clone().as_str();
+        let token = String::from("token ") + self.conf.token.as_str();
         let res = self.client.get(url.as_str()).header(Authorization(token)).send();
         let mut content = String::new();
         res?.read_to_string(&mut content)?;
@@ -173,7 +173,7 @@ impl GithubClient {
     }
 
     fn get_members(&self, mid:u64) -> Result<HashMap<String,Member>, CliError> {
-        let url = format!("{}/teams/{}/members",self.conf.endpoint.clone(), mid);
+        let url = format!("{}/teams/{}/members",self.conf.endpoint, mid);
         let content = self.get_content(&url)?;
         let members = serde_json::from_str::<Vec<Member>>(content.as_str())?;
         let mut member_map = HashMap::new();
