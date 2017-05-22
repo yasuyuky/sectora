@@ -21,9 +21,8 @@ impl GithubClient {
         let mut contents = String::new();
         file.read_to_string(&mut contents).unwrap();
         let config = toml::from_str::<Config>(contents.as_str()).unwrap();
-        match std::env::var("SSL_CERT_FILE") {
-            Ok(_) => (),
-            Err(_) => std::env::set_var("SSL_CERT_FILE", config.cert_path.clone()),
+        if std::env::var("SSL_CERT_FILE").is_err() {
+            std::env::set_var("SSL_CERT_FILE", config.cert_path.as_str());
         }
         let client = reqwest::Client::new()?;
         Ok(GithubClient {client:client, conf:config})
