@@ -10,27 +10,23 @@ use reqwest;
 use reqwest::header::Authorization;
 use serde_json;
 
-pub fn create_github_client( configpath: &str ) -> Result<GithubClient, CliError> {
-    let mut file = File::open(configpath)?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents).unwrap();
-    let config = toml::from_str::<Config>(contents.as_str()).unwrap();
-    match std::env::var("SSL_CERT_FILE") {
-        Ok(_) => (),
-        Err(_) => std::env::set_var("SSL_CERT_FILE", config.cert_path.clone()),
-    }
-    let client = reqwest::Client::new()?;
-    Ok(GithubClient::new(client, config))
-}
-
 pub struct GithubClient {
     client: reqwest::Client,
     pub conf: Config
 }
 
 impl GithubClient {
-    pub fn new(client:reqwest::Client, conf:Config) -> GithubClient {
-        GithubClient {client:client, conf:conf}
+    pub fn new(configpath:&str) -> Result<GithubClient, CliError> {
+        let mut file = File::open(configpath)?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents).unwrap();
+        let config = toml::from_str::<Config>(contents.as_str()).unwrap();
+        match std::env::var("SSL_CERT_FILE") {
+            Ok(_) => (),
+            Err(_) => std::env::set_var("SSL_CERT_FILE", config.cert_path.clone()),
+        }
+        let client = reqwest::Client::new()?;
+        Ok(GithubClient {client:client, conf:config})
     }
 
     fn get_cache_path(url:&String) -> std::path::PathBuf {
