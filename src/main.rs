@@ -24,7 +24,6 @@ lazy_static! {
     ).unwrap();
 }
 
-#[allow(dead_code)]
 fn main() {
 
     let matches = App::new("ghteam-auth")
