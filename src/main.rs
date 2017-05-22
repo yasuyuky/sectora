@@ -42,12 +42,6 @@ fn main() {
                                                       .help("user name")))
                       .subcommand(SubCommand::with_name("pam")
                                              .about("execute pam check"))
-                      .subcommand(SubCommand::with_name("passwd")
-                                             .about("get passwd"))
-                      .subcommand(SubCommand::with_name("shadow")
-                                             .about("get shadow"))
-                      .subcommand(SubCommand::with_name("group")
-                                             .about("get group"))
                       .subcommand(SubCommand::with_name("refresh")
                                              .about("refresh cache"))
                       .get_matches();
@@ -55,12 +49,6 @@ fn main() {
 
     if let Some(matches) = matches.subcommand_matches("key") {
         CLIENT.print_user_public_key(matches.value_of("USER").unwrap()).unwrap();
-    } else if let Some(_) = matches.subcommand_matches("passwd") {
-        CLIENT.print_passwd().unwrap();
-    } else if let Some(_) = matches.subcommand_matches("shadow") {
-        CLIENT.print_shadow().unwrap();
-    } else if let Some(_) = matches.subcommand_matches("group") {
-        CLIENT.print_group().unwrap();
     } else if let Some(_) = matches.subcommand_matches("refresh") {
         CLIENT.clear_all_caches().unwrap();
     } else if let Some(_) = matches.subcommand_matches("pam") {

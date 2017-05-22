@@ -109,51 +109,6 @@ impl GithubClient {
         Ok(members.contains_key(user))
     }
 
-    #[allow(dead_code)]
-    pub fn print_passwd(&self) -> Result<(), CliError> {
-        let (_,members) = self.get_team_members()?;
-        for member in members.values() {
-            println!("{}", self.create_passwd_line(&member));
-        }
-        Ok(())
-    }
-
-    #[allow(dead_code)]
-    pub fn print_shadow(&self) -> Result<(), CliError> {
-        let (_,members) = self.get_team_members()?;
-        for member in members.values() {
-            println!("{}", self.create_shadow_line(&member));
-        }
-        Ok(())
-    }
-
-    #[allow(dead_code)]
-    pub fn print_group(&self) -> Result<(), CliError> {
-        let (team,members) = self.get_team_members()?;
-        println!("{}", self.create_group_line(&team.name, self.conf.gid, &members));
-        Ok(())
-    }
-
-    fn create_passwd_line(&self, member:&Member) -> String {
-        format!("{login}:x:{uid}:{gid}:user@{org}:{home}:{sh}",
-                login=member.login,
-                uid=member.id,
-                gid=self.conf.gid,
-                org=self.conf.org,
-                home=self.conf.home.replace("{}",member.login.as_str()),
-                sh=self.conf.sh,
-                )
-    }
-
-    fn create_shadow_line(&self, member:&Member) -> String {
-        format!("{login}:!!:::::::", login=member.login )
-    }
-
-    fn create_group_line(&self, name:&String, id:u64, members:&HashMap<String,Member>) -> String {
-        format!("{name}:x:{id}:{members}", name=name, id=id,
-                members=members.values().map(|m|{m.login.clone()}).collect::<Vec<String>>().join(","))
-    }
-
     pub fn get_team_members(&self) -> Result<(Team,HashMap<String,Member>),CliError> {
         let teams:HashMap<String,Team> = self.get_teams()?;
         if let Some(team) = teams.get(&self.conf.team.clone()) {
