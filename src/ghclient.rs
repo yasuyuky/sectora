@@ -19,7 +19,7 @@ impl GithubClient {
     pub fn new(configpath:&str) -> Result<GithubClient, CliError> {
         let mut file = File::open(configpath)?;
         let mut contents = String::new();
-        file.read_to_string(&mut contents).unwrap();
+        file.read_to_string(&mut contents)?;
         let config = toml::from_str::<Config>(contents.as_str()).unwrap();
         if std::env::var("SSL_CERT_FILE").is_err() {
             std::env::set_var("SSL_CERT_FILE", config.cert_path.as_str());
