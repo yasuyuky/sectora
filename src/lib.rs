@@ -63,8 +63,8 @@ impl Buffer {
         }
     }
 
-    fn write_string(&mut self, s: &String) -> *mut libc::c_char {
-        let cs = CString::new(s.as_str()).unwrap();
+    fn write_string(&mut self, s: &str) -> *mut libc::c_char {
+        let cs = CString::new(s).unwrap();
         self.write(cs.as_ptr(), s.len() + 1)
     }
 }
@@ -83,13 +83,13 @@ pub struct Passwd {
 impl Passwd {
     fn pack(&mut self,
             buf:&mut Buffer,
-            name:&String,
-            passwd:&String,
+            name:&str,
+            passwd:&str,
             uid:libc::uid_t,
             gid:libc::gid_t,
-            gecos:&String,
-            dir:&String,
-            shell:&String) {
+            gecos:&str,
+            dir:&str,
+            shell:&str) {
         self.name = buf.write_string(name);
         self.passwd = buf.write_string(passwd);
         self.dir = buf.write_string(dir);
@@ -117,10 +117,10 @@ pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char,
                 (*pw).pack(
                     &mut buffer,
                     &member.login,
-                    &String::from("x"),
+                    "x",
                     member.id as libc::uid_t,
                     CLIENT.conf.gid as libc::gid_t,
-                    &String::new(),
+                    "",
                     &CLIENT.conf.home.replace("{}",member.login.as_str()),
                     &CLIENT.conf.sh,
                 );
@@ -145,10 +145,10 @@ pub extern "C" fn _nss_ghteam_getpwuid_r(uid: libc::uid_t,
                 (*pw).pack(
                     &mut buffer,
                     &member.login,
-                    &String::from("x"),
+                    "x",
                     member.id as libc::uid_t,
                     CLIENT.conf.gid as libc::gid_t,
-                    &String::new(),
+                    "",
                     &CLIENT.conf.home.replace("{}",member.login.as_str()),
                     &CLIENT.conf.sh,
                 );
@@ -185,8 +185,8 @@ pub struct Spwd {
 impl Spwd {
     fn pack(&mut self,
             buf:&mut Buffer,
-            namp:&String,
-            pwdp:&String,
+            namp:&str,
+            pwdp:&str,
             lstchg:libc::c_long,
             min:libc::c_long,
             max:libc::c_long,
@@ -223,7 +223,7 @@ pub extern "C" fn _nss_ghteam_getspnam_r(cnameptr: *const libc::c_char,
                 (*spwd).pack(
                     &mut buffer,
                     &member.login,
-                    &String::from("!!"),
+                    "!!",
                     -1,-1,-1,-1,-1,-1,0
                 );
             }
@@ -254,8 +254,8 @@ pub struct Group {
 impl Group {
     fn pack(&mut self,
             buf:&mut Buffer,
-            name:&String,
-            passwd:&String,
+            name:&str,
+            passwd:&str,
             gid:libc::gid_t,
             mem:&Vec<String>){
         self.name = buf.write_string(name);
@@ -289,7 +289,7 @@ pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t,
             (*group).pack(
                 &mut buffer,
                 &team.name,
-                &String::from("x"),
+                "x",
                 gid,
                 &members
             )
@@ -316,7 +316,7 @@ pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char,
             (*group).pack(
                 &mut buffer,
                 &team.name,
-                &String::from("x"),
+                "x",
                 team.id as libc::gid_t,
                 &members
             )

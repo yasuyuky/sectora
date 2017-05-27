@@ -28,14 +28,14 @@ impl GithubClient {
         Ok(GithubClient {client:client, conf:config})
     }
 
-    fn get_cache_path(url:&String) -> std::path::PathBuf {
+    fn get_cache_path(url:&str) -> std::path::PathBuf {
         let mut path = std::env::temp_dir();
         path.push("ghteam-auth-cache");
-        path.push(url.as_str());
+        path.push(url);
         path
     }
 
-    fn load_content_from_cache(&self, url:&String) -> Result<(std::fs::Metadata,String),CliError> {
+    fn load_content_from_cache(&self, url:&str) -> Result<(std::fs::Metadata,String),CliError> {
         let path = Self::get_cache_path(url);
         let metadata = std::fs::metadata(path.to_str().unwrap())?;
         let mut f = File::open(path.to_str().unwrap())?;
@@ -44,7 +44,7 @@ impl GithubClient {
         Ok((metadata,content))
     }
 
-    fn store_content_to_cache(&self, url:&String, content:&String) -> Result<(),CliError> {
+    fn store_content_to_cache(&self, url:&str, content:&str) -> Result<(),CliError> {
         let path = Self::get_cache_path(url);
         std::fs::create_dir_all(path.parent().unwrap())?;
         let mut f = File::create(path.to_str().unwrap())?;
@@ -52,16 +52,16 @@ impl GithubClient {
         Ok(())
     }
 
-    fn get_content_from_url(&self, url:&String) -> Result<String,CliError> {
+    fn get_content_from_url(&self, url:&str) -> Result<String,CliError> {
         let token = String::from("token ") + self.conf.token.as_str();
-        let res = self.client.get(url.as_str()).header(Authorization(token)).send();
+        let res = self.client.get(url).header(Authorization(token)).send();
         let mut content = String::new();
         res?.read_to_string(&mut content)?;
         self.store_content_to_cache(url,&content)?;
         Ok(content)
     }
 
-    fn get_content(&self, url:&String) -> Result<String,CliError> {
+    fn get_content(&self, url:&str) -> Result<String,CliError> {
         match self.load_content_from_cache(url) {
             Ok((metadata,cache_content)) => {
                 match std::time::SystemTime::now().duration_since(metadata.modified()?) {
@@ -99,7 +99,7 @@ impl GithubClient {
     }
 
     #[allow(dead_code)]
-    pub fn check_pam(&self, user:&String) -> Result<bool, CliError> {
+    pub fn check_pam(&self, user:&str) -> Result<bool, CliError> {
         let (_,members) = self.get_team_members()?;
         Ok(members.contains_key(user))
     }
