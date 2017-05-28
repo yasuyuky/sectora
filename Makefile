@@ -8,10 +8,10 @@ all: $(TARGET_DIR)/ghteam-auth $(TARGET_DIR)/libnss_ghteam.so
 enter-build-image:
 	docker run -it --rm -v ${PWD}:/source $(BUILD_IMG) bash
 
-$(TARGET_DIR)/ghteam-auth: src
+$(TARGET_DIR)/ghteam-auth: src/main.rs src/ghclient.rs src/structs.rs
 	docker run -it --rm $(BUILD_VOL_OPT) $(BUILD_IMG) cargo build --release --target=$(TARGET)
 
-$(TARGET_DIR)/libnss_ghteam.so: src
+$(TARGET_DIR)/libnss_ghteam.so: src/lib.rs src/ghclient.rs src/structs.rs
 	docker run -it --rm $(BUILD_VOL_OPT) $(BUILD_IMG) cargo build --release --target=$(TARGET)
 
 .PHONY: clean
