@@ -4,9 +4,9 @@ The program for ssh auth using github team.
 Inspired by [Octopass](https://github.com/linyows/octopass).
 Implemented with Rust.
 
-## build
+## How to build
 
-### On linux.
+### On linux
 
 ```
 cargo build --release
@@ -20,7 +20,7 @@ make
 
 See Makefile for details
 
-## install
+## How to install and setup
 
 1. Copy executable and shared object to each paths
 2. Place config file for this program.
