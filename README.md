@@ -6,6 +6,8 @@ Implemented with Rust.
 
 ## How to build
 
+[![CircleCI](https://circleci.com/gh/yasuyuky/ghteam-auth.svg?style=svg)](https://circleci.com/gh/yasuyuky/ghteam-auth)
+
 ### On linux
 
 ```
