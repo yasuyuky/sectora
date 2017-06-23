@@ -92,6 +92,15 @@ impl Buffer {
         let cs = CString::new(s).unwrap();
         self.write(cs.as_ptr(), s.len() + 1)
     }
+
+    fn write_vector_string(&mut self, ss: &Vec<String>) -> Result<*mut *mut libc::c_char, Error> {
+        let mut ptrs = Vec::<*mut libc::c_char>::new();
+        for s in ss {
+            ptrs.push(self.write_string(&s)?);
+        }
+        self.add_pointers(&ptrs)
+    }
+
 }
 
 #[repr(C)]
@@ -290,11 +299,7 @@ impl Group {
         self.name = buf.write_string(name)?;
         self.passwd = buf.write_string(passwd)?;
         self.gid = gid;
-        let mut ptrs = Vec::<*mut libc::c_char>::new();
-        for m in mem {
-            ptrs.push(buf.write_string(&m)?);
-        }
-        self.mem = buf.add_pointers(&ptrs)?;
+        self.mem = buf.write_vector_string(mem)?;
         Ok(())
     }
 }
