@@ -93,10 +93,10 @@ impl Buffer {
         self.write(cs.as_ptr(), s.len() + 1)
     }
 
-    fn write_vector_string(&mut self, ss: &Vec<String>) -> Result<*mut *mut libc::c_char, Error> {
+    fn write_vecstr(&mut self, ss: &Vec<&str>) -> Result<*mut *mut libc::c_char, Error> {
         let mut ptrs = Vec::<*mut libc::c_char>::new();
         for s in ss {
-            ptrs.push(self.write_string(&s)?);
+            ptrs.push(self.write_string(s)?);
         }
         self.add_pointers(&ptrs)
     }
@@ -294,12 +294,12 @@ impl Group {
             name:&str,
             passwd:&str,
             gid:libc::gid_t,
-            mem:&Vec<String>,
+            mem:&Vec<&str>,
         ) -> Result<(), Error> {
         self.name = buf.write_string(name)?;
         self.passwd = buf.write_string(passwd)?;
         self.gid = gid;
-        self.mem = buf.write_vector_string(mem)?;
+        self.mem = buf.write_vecstr(mem)?;
         Ok(())
     }
 }
@@ -312,7 +312,7 @@ pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t,
                                          _: *mut libc::c_int) -> libc::c_int {
     let mut buffer = Buffer::new(buf,buflen);
     let (team,members) = CLIENT.get_team_members().unwrap();
-    let members:Vec<String> = members.values().map(|m| m.login.clone()).collect::<Vec<String>>();
+    let members:Vec<&str> = members.values().map(|m| m.login.as_str()).collect();
     if gid == CLIENT.conf.gid as libc::gid_t {
         match unsafe{(*group).pack(
                 &mut buffer,
@@ -338,7 +338,7 @@ pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char,
     let cname: &CStr = unsafe {CStr::from_ptr(cnameptr)};
     let name = String::from(cname.to_str().unwrap());
     let (team,members) = CLIENT.get_team_members().unwrap();
-    let members:Vec<String> = members.values().map(|m| m.login.clone()).collect::<Vec<String>>();
+    let members:Vec<&str> = members.values().map(|m| m.login.as_str()).collect();
     if name == CLIENT.conf.team {
         match unsafe{(*group).pack(
                 &mut buffer,
