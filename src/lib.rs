@@ -69,6 +69,25 @@ impl Buffer {
         }
     }
 
+    fn add_pointers(&mut self, ptrs:&Vec<*mut libc::c_char>)
+        -> Result<*mut *mut libc::c_char, Error> {
+        use std::mem::size_of;
+        let step = std::cmp::max(size_of::<*mut libc::c_char>()/size_of::<libc::c_char>(), 1);
+        if self.buflen < (ptrs.len()+1) * step as libc::size_t {
+            return Err(Error::new(ErrorKind::AddrNotAvailable, "ERANGE"));
+        }
+        unsafe {
+            let mem = self.buf.offset(self.offset) as *mut *mut libc::c_char;
+            for (i,p) in ptrs.iter().enumerate() {
+                *(mem.offset(i as isize)) = *p;
+                self.offset += step as isize;
+                self.buflen -= step as libc::size_t;
+            }
+            *(mem.offset(ptrs.len() as isize)) = std::ptr::null_mut::<libc::c_char>();
+            Ok(mem)
+        }
+    }
+
     fn write_string(&mut self, s: &str) -> Result<*mut libc::c_char, Error> {
         let cs = CString::new(s).unwrap();
         self.write(cs.as_ptr(), s.len() + 1)
@@ -275,13 +294,7 @@ impl Group {
         for m in mem {
             ptrs.push(buf.write_string(&m)?);
         }
-        unsafe { //TODO: range checking
-            self.mem = buf.buf.offset(buf.offset) as *mut *mut libc::c_char;
-            for (i,p) in ptrs.iter().enumerate() {
-                *(self.mem.offset(i as isize)) = *p;
-            }
-            *(self.mem.offset(ptrs.len() as isize)) = 0x0 as *mut libc::c_char;
-        }
+        self.mem = buf.add_pointers(&ptrs)?;
         Ok(())
     }
 }
