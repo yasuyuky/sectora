@@ -5,9 +5,12 @@ extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 extern crate glob;
+extern crate nix;
 
 #[macro_use]
 extern crate lazy_static;
+
+use std::io::{Error, ErrorKind};
 
 use std::ffi::{CStr,CString};
 extern crate libc;
@@ -53,17 +56,20 @@ struct Buffer {
 impl Buffer {
     fn new(buf: *mut libc::c_char,buflen: libc::size_t) -> Self { Self{buf,offset:0,buflen} }
 
-    fn write(&mut self, data: *const libc::c_char, len: usize) -> *mut libc::c_char {
+    fn write(&mut self, data: *const libc::c_char, len: usize) -> Result<*mut libc::c_char, Error> {
+        if self.buflen < len as libc::size_t {
+            return Err(Error::new(ErrorKind::AddrNotAvailable, "ERANGE"));
+        }
         unsafe {
             let pos = self.buf.offset(self.offset);
             std::ptr::copy(data as *mut i8, pos, len);
             self.offset += len as isize;
-            self.buflen -= len as libc::size_t; //TODO: range checking
-            pos
+            self.buflen -= len as libc::size_t;
+            Ok(pos)
         }
     }
 
-    fn write_string(&mut self, s: &str) -> *mut libc::c_char {
+    fn write_string(&mut self, s: &str) -> Result<*mut libc::c_char, Error> {
         let cs = CString::new(s).unwrap();
         self.write(cs.as_ptr(), s.len() + 1)
     }
@@ -89,14 +95,15 @@ impl Passwd {
             gid:libc::gid_t,
             gecos:&str,
             dir:&str,
-            shell:&str) {
-        self.name = buf.write_string(name);
-        self.passwd = buf.write_string(passwd);
-        self.dir = buf.write_string(dir);
-        self.shell = buf.write_string(shell);
-        self.gecos = buf.write_string(gecos);
+            shell:&str) -> Result<(), Error> {
+        self.name = buf.write_string(name)?;
+        self.passwd = buf.write_string(passwd)?;
+        self.dir = buf.write_string(dir)?;
+        self.shell = buf.write_string(shell)?;
+        self.gecos = buf.write_string(gecos)?;
         self.uid = uid;
         self.gid = gid;
+        Ok(())
     }
 
 }
@@ -113,8 +120,7 @@ pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char,
     let (_,members) = CLIENT.get_team_members().unwrap();
     match members.get(&name) {
         Some(member) => {
-            unsafe {
-                (*pw).pack(
+            match unsafe{(*pw).pack(
                     &mut buffer,
                     &member.login,
                     "x",
@@ -123,9 +129,10 @@ pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char,
                     "",
                     &CLIENT.conf.home.replace("{}",member.login.as_str()),
                     &CLIENT.conf.sh,
-                );
+            )} {
+                Ok(_) => libc::c_int::from(NssStatus::Success),
+                Err(_) => nix::Errno::ERANGE as libc::c_int
             }
-            libc::c_int::from(NssStatus::Success)
         },
         None => libc::c_int::from(NssStatus::NotFound)
     }
@@ -141,8 +148,7 @@ pub extern "C" fn _nss_ghteam_getpwuid_r(uid: libc::uid_t,
     let (_,members) = CLIENT.get_team_members().unwrap();
     for member in members.values() {
         if uid == member.id as libc::uid_t {
-            unsafe {
-                (*pw).pack(
+            match unsafe {(*pw).pack(
                     &mut buffer,
                     &member.login,
                     "x",
@@ -151,9 +157,10 @@ pub extern "C" fn _nss_ghteam_getpwuid_r(uid: libc::uid_t,
                     "",
                     &CLIENT.conf.home.replace("{}",member.login.as_str()),
                     &CLIENT.conf.sh,
-                );
+                )} {
+                Ok(_) => return libc::c_int::from(NssStatus::Success),
+                Err(_) => return nix::Errno::ERANGE as libc::c_int
             }
-            return libc::c_int::from(NssStatus::Success);
         }
     }
     libc::c_int::from(NssStatus::NotFound)
@@ -194,9 +201,9 @@ impl Spwd {
             inact:libc::c_long,
             expire:libc::c_long,
             flag:libc::c_ulong,
-        ) {
-        self.namp = buf.write_string(namp);
-        self.pwdp = buf.write_string(pwdp);
+        ) -> Result<(), Error> {
+        self.namp = buf.write_string(namp)?;
+        self.pwdp = buf.write_string(pwdp)?;
         self.lstchg = lstchg;
         self.min = min;
         self.max = max;
@@ -204,6 +211,7 @@ impl Spwd {
         self.inact = inact;
         self.expire = expire;
         self.flag = flag;
+        Ok(())
     }
 }
 
@@ -219,15 +227,16 @@ pub extern "C" fn _nss_ghteam_getspnam_r(cnameptr: *const libc::c_char,
     let (_,members) = CLIENT.get_team_members().unwrap();
     match members.get(&name) {
         Some(member) => {
-            unsafe {
-                (*spwd).pack(
+            match unsafe {(*spwd).pack(
                     &mut buffer,
                     &member.login,
                     "!!",
                     -1,-1,-1,-1,-1,-1,0
-                );
+                )} {
+                Ok(_) => libc::c_int::from(NssStatus::Success),
+                Err(_) => nix::Errno::ERANGE as libc::c_int
             }
-            libc::c_int::from(NssStatus::Success)
+
         },
         None => libc::c_int::from(NssStatus::NotFound)
     }
@@ -257,21 +266,23 @@ impl Group {
             name:&str,
             passwd:&str,
             gid:libc::gid_t,
-            mem:&Vec<String>){
-        self.name = buf.write_string(name);
-        self.passwd = buf.write_string(passwd);
+            mem:&Vec<String>,
+        ) -> Result<(), Error> {
+        self.name = buf.write_string(name)?;
+        self.passwd = buf.write_string(passwd)?;
         self.gid = gid;
         let mut ptrs = Vec::<*mut libc::c_char>::new();
         for m in mem {
-            ptrs.push(buf.write_string(&m));
+            ptrs.push(buf.write_string(&m)?);
         }
-        unsafe {
+        unsafe { //TODO: range checking
             self.mem = buf.buf.offset(buf.offset) as *mut *mut libc::c_char;
             for (i,p) in ptrs.iter().enumerate() {
                 *(self.mem.offset(i as isize)) = *p;
             }
             *(self.mem.offset(ptrs.len() as isize)) = 0x0 as *mut libc::c_char;
         }
+        Ok(())
     }
 }
 
@@ -285,16 +296,15 @@ pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t,
     let (team,members) = CLIENT.get_team_members().unwrap();
     let members:Vec<String> = members.values().map(|m| m.login.clone()).collect::<Vec<String>>();
     if gid == CLIENT.conf.gid as libc::gid_t {
-        unsafe {
-            (*group).pack(
+        match unsafe{(*group).pack(
                 &mut buffer,
                 &team.name,
                 "x",
                 gid,
-                &members
-            )
+                &members)} {
+            Ok(_) => libc::c_int::from(NssStatus::Success),
+            Err(_) => nix::Errno::ERANGE as libc::c_int,
         }
-        libc::c_int::from(NssStatus::Success)
     } else {
         libc::c_int::from(NssStatus::NotFound)
     }
@@ -312,16 +322,17 @@ pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char,
     let (team,members) = CLIENT.get_team_members().unwrap();
     let members:Vec<String> = members.values().map(|m| m.login.clone()).collect::<Vec<String>>();
     if name == CLIENT.conf.team {
-        unsafe {
-            (*group).pack(
+        match unsafe{(*group).pack(
                 &mut buffer,
                 &team.name,
                 "x",
                 team.id as libc::gid_t,
                 &members
-            )
+            )} {
+            Ok(_) => libc::c_int::from(NssStatus::Success),
+            Err(_) => nix::Errno::ERANGE as libc::c_int
         }
-        libc::c_int::from(NssStatus::Success)
+
     } else {
         libc::c_int::from(NssStatus::NotFound)
     }
