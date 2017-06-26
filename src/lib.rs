@@ -10,6 +10,8 @@ extern crate nix;
 #[macro_use]
 extern crate lazy_static;
 
+use std::io::{Read,Write,Seek,SeekFrom,BufReader,BufRead};
+use std::fs::{File,OpenOptions};
 use std::ffi::CStr;
 extern crate libc;
 
@@ -28,6 +30,8 @@ lazy_static! {
                  .as_str()
     ).unwrap();
 }
+
+const RUN_DIR:&str = "/var/run/ghteam-auth";
 
 #[allow(dead_code)]
 enum NssStatus {
@@ -107,13 +111,70 @@ pub extern "C" fn _nss_ghteam_getpwuid_r(uid: libc::uid_t,
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_setpwent() -> libc::c_int { libc::c_int::from(NssStatus::Success) }
+pub extern "C" fn _nss_ghteam_setpwent() -> libc::c_int {
+    let pid = unsafe { libc::getpid() };
+    std::fs::create_dir_all(RUN_DIR).unwrap();
+    let mut idx_file:File = File::create(format!("{}/{}.index",RUN_DIR,pid)).unwrap();
+    idx_file.write(b"0").unwrap();
+    let mut list_file:File = File::create(format!("{}/{}.list",RUN_DIR,pid)).unwrap();
+    let (_,members) = CLIENT.get_team_members().unwrap();
+    for member in members.values () {
+        list_file.write(format!("{}\t{}\n",member.login,member.id).as_bytes()).unwrap();
+    }
+    libc::c_int::from(NssStatus::Success)
+}
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getpwent_r() -> libc::c_int { libc::c_int::from(NssStatus::Unavail) }
+pub extern "C" fn _nss_ghteam_getpwent_r(
+    pwbuf: *mut Passwd,
+    buf: *mut libc::c_char,
+    buflen: libc::size_t,
+    pwbufp: *mut *mut Passwd,
+    ) -> libc::c_int {
+    let pid = unsafe { libc::getpid() };
+    let mut idx_file:File =  OpenOptions::new().read(true).write(true).open(format!("{}/{}.index",RUN_DIR,pid)).unwrap();
+    let mut idx_string = String::new();
+    idx_file.read_to_string(&mut idx_string).unwrap();
+    let idx:usize = idx_string.parse().unwrap();
+    let list = BufReader::new(File::open(format!("{}/{}.list",RUN_DIR,pid)).unwrap());
+    for (i,line) in list.lines().enumerate() {
+        if i!=idx { continue }
+        if let Ok(l) = line {
+            let mut buffer = Buffer::new(buf,buflen);
+            let words:Vec<&str> = l.split("\t").collect();
+            match unsafe {(*pwbuf).pack(
+                &mut buffer,
+                words[0],
+                "x",
+                words[1].parse::<usize>().unwrap() as libc::uid_t,
+                CLIENT.conf.gid as libc::gid_t,
+                "",
+                &CLIENT.conf.home.replace("{}",words[0]),
+                &CLIENT.conf.sh,
+            )} {
+                Ok(_) => {
+                    idx_file.seek(SeekFrom::Start(0)).unwrap();
+                    idx_file.write(format!("{}",idx+1).as_bytes()).unwrap();
+                    unsafe {*pwbufp = pwbuf};
+                    return libc::c_int::from(NssStatus::Success)
+                },
+                Err(_) => {
+                    unsafe {*pwbufp = std::ptr::null_mut()};
+                    return nix::Errno::ERANGE as libc::c_int
+                }
+            }
+        }
+    }
+    libc::c_int::from(NssStatus::Unavail)
+}
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_endpwent() -> libc::c_int { libc::c_int::from(NssStatus::Success) }
+pub extern "C" fn _nss_ghteam_endpwent() -> libc::c_int {
+    let pid = unsafe { libc::getpid() };
+    std::fs::remove_file(format!("{}/{}.index",RUN_DIR,pid)).unwrap_or(());
+    std::fs::remove_file(format!("{}/{}.list",RUN_DIR,pid)).unwrap_or(());
+    libc::c_int::from(NssStatus::Success)
+}
 
 #[no_mangle]
 pub extern "C" fn _nss_ghteam_getspnam_r(cnameptr: *const libc::c_char,
