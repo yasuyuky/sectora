@@ -117,7 +117,10 @@ pub extern "C" fn _nss_ghteam_setpwent() -> libc::c_int {
     let mut idx_file:File = File::create(format!("{}/{}.index",RUN_DIR,pid)).unwrap();
     idx_file.write(b"0").unwrap();
     let mut list_file:File = File::create(format!("{}/{}.list",RUN_DIR,pid)).unwrap();
-    let (_,members) = CLIENT.get_team_members().unwrap();
+    let members = match CLIENT.get_team_members() {
+        Ok((_,members)) => members,
+        Err(_) => return libc::c_int::from(NssStatus::Success)
+    };
     for member in members.values () {
         list_file.write(format!("{}\t{}\n",member.login,member.id).as_bytes()).unwrap();
     }
@@ -132,11 +135,18 @@ pub extern "C" fn _nss_ghteam_getpwent_r(
     pwbufp: *mut *mut Passwd,
     ) -> libc::c_int {
     let pid = unsafe { libc::getpid() };
-    let mut idx_file:File =  OpenOptions::new().read(true).write(true).open(format!("{}/{}.index",RUN_DIR,pid)).unwrap();
+    let mut idx_file:File =
+    match OpenOptions::new().read(true).write(true).open(format!("{}/{}.index",RUN_DIR,pid)) {
+        Ok(file) => file,
+        Err(_) => return libc::c_int::from(NssStatus::Unavail),
+    };
     let mut idx_string = String::new();
     idx_file.read_to_string(&mut idx_string).unwrap();
     let idx:usize = idx_string.parse().unwrap();
-    let list = BufReader::new(File::open(format!("{}/{}.list",RUN_DIR,pid)).unwrap());
+    let list = match File::open(format!("{}/{}.list",RUN_DIR,pid)) {
+        Ok(f) => BufReader::new(f),
+        Err(_) => return libc::c_int::from(NssStatus::Unavail),
+    };
     for (i,line) in list.lines().enumerate() {
         if i!=idx { continue }
         if let Ok(l) = line {
@@ -210,7 +220,10 @@ pub extern "C" fn _nss_ghteam_setspent() -> libc::c_int {
     let mut idx_file:File = File::create(format!("{}/{}.index",RUN_DIR,pid)).unwrap();
     idx_file.write(b"0").unwrap();
     let mut list_file:File = File::create(format!("{}/{}.list",RUN_DIR,pid)).unwrap();
-    let (_,members) = CLIENT.get_team_members().unwrap();
+    let members = match CLIENT.get_team_members() {
+        Ok((_,members)) => members,
+        Err(_) => return libc::c_int::from(NssStatus::Success)
+    };
     for member in members.values () {
         list_file.write(format!("{}\t{}\n",member.login,member.id).as_bytes()).unwrap();
     }
@@ -225,11 +238,18 @@ pub extern "C" fn _nss_ghteam_getspent_r(
     spbufp: *mut *mut Spwd,
     ) -> libc::c_int {
     let pid = unsafe { libc::getpid() };
-    let mut idx_file:File =  OpenOptions::new().read(true).write(true).open(format!("{}/{}.index",RUN_DIR,pid)).unwrap();
+    let mut idx_file:File =
+    match OpenOptions::new().read(true).write(true).open(format!("{}/{}.index",RUN_DIR,pid)) {
+        Ok(file) => file,
+        Err(_) => return libc::c_int::from(NssStatus::Unavail),
+    };
     let mut idx_string = String::new();
     idx_file.read_to_string(&mut idx_string).unwrap();
     let idx:usize = idx_string.parse().unwrap();
-    let list = BufReader::new(File::open(format!("{}/{}.list",RUN_DIR,pid)).unwrap());
+    let list = match File::open(format!("{}/{}.list",RUN_DIR,pid)) {
+        Ok(f) => BufReader::new(f),
+        Err(_) => return libc::c_int::from(NssStatus::Unavail),
+    };
     for (i,line) in list.lines().enumerate() {
         if i!=idx { continue }
         if let Ok(l) = line {
@@ -324,7 +344,10 @@ pub extern "C" fn _nss_ghteam_setgrent() -> libc::c_int {
     let mut idx_file:File = File::create(format!("{}/{}.index",RUN_DIR,pid)).unwrap();
     idx_file.write(b"0").unwrap();
     let mut list_file:File = File::create(format!("{}/{}.glist",RUN_DIR,pid)).unwrap();
-    let (team,members) = CLIENT.get_team_members().unwrap();
+    let (team,members) = match CLIENT.get_team_members() {
+        Ok(team_members) => team_members,
+        Err(_) => return libc::c_int::from(NssStatus::Success)
+    };
     let member_names = members.values().map(|x| x.login.as_str()).collect::<Vec<&str>>().join(" ");
     list_file.write(format!("{}\t{}\t{}\n", team.name, team.id, member_names).as_bytes()).unwrap();
     libc::c_int::from(NssStatus::Success)
@@ -338,11 +361,18 @@ pub extern "C" fn _nss_ghteam_getgrent_r(
     grbufp: *mut *mut Group,
     ) -> libc::c_int {
     let pid = unsafe { libc::getpid() };
-    let mut idx_file:File =  OpenOptions::new().read(true).write(true).open(format!("{}/{}.index",RUN_DIR,pid)).unwrap();
+    let mut idx_file:File =
+    match OpenOptions::new().read(true).write(true).open(format!("{}/{}.index",RUN_DIR,pid)) {
+        Ok(file) => file,
+        Err(_) => return libc::c_int::from(NssStatus::Unavail),
+    };
     let mut idx_string = String::new();
     idx_file.read_to_string(&mut idx_string).unwrap();
     let idx:usize = idx_string.parse().unwrap();
-    let list = BufReader::new(File::open(format!("{}/{}.glist",RUN_DIR,pid)).unwrap());
+    let list = match File::open(format!("{}/{}.glist",RUN_DIR,pid)) {
+        Ok(f) => BufReader::new(f),
+        Err(_) => return libc::c_int::from(NssStatus::Unavail),
+    };
     for (i,line) in list.lines().enumerate() {
         if i!=idx { continue }
         if let Ok(l) = line {
