@@ -12,7 +12,7 @@ pub struct Buffer {
 }
 
 impl Buffer {
-    pub fn new(buf: *mut libc::c_char,buflen: libc::size_t) -> Self { Self{buf,offset:0,buflen} }
+    pub fn new(buf: *mut libc::c_char, buflen: libc::size_t) -> Self { Self { buf, offset: 0, buflen } }
 
     fn write(&mut self, data: *const libc::c_char, len: usize) -> Result<*mut libc::c_char, Error> {
         if self.buflen < len as libc::size_t {
@@ -27,16 +27,16 @@ impl Buffer {
         }
     }
 
-    fn add_pointers(&mut self, ptrs:&Vec<*mut libc::c_char>)
-        -> Result<*mut *mut libc::c_char, Error> {
+    fn add_pointers(&mut self, ptrs: &Vec<*mut libc::c_char>) -> Result<*mut *mut libc::c_char, Error> {
         use std::mem::size_of;
-        let step = std::cmp::max(size_of::<*mut libc::c_char>()/size_of::<libc::c_char>(), 1);
-        if self.buflen < (ptrs.len()+1) * step as libc::size_t {
+        let step = std::cmp::max(size_of::<*mut libc::c_char>() / size_of::<libc::c_char>(),
+                                 1);
+        if self.buflen < (ptrs.len() + 1) * step as libc::size_t {
             return Err(Error::new(ErrorKind::AddrNotAvailable, "ERANGE"));
         }
         unsafe {
             let mem = self.buf.offset(self.offset) as *mut *mut libc::c_char;
-            for (i,p) in ptrs.iter().enumerate() {
+            for (i, p) in ptrs.iter().enumerate() {
                 *(mem.offset(i as isize)) = *p;
                 self.offset += step as isize;
                 self.buflen -= step as libc::size_t;
@@ -58,5 +58,4 @@ impl Buffer {
         }
         self.add_pointers(&ptrs)
     }
-
 }

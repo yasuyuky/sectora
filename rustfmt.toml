@@ -1,0 +1,11 @@
+max_width = 120
+struct_lit_width = 50
+single_line_if_else_max_width = 80
+array_layout = "Visual"
+chain_indent = "Visual"
+fn_args_layout = "Visual"
+fn_call_style = "Visual"
+generics_indent = "Visual"
+struct_lit_style = "Visual"
+where_pred_indent = "Visual"
+fn_single_line = true
