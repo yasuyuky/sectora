@@ -1,7 +1,7 @@
 use std::io::Error;
 use libc;
 use buffer::Buffer;
-
+use GithubClient;
 
 #[repr(C)]
 pub struct Passwd {
@@ -15,16 +15,16 @@ pub struct Passwd {
 }
 
 impl Passwd {
-    pub fn pack(&mut self,
-                buf: &mut Buffer,
-                name: &str,
-                passwd: &str,
-                uid: libc::uid_t,
-                gid: libc::gid_t,
-                gecos: &str,
-                dir: &str,
-                shell: &str)
-                -> Result<(), Error> {
+    fn pack(&mut self,
+            buf: &mut Buffer,
+            name: &str,
+            passwd: &str,
+            uid: libc::uid_t,
+            gid: libc::gid_t,
+            gecos: &str,
+            dir: &str,
+            shell: &str)
+            -> Result<(), Error> {
         self.name = buf.write_string(name)?;
         self.passwd = buf.write_string(passwd)?;
         self.dir = buf.write_string(dir)?;
@@ -33,6 +33,17 @@ impl Passwd {
         self.uid = uid;
         self.gid = gid;
         Ok(())
+    }
+
+    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, client: &GithubClient) -> Result<(), Error> {
+        self.pack(buf,
+                  name,
+                  "x",
+                  id as libc::uid_t,
+                  client.conf.gid as libc::gid_t,
+                  "",
+                  &client.conf.home.replace("{}", name),
+                  &client.conf.sh)
     }
 }
 
@@ -50,18 +61,18 @@ pub struct Spwd {
 }
 
 impl Spwd {
-    pub fn pack(&mut self,
-                buf: &mut Buffer,
-                namp: &str,
-                pwdp: &str,
-                lstchg: libc::c_long,
-                min: libc::c_long,
-                max: libc::c_long,
-                warn: libc::c_long,
-                inact: libc::c_long,
-                expire: libc::c_long,
-                flag: libc::c_ulong)
-                -> Result<(), Error> {
+    fn pack(&mut self,
+            buf: &mut Buffer,
+            namp: &str,
+            pwdp: &str,
+            lstchg: libc::c_long,
+            min: libc::c_long,
+            max: libc::c_long,
+            warn: libc::c_long,
+            inact: libc::c_long,
+            expire: libc::c_long,
+            flag: libc::c_ulong)
+            -> Result<(), Error> {
         self.namp = buf.write_string(namp)?;
         self.pwdp = buf.write_string(pwdp)?;
         self.lstchg = lstchg;
@@ -72,6 +83,10 @@ impl Spwd {
         self.expire = expire;
         self.flag = flag;
         Ok(())
+    }
+
+    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str) -> Result<(), Error> {
+        self.pack(buf, name, "!!", -1, -1, -1, -1, -1, -1, 0)
     }
 }
 
@@ -85,17 +100,21 @@ pub struct Group {
 }
 
 impl Group {
-    pub fn pack(&mut self,
-                buf: &mut Buffer,
-                name: &str,
-                passwd: &str,
-                gid: libc::gid_t,
-                mem: &Vec<&str>)
-                -> Result<(), Error> {
+    fn pack(&mut self,
+            buf: &mut Buffer,
+            name: &str,
+            passwd: &str,
+            gid: libc::gid_t,
+            mem: &Vec<&str>)
+            -> Result<(), Error> {
         self.name = buf.write_string(name)?;
         self.passwd = buf.write_string(passwd)?;
         self.gid = gid;
         self.mem = buf.write_vecstr(mem)?;
         Ok(())
+    }
+
+    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, members: &Vec<&str>) -> Result<(), Error> {
+        self.pack(buf, name, "x", id as libc::gid_t, &members)
     }
 }

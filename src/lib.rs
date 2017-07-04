@@ -63,16 +63,7 @@ pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char,
     let (_, members) = CLIENT.get_team_members().unwrap();
     match members.get(&name) {
         Some(member) => {
-            match unsafe {
-                (*pw).pack(&mut buffer,
-                           &member.login,
-                           "x",
-                           member.id as libc::uid_t,
-                           CLIENT.conf.gid as libc::gid_t,
-                           "",
-                           &CLIENT.conf.home.replace("{}", member.login.as_str()),
-                           &CLIENT.conf.sh)
-            } {
+            match unsafe { (*pw).pack_args(&mut buffer, &member.login, member.id, &CLIENT) } {
                 Ok(_) => libc::c_int::from(NssStatus::Success),
                 Err(_) => nix::Errno::ERANGE as libc::c_int,
             }
@@ -92,16 +83,7 @@ pub extern "C" fn _nss_ghteam_getpwuid_r(uid: libc::uid_t,
     let (_, members) = CLIENT.get_team_members().unwrap();
     for member in members.values() {
         if uid == member.id as libc::uid_t {
-            match unsafe {
-                (*pw).pack(&mut buffer,
-                           &member.login,
-                           "x",
-                           member.id as libc::uid_t,
-                           CLIENT.conf.gid as libc::gid_t,
-                           "",
-                           &CLIENT.conf.home.replace("{}", member.login.as_str()),
-                           &CLIENT.conf.sh)
-            } {
+            match unsafe { (*pw).pack_args(&mut buffer, &member.login, member.id, &CLIENT) } {
                 Ok(_) => return libc::c_int::from(NssStatus::Success),
                 Err(_) => return nix::Errno::ERANGE as libc::c_int,
             }
@@ -144,16 +126,8 @@ pub extern "C" fn _nss_ghteam_getpwent_r(pwbuf: *mut Passwd,
         if let Ok(l) = line {
             let mut buffer = Buffer::new(buf, buflen);
             let words: Vec<&str> = l.split("\t").collect();
-            match unsafe {
-                (*pwbuf).pack(&mut buffer,
-                              words[0],
-                              "x",
-                              words[1].parse::<usize>().unwrap() as libc::uid_t,
-                              CLIENT.conf.gid as libc::gid_t,
-                              "",
-                              &CLIENT.conf.home.replace("{}", words[0]),
-                              &CLIENT.conf.sh)
-            } {
+            let id = words[1].parse::<u64>().unwrap();
+            match unsafe { (*pwbuf).pack_args(&mut buffer, words[0], id, &CLIENT) } {
                 Ok(_) => {
                     runfiles::increment(idx, idx_file);
                     unsafe { *pwbufp = pwbuf };
@@ -188,7 +162,7 @@ pub extern "C" fn _nss_ghteam_getspnam_r(cnameptr: *const libc::c_char,
     let (_, members) = CLIENT.get_team_members().unwrap();
     match members.get(&name) {
         Some(member) => {
-            match unsafe { (*spwd).pack(&mut buffer, &member.login, "!!", -1, -1, -1, -1, -1, -1, 0) } {
+            match unsafe { (*spwd).pack_args(&mut buffer, &member.login) } {
                 Ok(_) => libc::c_int::from(NssStatus::Success),
                 Err(_) => nix::Errno::ERANGE as libc::c_int,
             }
@@ -231,7 +205,7 @@ pub extern "C" fn _nss_ghteam_getspent_r(spbuf: *mut Spwd,
         if let Ok(l) = line {
             let mut buffer = Buffer::new(buf, buflen);
             let words: Vec<&str> = l.split("\t").collect();
-            match unsafe { (*spbuf).pack(&mut buffer, words[0], "!!", -1, -1, -1, -1, -1, -1, 0) } {
+            match unsafe { (*spbuf).pack_args(&mut buffer, words[0]) } {
                 Ok(_) => {
                     runfiles::increment(idx, idx_file);
                     unsafe { *spbufp = spbuf };
@@ -263,8 +237,8 @@ pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t,
     let mut buffer = Buffer::new(buf, buflen);
     let (team, members) = CLIENT.get_team_members().unwrap();
     let members: Vec<&str> = members.values().map(|m| m.login.as_str()).collect();
-    if gid == CLIENT.conf.gid as libc::gid_t {
-        match unsafe { (*group).pack(&mut buffer, &team.name, "x", gid, &members) } {
+    if gid as u64 == CLIENT.conf.gid {
+        match unsafe { (*group).pack_args(&mut buffer, &team.name, gid as u64, &members) } {
             Ok(_) => libc::c_int::from(NssStatus::Success),
             Err(_) => nix::Errno::ERANGE as libc::c_int,
         }
@@ -286,17 +260,10 @@ pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char,
     let (team, members) = CLIENT.get_team_members().unwrap();
     let members: Vec<&str> = members.values().map(|m| m.login.as_str()).collect();
     if name == CLIENT.conf.team {
-        match unsafe {
-            (*group).pack(&mut buffer,
-                          &team.name,
-                          "x",
-                          team.id as libc::gid_t,
-                          &members)
-        } {
+        match unsafe { (*group).pack_args(&mut buffer, &team.name, team.id, &members) } {
             Ok(_) => libc::c_int::from(NssStatus::Success),
             Err(_) => nix::Errno::ERANGE as libc::c_int,
         }
-
     } else {
         libc::c_int::from(NssStatus::NotFound)
     }
@@ -339,13 +306,8 @@ pub extern "C" fn _nss_ghteam_getgrent_r(grbuf: *mut Group,
             let mut buffer = Buffer::new(buf, buflen);
             let words: Vec<&str> = l.split("\t").collect();
             let member_names: Vec<&str> = words[2].split(" ").collect();
-            match unsafe {
-                (*grbuf).pack(&mut buffer,
-                              words[0],
-                              "x",
-                              words[1].parse::<usize>().unwrap() as libc::gid_t,
-                              &member_names)
-            } {
+            let id: u64 = words[1].parse::<u64>().unwrap();
+            match unsafe { (*grbuf).pack_args(&mut buffer, words[0], id, &member_names) } {
                 Ok(_) => {
                     runfiles::increment(idx, idx_file);
                     unsafe { *grbufp = grbuf };
