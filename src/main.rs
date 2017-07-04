@@ -14,18 +14,9 @@ extern crate lazy_static;
 extern crate libc;
 
 mod structs;
-use structs::Config;
 mod ghclient;
-use ghclient::GithubClient;
-
-lazy_static! {
-    static ref CONFIG:Config = Config::new(
-        std::env::var("GHTEAMAUTH_CONFIG")
-                 .unwrap_or(String::from("/etc/ghteam-auth.conf"))
-                 .as_str()
-    ).unwrap();
-    static ref CLIENT:GithubClient = GithubClient::new(&CONFIG).unwrap();
-}
+mod statics;
+use statics::CLIENT;
 
 fn main() {
 
@@ -62,7 +53,7 @@ fn main() {
                     std::process::exit(1)
                 }
             }
-            Err(e) => println!("couldn't interpret PAM_USER: {}", e),
+            Err(e) => println!("PAM_USER: {}", e),
         }
     }
 

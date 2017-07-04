@@ -17,21 +17,14 @@ extern crate libc;
 mod structs;
 use structs::Config;
 mod ghclient;
-use ghclient::GithubClient;
 mod buffer;
 use buffer::Buffer;
 mod cstructs;
 use cstructs::{Passwd, Spwd, Group};
 mod runfiles;
+mod statics;
+use statics::{CONFIG, CLIENT};
 
-lazy_static! {
-    static ref CONFIG:Config = Config::new(
-        std::env::var("GHTEAMAUTH_CONFIG")
-                 .unwrap_or(String::from("/etc/ghteam-auth.conf"))
-                 .as_str()
-    ).unwrap();
-    static ref CLIENT:GithubClient = GithubClient::new(&CONFIG).unwrap();
-}
 
 #[allow(dead_code)]
 enum NssStatus {
