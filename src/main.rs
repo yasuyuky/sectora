@@ -14,15 +14,17 @@ extern crate lazy_static;
 extern crate libc;
 
 mod structs;
+use structs::Config;
 mod ghclient;
 use ghclient::GithubClient;
 
 lazy_static! {
-    static ref CLIENT:GithubClient = GithubClient::new(
+    static ref CONFIG:Config = Config::new(
         std::env::var("GHTEAMAUTH_CONFIG")
                  .unwrap_or(String::from("/etc/ghteam-auth.conf"))
                  .as_str()
     ).unwrap();
+    static ref CLIENT:GithubClient = GithubClient::new(&CONFIG).unwrap();
 }
 
 fn main() {

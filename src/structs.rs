@@ -1,8 +1,11 @@
 use serde_json;
 use reqwest;
 use std;
+use std::fs::File;
+use std::io::Read;
+use toml;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     pub token: String,
     pub org: String,
@@ -28,6 +31,15 @@ fn default_gid() -> u64 { 2000 }
 fn default_sh() -> String { String::from("/bin/bash") }
 fn default_cache_duration() -> u64 { 3600 }
 fn default_cert_path() -> String { String::from("/etc/ssl/certs/ca-certificates.crt") }
+
+impl Config {
+    pub fn new(configpath: &str) -> Result<Self, std::io::Error> {
+        let mut file = File::open(configpath)?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+        Ok(toml::from_str::<Config>(contents.as_str()).unwrap())
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Team {

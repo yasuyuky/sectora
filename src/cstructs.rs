@@ -1,7 +1,7 @@
 use std::io::Error;
 use libc;
 use buffer::Buffer;
-use GithubClient;
+use Config;
 
 #[repr(C)]
 pub struct Passwd {
@@ -35,15 +35,15 @@ impl Passwd {
         Ok(())
     }
 
-    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, client: &GithubClient) -> Result<(), Error> {
+    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, conf: &Config) -> Result<(), Error> {
         self.pack(buf,
                   name,
                   "x",
                   id as libc::uid_t,
-                  client.conf.gid as libc::gid_t,
+                  conf.gid as libc::gid_t,
                   "",
-                  &client.conf.home.replace("{}", name),
-                  &client.conf.sh)
+                  &conf.home.replace("{}", name),
+                  &conf.sh)
     }
 }
 

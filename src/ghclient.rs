@@ -4,7 +4,6 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::collections::HashMap;
 
-use toml;
 use glob::glob;
 use reqwest;
 use reqwest::header::Authorization;
@@ -12,20 +11,16 @@ use serde_json;
 
 pub struct GithubClient {
     client: reqwest::Client,
-    pub conf: Config,
+    conf: Config,
 }
 
 impl GithubClient {
-    pub fn new(configpath: &str) -> Result<GithubClient, CliError> {
-        let mut file = File::open(configpath)?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)?;
-        let config = toml::from_str::<Config>(contents.as_str()).unwrap();
+    pub fn new(config: &Config) -> Result<GithubClient, CliError> {
         if std::env::var("SSL_CERT_FILE").is_err() {
             std::env::set_var("SSL_CERT_FILE", config.cert_path.as_str());
         }
         let client = reqwest::Client::new()?;
-        Ok(GithubClient { client: client, conf: config })
+        Ok(GithubClient { client: client, conf: config.clone() })
     }
 
     fn get_cache_path(url: &str) -> std::path::PathBuf {
