@@ -30,32 +30,33 @@ fn main() {
                  .multiple(true)
                  .help("Sets the level of verbosity"))
         .subcommand(SubCommand::with_name("key")
-                        .about("get user public key")
+                        .about("Gets user public key")
                         .arg(Arg::with_name("USER")
                                  .required(true)
                                  .index(1)
                                  .help("user name")))
-        .subcommand(SubCommand::with_name("pam").about("execute pam check"))
-        .subcommand(SubCommand::with_name("refresh").about("refresh cache"))
+        .subcommand(SubCommand::with_name("pam").about("Executes pam check"))
+        .subcommand(SubCommand::with_name("cleanup").about("Cleans caches up"))
         .get_matches();
 
-
-    if let Some(matches) = matches.subcommand_matches("key") {
-        CLIENT.print_user_public_key(matches.value_of("USER").unwrap())
-              .unwrap();
-    } else if let Some(_) = matches.subcommand_matches("refresh") {
-        CLIENT.clear_all_caches().unwrap();
-    } else if let Some(_) = matches.subcommand_matches("pam") {
-        match std::env::var("PAM_USER") {
-            Ok(user) => {
-                if CLIENT.check_pam(&user).unwrap() {
-                    std::process::exit(0);
-                } else {
-                    std::process::exit(1)
-                }
-            }
-            Err(e) => println!("PAM_USER: {}", e),
+    match matches.subcommand() {
+        ("key", Some(sub)) => {
+            CLIENT.print_user_public_key(sub.value_of("USER").unwrap())
+                  .unwrap()
         }
+        ("cleanup", Some(_)) => CLIENT.clear_all_caches().unwrap(),
+        ("pam", Some(_)) => {
+            match std::env::var("PAM_USER") {
+                Ok(user) => {
+                    if CLIENT.check_pam(&user).unwrap() {
+                        std::process::exit(0);
+                    } else {
+                        std::process::exit(1)
+                    }
+                }
+                Err(e) => println!("PAM_USER: {}", e),
+            }
+        }
+        (&_, _) => println!("{}", matches.usage()),
     }
-
 }
