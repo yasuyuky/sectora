@@ -1,3 +1,4 @@
+#[macro_use]
 extern crate clap;
 use clap::{Arg, App, SubCommand};
 extern crate toml;
@@ -20,10 +21,10 @@ use statics::CLIENT;
 
 fn main() {
 
-    let matches = App::new("ghteam-auth")
-        .version("0.1")
-        .author("Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>")
-        .about("")
+    let matches = App::new(crate_name!())
+        .version(crate_version!())
+        .author(crate_authors!())
+        .about(crate_description!())
         .arg(Arg::with_name("v")
                  .short("v")
                  .multiple(true)
