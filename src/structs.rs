@@ -33,11 +33,11 @@ fn default_cache_duration() -> u64 { 3600 }
 fn default_cert_path() -> String { String::from("/etc/ssl/certs/ca-certificates.crt") }
 
 impl Config {
-    pub fn new(configpath: &str) -> Result<Self, std::io::Error> {
+    pub fn new(configpath: &str) -> Result<Self, CliError> {
         let mut file = File::open(configpath)?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
-        Ok(toml::from_str::<Config>(contents.as_str()).unwrap())
+        Ok(toml::from_str::<Config>(contents.as_str())?)
     }
 }
 
@@ -64,6 +64,7 @@ pub enum CliError {
     Serde(serde_json::Error),
     Reqwest(reqwest::Error),
     Io(std::io::Error),
+    Toml(toml::de::Error),
 }
 
 impl From<serde_json::Error> for CliError {
@@ -74,4 +75,7 @@ impl From<reqwest::Error> for CliError {
 }
 impl From<std::io::Error> for CliError {
     fn from(err: std::io::Error) -> CliError { CliError::Io(err) }
+}
+impl From<toml::de::Error> for CliError {
+    fn from(err: toml::de::Error) -> CliError { CliError::Toml(err) }
 }
