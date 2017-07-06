@@ -17,7 +17,7 @@ extern crate libc;
 mod structs;
 mod ghclient;
 mod statics;
-use statics::CLIENT;
+use statics::CONF_PATH;
 
 fn main() {
 
@@ -39,16 +39,32 @@ fn main() {
         .subcommand(SubCommand::with_name("cleanup").about("Cleans caches up"))
         .get_matches();
 
+    let config = match structs::Config::new(&CONF_PATH) {
+        Ok(config) => config,
+        Err(err) => {
+            println!("Failed to open configuration file: {:?}", *CONF_PATH);
+            println!("[{:?}]", err);
+            std::process::exit(11);
+        }
+    };
+    let client = match ghclient::GithubClient::new(&config) {
+        Ok(client) => client,
+        Err(err) => {
+            println!("Failed to open github client [{:?}]", err);
+            std::process::exit(21);
+        }
+    };
+
     match matches.subcommand() {
         ("key", Some(sub)) => {
-            CLIENT.print_user_public_key(sub.value_of("USER").unwrap())
+            client.print_user_public_key(sub.value_of("USER").unwrap())
                   .unwrap()
         }
-        ("cleanup", Some(_)) => CLIENT.clear_all_caches().unwrap(),
+        ("cleanup", Some(_)) => client.clear_all_caches().unwrap(),
         ("pam", Some(_)) => {
             match std::env::var("PAM_USER") {
                 Ok(user) => {
-                    if CLIENT.check_pam(&user).unwrap() {
+                    if client.check_pam(&user).unwrap() {
                         std::process::exit(0);
                     } else {
                         std::process::exit(1)

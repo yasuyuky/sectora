@@ -17,14 +17,19 @@ extern crate libc;
 mod structs;
 use structs::Config;
 mod ghclient;
+use ghclient::GithubClient;
 mod buffer;
 use buffer::Buffer;
 mod cstructs;
 use cstructs::{Passwd, Spwd, Group};
 mod runfiles;
 mod statics;
-use statics::{CONFIG, CLIENT};
+use statics::CONF_PATH;
 
+lazy_static! {
+    pub static ref CONFIG:Config = Config::new(&CONF_PATH).unwrap();
+    pub static ref CLIENT:GithubClient = GithubClient::new(&CONFIG).unwrap();
+}
 
 #[allow(dead_code)]
 enum NssStatus {
