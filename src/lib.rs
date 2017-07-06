@@ -119,24 +119,19 @@ pub extern "C" fn _nss_ghteam_getpwent_r(pwbuf: *mut Passwd,
         Ok(ret) => ret,
         Err(_) => return libc::c_int::from(NssStatus::Unavail),
     };
-    for (i, line) in list.lines().enumerate() {
-        if i != idx {
-            continue;
-        }
-        if let Ok(l) = line {
-            let mut buffer = Buffer::new(buf, buflen);
-            let words: Vec<&str> = l.split("\t").collect();
-            let id = words[1].parse::<u64>().unwrap();
-            match unsafe { (*pwbuf).pack_args(&mut buffer, words[0], id, &CONFIG) } {
-                Ok(_) => {
-                    runfiles::increment(idx, idx_file);
-                    unsafe { *pwbufp = pwbuf };
-                    return libc::c_int::from(NssStatus::Success);
-                }
-                Err(_) => {
-                    unsafe { *pwbufp = std::ptr::null_mut() };
-                    return nix::Errno::ERANGE as libc::c_int;
-                }
+    if let Some(Ok(line)) = list.lines().nth(idx) {
+        let mut buffer = Buffer::new(buf, buflen);
+        let words: Vec<&str> = line.split("\t").collect();
+        let id = words[1].parse::<u64>().unwrap();
+        match unsafe { (*pwbuf).pack_args(&mut buffer, words[0], id, &CONFIG) } {
+            Ok(_) => {
+                runfiles::increment(idx, idx_file);
+                unsafe { *pwbufp = pwbuf };
+                return libc::c_int::from(NssStatus::Success);
+            }
+            Err(_) => {
+                unsafe { *pwbufp = std::ptr::null_mut() };
+                return nix::Errno::ERANGE as libc::c_int;
             }
         }
     }
@@ -198,23 +193,18 @@ pub extern "C" fn _nss_ghteam_getspent_r(spbuf: *mut Spwd,
         Ok(ret) => ret,
         Err(_) => return libc::c_int::from(NssStatus::Unavail),
     };
-    for (i, line) in list.lines().enumerate() {
-        if i != idx {
-            continue;
-        }
-        if let Ok(l) = line {
-            let mut buffer = Buffer::new(buf, buflen);
-            let words: Vec<&str> = l.split("\t").collect();
-            match unsafe { (*spbuf).pack_args(&mut buffer, words[0]) } {
-                Ok(_) => {
-                    runfiles::increment(idx, idx_file);
-                    unsafe { *spbufp = spbuf };
-                    return libc::c_int::from(NssStatus::Success);
-                }
-                Err(_) => {
-                    unsafe { *spbufp = std::ptr::null_mut() };
-                    return nix::Errno::ERANGE as libc::c_int;
-                }
+    if let Some(Ok(line)) = list.lines().nth(idx) {
+        let mut buffer = Buffer::new(buf, buflen);
+        let words: Vec<&str> = line.split("\t").collect();
+        match unsafe { (*spbuf).pack_args(&mut buffer, words[0]) } {
+            Ok(_) => {
+                runfiles::increment(idx, idx_file);
+                unsafe { *spbufp = spbuf };
+                return libc::c_int::from(NssStatus::Success);
+            }
+            Err(_) => {
+                unsafe { *spbufp = std::ptr::null_mut() };
+                return nix::Errno::ERANGE as libc::c_int;
             }
         }
     }
@@ -295,25 +285,20 @@ pub extern "C" fn _nss_ghteam_getgrent_r(grbuf: *mut Group,
         Ok(ret) => ret,
         Err(_) => return libc::c_int::from(NssStatus::Unavail),
     };
-    for (i, line) in list.lines().enumerate() {
-        if i != idx {
-            continue;
-        }
-        if let Ok(l) = line {
-            let mut buffer = Buffer::new(buf, buflen);
-            let words: Vec<&str> = l.split("\t").collect();
-            let member_names: Vec<&str> = words[2].split(" ").collect();
-            let id: u64 = words[1].parse::<u64>().unwrap();
-            match unsafe { (*grbuf).pack_args(&mut buffer, words[0], id, &member_names) } {
-                Ok(_) => {
-                    runfiles::increment(idx, idx_file);
-                    unsafe { *grbufp = grbuf };
-                    return libc::c_int::from(NssStatus::Success);
-                }
-                Err(_) => {
-                    unsafe { *grbufp = std::ptr::null_mut() };
-                    return nix::Errno::ERANGE as libc::c_int;
-                }
+    if let Some(Ok(line)) = list.lines().nth(idx) {
+        let mut buffer = Buffer::new(buf, buflen);
+        let words: Vec<&str> = line.split("\t").collect();
+        let member_names: Vec<&str> = words[2].split(" ").collect();
+        let id: u64 = words[1].parse::<u64>().unwrap();
+        match unsafe { (*grbuf).pack_args(&mut buffer, words[0], id, &member_names) } {
+            Ok(_) => {
+                runfiles::increment(idx, idx_file);
+                unsafe { *grbufp = grbuf };
+                return libc::c_int::from(NssStatus::Success);
+            }
+            Err(_) => {
+                unsafe { *grbufp = std::ptr::null_mut() };
+                return nix::Errno::ERANGE as libc::c_int;
             }
         }
     }
