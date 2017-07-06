@@ -17,7 +17,7 @@ pub struct GithubClient {
 impl GithubClient {
     pub fn new(config: &Config) -> Result<GithubClient, CliError> {
         if std::env::var("SSL_CERT_FILE").is_err() {
-            std::env::set_var("SSL_CERT_FILE", config.cert_path.as_str());
+            std::env::set_var("SSL_CERT_FILE", &config.cert_path);
         }
         let client = reqwest::Client::new()?;
         Ok(GithubClient { client: client, conf: config.clone() })
@@ -48,7 +48,7 @@ impl GithubClient {
     }
 
     fn get_content_from_url(&self, url: &str) -> Result<String, CliError> {
-        let token = String::from("token ") + self.conf.token.as_str();
+        let token = String::from("token ") + &self.conf.token;
         let res = self.client.get(url).header(Authorization(token)).send();
         let mut content = String::new();
         res?.read_to_string(&mut content)?;
@@ -86,8 +86,8 @@ impl GithubClient {
 
     fn get_user_public_key(&self, user: &str) -> Result<String, CliError> {
         let url = format!("{}/users/{}/keys", self.conf.endpoint, user);
-        let content = self.get_content(&url);
-        let keys = serde_json::from_str::<Vec<PublicKey>>(content?.as_str())?;
+        let content = self.get_content(&url)?;
+        let keys = serde_json::from_str::<Vec<PublicKey>>(&content)?;
         Ok(keys.iter()
                .map(|k| k.key.clone())
                .collect::<Vec<String>>()
@@ -112,7 +112,7 @@ impl GithubClient {
     fn get_teams(&self) -> Result<HashMap<String, Team>, CliError> {
         let url = format!("{}/orgs/{}/teams", self.conf.endpoint, self.conf.org);
         let content = self.get_content(&url)?;
-        let teams = serde_json::from_str::<Vec<Team>>(content.as_str())?;
+        let teams = serde_json::from_str::<Vec<Team>>(&content)?;
         let mut team_map = HashMap::new();
         for team in teams {
             team_map.insert(team.name.clone(), team);
@@ -123,7 +123,7 @@ impl GithubClient {
     fn get_members(&self, mid: u64) -> Result<HashMap<String, Member>, CliError> {
         let url = format!("{}/teams/{}/members", self.conf.endpoint, mid);
         let content = self.get_content(&url)?;
-        let members = serde_json::from_str::<Vec<Member>>(content.as_str())?;
+        let members = serde_json::from_str::<Vec<Member>>(&content)?;
         let mut member_map = HashMap::new();
         for member in members {
             member_map.insert(member.login.clone(), member);

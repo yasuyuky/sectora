@@ -37,7 +37,7 @@ impl Config {
         let mut file = File::open(configpath)?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
-        Ok(toml::from_str::<Config>(contents.as_str())?)
+        Ok(toml::from_str::<Config>(&contents)?)
     }
 }
 
