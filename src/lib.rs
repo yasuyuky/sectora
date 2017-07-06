@@ -279,10 +279,7 @@ pub extern "C" fn _nss_ghteam_setgrent() -> libc::c_int {
         Ok(team_members) => team_members,
         Err(_) => return libc::c_int::from(NssStatus::Success),
     };
-    let member_names = members.values()
-                              .map(|x| x.login.as_str())
-                              .collect::<Vec<&str>>()
-                              .join(" ");
+    let member_names = members.values().map(|x| x.login.as_str()).collect::<Vec<&str>>().join(" ");
     list_file.write(format!("{}\t{}\t{}\n", team.name, team.id, member_names).as_bytes())
              .unwrap();
     libc::c_int::from(NssStatus::Success)

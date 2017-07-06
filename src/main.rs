@@ -31,10 +31,7 @@ fn main() {
                  .help("Sets the level of verbosity"))
         .subcommand(SubCommand::with_name("key")
                         .about("Gets user public key")
-                        .arg(Arg::with_name("USER")
-                                 .required(true)
-                                 .index(1)
-                                 .help("user name")))
+                        .arg(Arg::with_name("USER").required(true).index(1).help("user name")))
         .subcommand(SubCommand::with_name("pam").about("Executes pam check"))
         .subcommand(SubCommand::with_name("cleanup").about("Cleans caches up"))
         .get_matches();
@@ -56,10 +53,7 @@ fn main() {
     };
 
     match matches.subcommand() {
-        ("key", Some(sub)) => {
-            client.print_user_public_key(sub.value_of("USER").unwrap())
-                  .unwrap()
-        }
+        ("key", Some(sub)) => client.print_user_public_key(sub.value_of("USER").unwrap()).unwrap(),
         ("cleanup", Some(_)) => client.clear_all_caches().unwrap(),
         ("pam", Some(_)) => {
             match std::env::var("PAM_USER") {
