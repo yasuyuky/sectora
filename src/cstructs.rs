@@ -1,7 +1,9 @@
 use std::io::Error;
+use std::path::Path;
 use libc;
 use buffer::Buffer;
 use Config;
+use structs::PersonalConfig;
 
 #[repr(C)]
 pub struct Passwd {
@@ -36,14 +38,17 @@ impl Passwd {
     }
 
     pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, conf: &Config) -> Result<(), Error> {
-        self.pack(buf,
-                  name,
-                  "x",
-                  id as libc::uid_t,
-                  conf.gid as libc::gid_t,
-                  "",
-                  &conf.home.replace("{}", name),
-                  &conf.sh)
+        let home = conf.home.replace("{}", name);
+        let sh: String = match PersonalConfig::new(&(home.clone() + "/.config/ghteam-auth.toml")) {
+            Ok(personal) => {
+                match personal.sh {
+                    Some(sh) => if Path::new(&sh).exists() { sh } else { conf.sh.clone() },
+                    None => conf.sh.clone(),
+                }
+            }
+            Err(_) => conf.sh.clone(),
+        };
+        self.pack(buf, name, "x", id as libc::uid_t, conf.gid as libc::gid_t, "", &home, &sh)
     }
 }
 

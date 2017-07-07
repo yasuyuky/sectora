@@ -42,6 +42,20 @@ impl Config {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PersonalConfig {
+    pub sh: Option<String>,
+}
+
+impl PersonalConfig {
+    pub fn new(configpath: &str) -> Result<Self, CliError> {
+        let mut file = File::open(configpath)?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+        Ok(toml::from_str::<PersonalConfig>(&contents)?)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Team {
     pub id: u64,
     pub name: String,
