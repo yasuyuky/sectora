@@ -47,6 +47,7 @@ pub struct PersonalConfig {
 }
 
 impl PersonalConfig {
+    #[allow(dead_code)]
     pub fn new(configpath: &str) -> Result<Self, CliError> {
         let mut file = File::open(configpath)?;
         let mut contents = String::new();
