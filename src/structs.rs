@@ -44,6 +44,7 @@ impl Config {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PersonalConfig {
     pub sh: Option<String>,
+    pub pass: Option<String>,
 }
 
 impl PersonalConfig {

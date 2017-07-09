@@ -90,8 +90,18 @@ impl Spwd {
         Ok(())
     }
 
-    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str) -> Result<(), Error> {
-        self.pack(buf, name, "!!", -1, -1, -1, -1, -1, -1, 0)
+    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, conf: &Config) -> Result<(), Error> {
+        let home = conf.home.replace("{}", name);
+        let pass: String = match PersonalConfig::new(&(home.clone() + "/.config/ghteam-auth.toml")) {
+            Ok(personal) => {
+                match personal.pass {
+                    Some(pass) => pass,
+                    None => String::from("*"),
+                }
+            }
+            Err(_) => String::from("*"),
+        };
+        self.pack(buf, name, &pass, -1, -1, -1, -1, -1, -1, 0)
     }
 }
 

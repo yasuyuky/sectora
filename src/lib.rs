@@ -157,7 +157,7 @@ pub extern "C" fn _nss_ghteam_getspnam_r(cnameptr: *const libc::c_char,
     let (_, members) = CLIENT.get_team_members().unwrap();
     match members.get(&name) {
         Some(member) => {
-            match unsafe { (*spwd).pack_args(&mut buffer, &member.login) } {
+            match unsafe { (*spwd).pack_args(&mut buffer, &member.login, &CONFIG) } {
                 Ok(_) => libc::c_int::from(NssStatus::Success),
                 Err(_) => nix::Errno::ERANGE as libc::c_int,
             }
@@ -196,7 +196,7 @@ pub extern "C" fn _nss_ghteam_getspent_r(spbuf: *mut Spwd,
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let words: Vec<&str> = line.split("\t").collect();
-        match unsafe { (*spbuf).pack_args(&mut buffer, words[0]) } {
+        match unsafe { (*spbuf).pack_args(&mut buffer, words[0], &CONFIG) } {
             Ok(_) => {
                 runfiles::increment(idx, idx_file);
                 unsafe { *spbufp = spbuf };
