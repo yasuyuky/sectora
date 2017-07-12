@@ -50,6 +50,11 @@ impl From<NssStatus> for libc::c_int {
     }
 }
 
+fn string_from(cstrptr: *const libc::c_char) -> String {
+    let cstr: &CStr = unsafe { CStr::from_ptr(cstrptr) };
+    String::from(cstr.to_str().unwrap())
+}
+
 #[no_mangle]
 pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char,
                                          pw: *mut Passwd,
@@ -58,8 +63,7 @@ pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char,
                                          _: *mut libc::c_int)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let cname: &CStr = unsafe { CStr::from_ptr(cnameptr) };
-    let name = String::from(cname.to_str().unwrap());
+    let name = string_from(cnameptr);
     let (_, members) = CLIENT.get_team_members().unwrap();
     match members.get(&name) {
         Some(member) => {
@@ -152,8 +156,7 @@ pub extern "C" fn _nss_ghteam_getspnam_r(cnameptr: *const libc::c_char,
                                          _: *mut libc::c_int)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let cname: &CStr = unsafe { CStr::from_ptr(cnameptr) };
-    let name = String::from(cname.to_str().unwrap());
+    let name = string_from(cnameptr);
     let (_, members) = CLIENT.get_team_members().unwrap();
     match members.get(&name) {
         Some(member) => {
@@ -245,8 +248,7 @@ pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char,
                                          _: *mut libc::c_int)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let cname: &CStr = unsafe { CStr::from_ptr(cnameptr) };
-    let name = String::from(cname.to_str().unwrap());
+    let name = string_from(cnameptr);
     let (team, members) = CLIENT.get_team_members().unwrap();
     let members: Vec<&str> = members.values().map(|m| m.login.as_str()).collect();
     if name == team.name {
