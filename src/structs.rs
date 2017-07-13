@@ -23,6 +23,8 @@ pub struct Config {
     pub cache_duration: u64,
     #[serde(default = "default_cert_path")]
     pub cert_path: String,
+    #[serde(default = "default_user_conf_path")]
+    pub user_conf_path: String,
 }
 
 fn default_endpoint() -> String { String::from("https://api.github.com") }
@@ -31,6 +33,7 @@ fn default_gid() -> u64 { 2000 }
 fn default_sh() -> String { String::from("/bin/bash") }
 fn default_cache_duration() -> u64 { 3600 }
 fn default_cert_path() -> String { String::from("/etc/ssl/certs/ca-certificates.crt") }
+fn default_user_conf_path() -> String { String::from("/.config/ghteam-auth.toml") }
 
 impl Config {
     pub fn new(configpath: &str) -> Result<Self, CliError> {
