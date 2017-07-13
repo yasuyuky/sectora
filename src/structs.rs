@@ -45,18 +45,18 @@ impl Config {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct PersonalConfig {
+pub struct UserConfig {
     pub sh: Option<String>,
     pub pass: Option<String>,
 }
 
-impl PersonalConfig {
+impl UserConfig {
     #[allow(dead_code)]
     pub fn new(configpath: &str) -> Result<Self, CliError> {
         let mut file = File::open(configpath)?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
-        Ok(toml::from_str::<PersonalConfig>(&contents)?)
+        Ok(toml::from_str::<UserConfig>(&contents)?)
     }
 }
 

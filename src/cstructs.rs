@@ -3,7 +3,7 @@ use std::path::Path;
 use libc;
 use buffer::Buffer;
 use Config;
-use structs::PersonalConfig;
+use structs::UserConfig;
 
 #[repr(C)]
 pub struct Passwd {
@@ -39,7 +39,7 @@ impl Passwd {
 
     pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, conf: &Config) -> Result<(), Error> {
         let home = conf.home.replace("{}", name);
-        let sh: String = match PersonalConfig::new(&(home.clone() + &conf.user_conf_path)) {
+        let sh: String = match UserConfig::new(&(home.clone() + &conf.user_conf_path)) {
             Ok(personal) => {
                 match personal.sh {
                     Some(sh) => if Path::new(&sh).exists() { sh } else { conf.sh.clone() },
@@ -92,7 +92,7 @@ impl Spwd {
 
     pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, conf: &Config) -> Result<(), Error> {
         let home = conf.home.replace("{}", name);
-        let pass: String = match PersonalConfig::new(&(home.clone() + &conf.user_conf_path)) {
+        let pass: String = match UserConfig::new(&(home.clone() + &conf.user_conf_path)) {
             Ok(personal) => {
                 match personal.pass {
                     Some(pass) => pass,
