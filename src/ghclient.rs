@@ -128,7 +128,7 @@ impl GithubClient {
         Ok(member_map)
     }
 
-    fn get_user_conf_path(&self, user: &str) -> UserConfig {
+    fn get_user_conf_path(&self, user: &str) -> Result<UserConfig, CliError> {
         let home = self.conf.home.replace("{}", user);
         UserConfig::new(&(home + &self.conf.user_conf_path))
     }
