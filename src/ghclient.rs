@@ -1,4 +1,4 @@
-use structs::{CliError, Config, Member, Team, PublicKey};
+use structs::{CliError, Config, UserConfig, Member, Team, PublicKey};
 use std;
 use std::fs::File;
 use std::io::prelude::*;
@@ -126,6 +126,11 @@ impl GithubClient {
             member_map.insert(member.login.clone(), member);
         }
         Ok(member_map)
+    }
+
+    fn get_user_conf_path(&self, user: &str) -> UserConfig {
+        let home = self.conf.home.replace("{}", user);
+        UserConfig::new(&(home + &self.conf.user_conf_path))
     }
 
     #[allow(dead_code)]
