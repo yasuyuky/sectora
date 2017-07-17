@@ -252,7 +252,7 @@ pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char,
     let (team, members) = CLIENT.get_team_members().unwrap();
     let members: Vec<&str> = members.values().map(|m| m.login.as_str()).collect();
     if name == team.name {
-        match unsafe { (*group).pack_args(&mut buffer, &team.name, team.id, &members) } {
+        match unsafe { (*group).pack_args(&mut buffer, &team.name, CONFIG.gid, &members) } {
             Ok(_) => libc::c_int::from(NssStatus::Success),
             Err(_) => nix::Errno::ERANGE as libc::c_int,
         }
