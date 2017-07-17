@@ -4,7 +4,7 @@ X64_TARGET_DIR=target/$(X64_TARGET)/release
 ARM_TARGET_DIR=target/$(ARM_TARGET)/release
 X64_BUILD_IMG=yasuyuky/rust-ssl-static
 ARM_BUILD_IMG=yasuyuky/rust-arm
-BUILD_VOL_OPT= -v ${PWD}/.cargo/registry:/root/.cargo/registry -v ${PWD}:/source
+X64_BUILD_VOL_OPT= -v ${PWD}/.cargo-x64/registry:/root/.cargo/registry -v ${PWD}:/source
 ARM_BUILD_VOL_OPT= -v ${PWD}/.cargo-arm/registry:/root/.cargo/registry -v ${PWD}:/source
 DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
 SRCS := src/buffer.rs src/cstructs.rs src/ghclient.rs src/runfiles.rs src/statics.rs src/structs.rs
@@ -19,10 +19,10 @@ enter-build-image:
 	docker run -it --rm -v ${PWD}:/source $(X64_BUILD_IMG) bash
 
 $(X64_TARGET_DIR)/ghteam-auth: src/main.rs $(SRCS)
-	docker run -it --rm $(BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo build --release --target=$(X64_TARGET)
+	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo build --release --target=$(X64_TARGET)
 
 $(X64_TARGET_DIR)/libnss_ghteam.so: src/lib.rs $(SRCS)
-	docker run -it --rm $(BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo build --release --target=$(X64_TARGET)
+	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo build --release --target=$(X64_TARGET)
 
 $(ARM_TARGET_DIR)/ghteam-auth: src/main.rs src/ghclient.rs src/structs.rs
 	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo build --release --target=$(ARM_TARGET)
