@@ -105,6 +105,22 @@ And comment out the following line.
 # @include common-auth
 ```
 
+## Personal settings
+
+To set personal settings, use `$HOME/.config/ghteam-auth.toml` like this.
+
+```toml
+sh = "/path/to/login/shell"
+pass = PASSWORD_HASH_STRING
+```
+
+Use `mkpasswd` command to create your `PASSWORD_HASH_STRING`
+
+```
+mkpasswd -S $(head -c 4 /dev/urandom|xxd -p) -m sha-512
+```
+
+
 ## LICENSE
 
 MIT
