@@ -10,15 +10,14 @@ pub struct Config {
     pub token: String,
     pub org: String,
     pub team: String,
+    pub gid: Option<u64>,
+    pub group: Option<String>,
     #[serde(default = "default_endpoint")]
     pub endpoint: String,
     #[serde(default = "default_home")]
     pub home: String,
-    #[serde(default = "default_gid")]
-    pub gid: u64,
     #[serde(default = "default_sh")]
     pub sh: String,
-    pub group: Option<String>,
     #[serde(default = "default_cache_duration")]
     pub cache_duration: u64,
     #[serde(default = "default_cert_path")]
@@ -29,7 +28,6 @@ pub struct Config {
 
 fn default_endpoint() -> String { String::from("https://api.github.com") }
 fn default_home() -> String { String::from("/home/{}") }
-fn default_gid() -> u64 { 2000 }
 fn default_sh() -> String { String::from("/bin/bash") }
 fn default_cache_duration() -> u64 { 3600 }
 fn default_cert_path() -> String { String::from("/etc/ssl/certs/ca-certificates.crt") }

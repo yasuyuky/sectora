@@ -37,7 +37,7 @@ impl Passwd {
         Ok(())
     }
 
-    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, conf: &Config) -> Result<(), Error> {
+    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, gid: u64, conf: &Config) -> Result<(), Error> {
         let home = conf.home.replace("{}", name);
         let sh: String = match UserConfig::new(&(home.clone() + &conf.user_conf_path)) {
             Ok(personal) => {
@@ -48,7 +48,7 @@ impl Passwd {
             }
             Err(_) => conf.sh.clone(),
         };
-        self.pack(buf, name, "x", id as libc::uid_t, conf.gid as libc::gid_t, "", &home, &sh)
+        self.pack(buf, name, "x", id as libc::uid_t, gid as libc::gid_t, "", &home, &sh)
     }
 }
 
