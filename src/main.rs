@@ -20,14 +20,12 @@ mod statics;
 use statics::CONF_PATH;
 
 fn main() {
-
-    let matches = App::new(crate_name!())
+    let user_arg = Arg::with_name("USER").required(true).index(1).help("user name");
+    let app = App::new(crate_name!())
         .version(crate_version!())
         .author(crate_authors!())
         .about(crate_description!())
-        .subcommand(SubCommand::with_name("key")
-                        .about("Gets user public key")
-                        .arg(Arg::with_name("USER").required(true).index(1).help("user name")))
+        .subcommand(SubCommand::with_name("key").about("Gets user public key").arg(user_arg))
         .subcommand(SubCommand::with_name("pam").about("Executes pam check"))
         .subcommand(SubCommand::with_name("cleanup").about("Cleans caches up"))
         .get_matches();
@@ -48,7 +46,7 @@ fn main() {
         }
     };
 
-    match matches.subcommand() {
+    match app.subcommand() {
         ("key", Some(sub)) => client.print_user_public_key(sub.value_of("USER").unwrap()).unwrap(),
         ("cleanup", Some(_)) => client.clear_all_caches().unwrap(),
         ("pam", Some(_)) => {
@@ -63,6 +61,6 @@ fn main() {
                 Err(e) => println!("PAM_USER: {}", e),
             }
         }
-        (&_, _) => println!("{}", matches.usage()),
+        (&_, _) => println!("{}", app.usage()),
     }
 }
