@@ -100,7 +100,9 @@ impl GithubClient {
     pub fn get_team_members(&self) -> Result<(Team, HashMap<String, Member>), CliError> {
         let teams: HashMap<String, Team> = self.get_teams()?;
         if let Some(team) = teams.get(&self.conf.team.clone()) {
-            Ok((team.clone(), self.get_members(team.id)?))
+            Ok((Team { name: self.conf.group.clone().unwrap_or(team.name.clone()),
+                       id: self.conf.gid.unwrap_or(team.id), },
+                self.get_members(team.id)?))
         } else {
             Err(CliError::from(std::io::Error::new(std::io::ErrorKind::NotFound, "Team not found")))
         }

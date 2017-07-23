@@ -67,8 +67,7 @@ pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char,
     let (team, members) = CLIENT.get_team_members().unwrap();
     match members.get(&name) {
         Some(member) => {
-            let gid = CONFIG.gid.unwrap_or(team.id);
-            match unsafe { (*pw).pack_args(&mut buffer, &member.login, member.id, gid, &CONFIG) } {
+            match unsafe { (*pw).pack_args(&mut buffer, &member.login, member.id, team.id, &CONFIG) } {
                 Ok(_) => libc::c_int::from(NssStatus::Success),
                 Err(_) => nix::Errno::ERANGE as libc::c_int,
             }
@@ -88,8 +87,7 @@ pub extern "C" fn _nss_ghteam_getpwuid_r(uid: libc::uid_t,
     let (team, members) = CLIENT.get_team_members().unwrap();
     for member in members.values() {
         if uid == member.id as libc::uid_t {
-            let gid = CONFIG.gid.unwrap_or(team.id);
-            match unsafe { (*pw).pack_args(&mut buffer, &member.login, member.id, gid, &CONFIG) } {
+            match unsafe { (*pw).pack_args(&mut buffer, &member.login, member.id, team.id, &CONFIG) } {
                 Ok(_) => return libc::c_int::from(NssStatus::Success),
                 Err(_) => return nix::Errno::ERANGE as libc::c_int,
             }
@@ -129,7 +127,7 @@ pub extern "C" fn _nss_ghteam_getpwent_r(pwbuf: *mut Passwd,
         let mut buffer = Buffer::new(buf, buflen);
         let words: Vec<&str> = line.split("\t").collect();
         let id = words[1].parse::<u64>().unwrap();
-        let gid = CONFIG.gid.unwrap_or(words[2].parse::<u64>().unwrap());
+        let gid = words[2].parse::<u64>().unwrap();
         match unsafe { (*pwbuf).pack_args(&mut buffer, words[0], id, gid, &CONFIG) } {
             Ok(_) => {
                 runfiles::increment(idx, idx_file);
@@ -233,7 +231,7 @@ pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t,
     let mut buffer = Buffer::new(buf, buflen);
     let (team, members) = CLIENT.get_team_members().unwrap();
     let members: Vec<&str> = members.values().map(|m| m.login.as_str()).collect();
-    if gid as u64 == CONFIG.gid.unwrap_or(team.id) {
+    if gid as u64 == team.id {
         match unsafe { (*group).pack_args(&mut buffer, &team.name, gid as u64, &members) } {
             Ok(_) => libc::c_int::from(NssStatus::Success),
             Err(_) => nix::Errno::ERANGE as libc::c_int,
@@ -255,7 +253,7 @@ pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char,
     let (team, members) = CLIENT.get_team_members().unwrap();
     let members: Vec<&str> = members.values().map(|m| m.login.as_str()).collect();
     if name == team.name {
-        match unsafe { (*group).pack_args(&mut buffer, &team.name, CONFIG.gid.unwrap_or(team.id), &members) } {
+        match unsafe { (*group).pack_args(&mut buffer, &team.name, team.id, &members) } {
             Ok(_) => libc::c_int::from(NssStatus::Success),
             Err(_) => nix::Errno::ERANGE as libc::c_int,
         }
@@ -294,7 +292,7 @@ pub extern "C" fn _nss_ghteam_getgrent_r(grbuf: *mut Group,
         let mut buffer = Buffer::new(buf, buflen);
         let words: Vec<&str> = line.split("\t").collect();
         let member_names: Vec<&str> = words[2].split(" ").collect();
-        let gid = CONFIG.gid.unwrap_or(words[1].parse::<u64>().unwrap());
+        let gid = words[1].parse::<u64>().unwrap();
         match unsafe { (*grbuf).pack_args(&mut buffer, words[0], gid, &member_names) } {
             Ok(_) => {
                 runfiles::increment(idx, idx_file);
