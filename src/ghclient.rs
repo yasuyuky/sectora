@@ -2,6 +2,7 @@ use structs::{CliError, Config, UserConfig, Member, Team, PublicKey};
 use std;
 use std::fs::File;
 use std::io::prelude::*;
+use std::path::Path;
 use std::collections::HashMap;
 
 use glob::glob;
@@ -132,7 +133,7 @@ impl GithubClient {
 
     fn get_user_conf(&self, user: &str) -> Result<UserConfig, CliError> {
         let home = self.conf.home.replace("{}", user);
-        UserConfig::new(&(home + &self.conf.user_conf_path))
+        UserConfig::new(&Path::new(&home).join(&self.conf.user_conf_path))
     }
 
     #[allow(dead_code)]

@@ -50,7 +50,7 @@ pub struct UserConfig {
 
 impl UserConfig {
     #[allow(dead_code)]
-    pub fn new(configpath: &str) -> Result<Self, CliError> {
+    pub fn new(configpath: &std::path::Path) -> Result<Self, CliError> {
         let mut file = File::open(configpath)?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
