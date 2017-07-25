@@ -34,7 +34,7 @@ fn default_cert_path() -> String { String::from("/etc/ssl/certs/ca-certificates.
 fn default_user_conf_path() -> String { String::from("/.config/ghteam-auth.toml") }
 
 impl Config {
-    pub fn new(configpath: &str) -> Result<Self, CliError> {
+    pub fn new(configpath: &std::path::Path) -> Result<Self, CliError> {
         let mut file = File::open(configpath)?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
