@@ -31,7 +31,7 @@ fn default_home() -> String { String::from("/home/{}") }
 fn default_sh() -> String { String::from("/bin/bash") }
 fn default_cache_duration() -> u64 { 3600 }
 fn default_cert_path() -> String { String::from("/etc/ssl/certs/ca-certificates.crt") }
-fn default_user_conf_path() -> String { String::from("/.config/ghteam-auth.toml") }
+fn default_user_conf_path() -> String { String::from(".config/ghteam-auth.toml") }
 
 impl Config {
     pub fn new(configpath: &std::path::Path) -> Result<Self, CliError> {
