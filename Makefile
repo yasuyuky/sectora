@@ -19,16 +19,16 @@ enter-build-image:
 	docker run -it --rm -v ${PWD}:/source $(X64_BUILD_IMG) bash
 
 $(X64_TARGET_DIR)/ghteam-auth: src/main.rs $(SRCS)
-	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo build --release --target=$(X64_TARGET)
+	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo build --bin ghteam-auth --release --target=$(X64_TARGET)
 
 $(X64_TARGET_DIR)/libnss_ghteam.so: src/lib.rs $(SRCS)
-	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo build --release --target=$(X64_TARGET)
+	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo build --lib --release --target=$(X64_TARGET)
 
 $(ARM_TARGET_DIR)/ghteam-auth: src/main.rs src/ghclient.rs src/structs.rs
-	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo build --release --target=$(ARM_TARGET)
+	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo build --bin ghteam-auth --release --target=$(ARM_TARGET)
 
 $(ARM_TARGET_DIR)/libnss_ghteam.so: src/lib.rs src/ghclient.rs src/structs.rs
-	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo build --release --target=$(ARM_TARGET)
+	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo build --lib --release --target=$(ARM_TARGET)
 
 
 .PHONY: clean
