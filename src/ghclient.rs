@@ -94,16 +94,16 @@ impl GithubClient {
 
     #[allow(dead_code)]
     pub fn check_pam(&self, user: &str) -> Result<bool, CliError> {
-        let (_, members) = self.get_team_members()?;
-        Ok(members.contains_key(user))
+        let team = self.get_team_members()?;
+        Ok(team.members.contains_key(user))
     }
 
-    pub fn get_team_members(&self) -> Result<(Team, HashMap<String, Member>), CliError> {
+    pub fn get_team_members(&self) -> Result<Team, CliError> {
         let teams: HashMap<String, Team> = self.get_teams()?;
         if let Some(team) = teams.get(&self.conf.team.clone()) {
-            Ok((Team { name: self.conf.group.clone().unwrap_or(team.name.clone()),
-                       id: self.conf.gid.unwrap_or(team.id), },
-                self.get_members(team.id)?))
+            Ok(Team { name: self.conf.group.clone().unwrap_or(team.name.clone()),
+                      id: self.conf.gid.unwrap_or(team.id),
+                      members: self.get_members(team.id)?, })
         } else {
             Err(CliError::from(std::io::Error::new(std::io::ErrorKind::NotFound, "Team not found")))
         }

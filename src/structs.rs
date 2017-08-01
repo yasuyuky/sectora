@@ -3,6 +3,7 @@ use reqwest;
 use std;
 use std::fs::File;
 use std::io::Read;
+use std::collections::HashMap;
 use toml;
 
 #[derive(Deserialize, Debug, Clone)]
@@ -62,9 +63,13 @@ impl UserConfig {
 pub struct Team {
     pub id: u64,
     pub name: String,
+    #[serde(default = "empty_members")]
+    pub members: HashMap<String, Member>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+fn empty_members() -> HashMap<String, Member> { HashMap::new() }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Member {
     pub id: u64,
     pub login: String,
