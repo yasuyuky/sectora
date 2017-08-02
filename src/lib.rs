@@ -58,7 +58,13 @@ pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char,
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let team = CLIENT.get_team_members().unwrap();
+    let team = match CLIENT.get_team_members() {
+        Ok(team) => team,
+        Err(_) => {
+            unsafe { *pwbufp = std::ptr::null_mut() };
+            return libc::c_int::from(NssStatus::NotFound);
+        }
+    };
     match team.members.get(&name) {
         Some(member) => {
             match unsafe { (*pw).pack_args(&mut buffer, &member.login, member.id, team.id, &CONFIG) } {
@@ -88,7 +94,13 @@ pub extern "C" fn _nss_ghteam_getpwuid_r(uid: libc::uid_t,
                                          pwbufp: *mut *mut Passwd)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let team = CLIENT.get_team_members().unwrap();
+    let team = match CLIENT.get_team_members() {
+        Ok(team) => team,
+        Err(_) => {
+            unsafe { *pwbufp = std::ptr::null_mut() };
+            return libc::c_int::from(NssStatus::NotFound);
+        }
+    };
     for member in team.members.values() {
         if uid == member.id as libc::uid_t {
             match unsafe { (*pw).pack_args(&mut buffer, &member.login, member.id, team.id, &CONFIG) } {
@@ -169,7 +181,13 @@ pub extern "C" fn _nss_ghteam_getspnam_r(cnameptr: *const libc::c_char,
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let team = CLIENT.get_team_members().unwrap();
+    let team = match CLIENT.get_team_members() {
+        Ok(team) => team,
+        Err(_) => {
+            unsafe { *spbufp = std::ptr::null_mut() };
+            return libc::c_int::from(NssStatus::NotFound);
+        }
+    };
     match team.members.get(&name) {
         Some(member) => {
             match unsafe { (*spwd).pack_args(&mut buffer, &member.login, &CONFIG) } {
@@ -249,7 +267,13 @@ pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t,
                                          grbufp: *mut *mut Group)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let team = CLIENT.get_team_members().unwrap();
+    let team = match CLIENT.get_team_members() {
+        Ok(team) => team,
+        Err(_) => {
+            unsafe { *grbufp = std::ptr::null_mut() };
+            return libc::c_int::from(NssStatus::NotFound);
+        }
+    };
     let members: Vec<&str> = team.members.values().map(|m| m.login.as_str()).collect();
     if gid as u64 == team.id {
         match unsafe { (*group).pack_args(&mut buffer, &team.name, gid as u64, &members) } {
@@ -277,7 +301,13 @@ pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char,
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let team = CLIENT.get_team_members().unwrap();
+    let team = match CLIENT.get_team_members() {
+        Ok(team) => team,
+        Err(_) => {
+            unsafe { *grbufp = std::ptr::null_mut() };
+            return libc::c_int::from(NssStatus::NotFound);
+        }
+    };
     let members: Vec<&str> = team.members.values().map(|m| m.login.as_str()).collect();
     if name == team.name {
         match unsafe { (*group).pack_args(&mut buffer, &team.name, team.id, &members) } {
