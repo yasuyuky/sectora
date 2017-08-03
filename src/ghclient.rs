@@ -94,12 +94,12 @@ impl GithubClient {
 
     #[allow(dead_code)]
     pub fn check_pam(&self, user: &str) -> Result<bool, CliError> {
-        let team = self.get_team_members()?;
+        let team = self.get_team()?;
         Ok(team.members.contains_key(user))
     }
 
-    pub fn get_team_members(&self) -> Result<Team, CliError> {
-        let teams: HashMap<String, Team> = self.get_teams()?;
+    pub fn get_team(&self) -> Result<Team, CliError> {
+        let teams: HashMap<String, Team> = self.get_team_map()?;
         if let Some(team) = teams.get(&self.conf.team.clone()) {
             Ok(Team { name: self.conf.group.clone().unwrap_or(team.name.clone()),
                       id: self.conf.gid.unwrap_or(team.id),
@@ -109,7 +109,7 @@ impl GithubClient {
         }
     }
 
-    fn get_teams(&self) -> Result<HashMap<String, Team>, CliError> {
+    fn get_team_map(&self) -> Result<HashMap<String, Team>, CliError> {
         let url = format!("{}/orgs/{}/teams", self.conf.endpoint, self.conf.org);
         let content = self.get_content(&url)?;
         let teams = serde_json::from_str::<Vec<Team>>(&content)?;
