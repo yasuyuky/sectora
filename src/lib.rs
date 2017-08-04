@@ -70,49 +70,49 @@ macro_rules! fail {
 
 #[no_mangle]
 pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char,
-                                         pw: *mut Passwd,
+                                         pwptr: *mut Passwd,
                                          buf: *mut libc::c_char,
                                          buflen: libc::size_t,
-                                         pwbufp: *mut *mut Passwd)
+                                         pwptrp: *mut *mut Passwd)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
     let team = match CLIENT.get_team() {
         Ok(team) => team,
-        Err(_) => fail!(pwbufp, libc::c_int::from(NssStatus::NotFound)),
+        Err(_) => fail!(pwptrp, libc::c_int::from(NssStatus::NotFound)),
     };
     match team.members.get(&name) {
         Some(member) => {
-            match unsafe { (*pw).pack_args(&mut buffer, &member.login, member.id, team.id, &CONFIG) } {
-                Ok(_) => succeed!(pwbufp, pw),
-                Err(_) => fail!(pwbufp, nix::Errno::ERANGE as libc::c_int),
+            match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, team.id, &CONFIG) } {
+                Ok(_) => succeed!(pwptrp, pwptr),
+                Err(_) => fail!(pwptrp, nix::Errno::ERANGE as libc::c_int),
             }
         }
-        None => fail!(pwbufp, libc::c_int::from(NssStatus::NotFound)),
+        None => fail!(pwptrp, libc::c_int::from(NssStatus::NotFound)),
     }
 }
 
 #[no_mangle]
 pub extern "C" fn _nss_ghteam_getpwuid_r(uid: libc::uid_t,
-                                         pw: *mut Passwd,
+                                         pwptr: *mut Passwd,
                                          buf: *mut libc::c_char,
                                          buflen: libc::size_t,
-                                         pwbufp: *mut *mut Passwd)
+                                         pwptrp: *mut *mut Passwd)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let team = match CLIENT.get_team() {
         Ok(team) => team,
-        Err(_) => fail!(pwbufp, libc::c_int::from(NssStatus::NotFound)),
+        Err(_) => fail!(pwptrp, libc::c_int::from(NssStatus::NotFound)),
     };
     for member in team.members.values() {
         if uid == member.id as libc::uid_t {
-            match unsafe { (*pw).pack_args(&mut buffer, &member.login, member.id, team.id, &CONFIG) } {
-                Ok(_) => succeed!(pwbufp, pw),
-                Err(_) => fail!(pwbufp, nix::Errno::ERANGE as libc::c_int),
+            match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, team.id, &CONFIG) } {
+                Ok(_) => succeed!(pwptrp, pwptr),
+                Err(_) => fail!(pwptrp, nix::Errno::ERANGE as libc::c_int),
             }
         }
     }
-    fail!(pwbufp, libc::c_int::from(NssStatus::NotFound))
+    fail!(pwptrp, libc::c_int::from(NssStatus::NotFound))
 }
 
 #[no_mangle]
@@ -133,26 +133,26 @@ pub extern "C" fn _nss_ghteam_setpwent() -> libc::c_int {
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getpwent_r(pwbuf: *mut Passwd,
+pub extern "C" fn _nss_ghteam_getpwent_r(pwptr: *mut Passwd,
                                          buf: *mut libc::c_char,
                                          buflen: libc::size_t,
-                                         pwbufp: *mut *mut Passwd)
+                                         pwptrp: *mut *mut Passwd)
                                          -> libc::c_int {
     let (idx, idx_file, list) = match runfiles::open() {
         Ok(ret) => ret,
-        Err(_) => fail!(pwbufp, libc::c_int::from(NssStatus::Unavail)),
+        Err(_) => fail!(pwptrp, libc::c_int::from(NssStatus::Unavail)),
     };
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let words: Vec<&str> = line.split("\t").collect();
         let id = words[1].parse::<u64>().unwrap();
         let gid = words[2].parse::<u64>().unwrap();
-        match unsafe { (*pwbuf).pack_args(&mut buffer, words[0], id, gid, &CONFIG) } {
-            Ok(_) => succeed!(pwbufp, pwbuf, runfiles::increment(idx, idx_file)),
-            Err(_) => fail!(pwbufp, nix::Errno::ERANGE as libc::c_int),
+        match unsafe { (*pwptr).pack_args(&mut buffer, words[0], id, gid, &CONFIG) } {
+            Ok(_) => succeed!(pwptrp, pwptr, runfiles::increment(idx, idx_file)),
+            Err(_) => fail!(pwptrp, nix::Errno::ERANGE as libc::c_int),
         }
     }
-    fail!(pwbufp, libc::c_int::from(NssStatus::Unavail))
+    fail!(pwptrp, libc::c_int::from(NssStatus::Unavail))
 }
 
 #[no_mangle]
@@ -163,25 +163,25 @@ pub extern "C" fn _nss_ghteam_endpwent() -> libc::c_int {
 
 #[no_mangle]
 pub extern "C" fn _nss_ghteam_getspnam_r(cnameptr: *const libc::c_char,
-                                         spwd: *mut Spwd,
+                                         spptr: *mut Spwd,
                                          buf: *mut libc::c_char,
                                          buflen: libc::size_t,
-                                         spbufp: *mut *mut Spwd)
+                                         spptrp: *mut *mut Spwd)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
     let team = match CLIENT.get_team() {
         Ok(team) => team,
-        Err(_) => fail!(spbufp, libc::c_int::from(NssStatus::NotFound)),
+        Err(_) => fail!(spptrp, libc::c_int::from(NssStatus::NotFound)),
     };
     match team.members.get(&name) {
         Some(member) => {
-            match unsafe { (*spwd).pack_args(&mut buffer, &member.login, &CONFIG) } {
-                Ok(_) => succeed!(spbufp, spwd),
-                Err(_) => fail!(spbufp, nix::Errno::ERANGE as libc::c_int),
+            match unsafe { (*spptr).pack_args(&mut buffer, &member.login, &CONFIG) } {
+                Ok(_) => succeed!(spptrp, spptr),
+                Err(_) => fail!(spptrp, nix::Errno::ERANGE as libc::c_int),
             }
         }
-        None => fail!(spbufp, libc::c_int::from(NssStatus::NotFound)),
+        None => fail!(spptrp, libc::c_int::from(NssStatus::NotFound)),
     }
 }
 
@@ -203,24 +203,24 @@ pub extern "C" fn _nss_ghteam_setspent() -> libc::c_int {
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getspent_r(spbuf: *mut Spwd,
+pub extern "C" fn _nss_ghteam_getspent_r(spptr: *mut Spwd,
                                          buf: *mut libc::c_char,
                                          buflen: libc::size_t,
-                                         spbufp: *mut *mut Spwd)
+                                         spptrp: *mut *mut Spwd)
                                          -> libc::c_int {
     let (idx, idx_file, list) = match runfiles::open() {
         Ok(ret) => ret,
-        Err(_) => fail!(spbufp, libc::c_int::from(NssStatus::Unavail)),
+        Err(_) => fail!(spptrp, libc::c_int::from(NssStatus::Unavail)),
     };
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let words: Vec<&str> = line.split("\t").collect();
-        match unsafe { (*spbuf).pack_args(&mut buffer, words[0], &CONFIG) } {
-            Ok(_) => succeed!(spbufp, spbuf, runfiles::increment(idx, idx_file)),
-            Err(_) => fail!(spbufp, nix::Errno::ERANGE as libc::c_int),
+        match unsafe { (*spptr).pack_args(&mut buffer, words[0], &CONFIG) } {
+            Ok(_) => succeed!(spptrp, spptr, runfiles::increment(idx, idx_file)),
+            Err(_) => fail!(spptrp, nix::Errno::ERANGE as libc::c_int),
         }
     }
-    fail!(spbufp, libc::c_int::from(NssStatus::Unavail))
+    fail!(spptrp, libc::c_int::from(NssStatus::Unavail))
 }
 
 #[no_mangle]
@@ -231,48 +231,48 @@ pub extern "C" fn _nss_ghteam_endspent() -> libc::c_int {
 
 #[no_mangle]
 pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t,
-                                         group: *mut Group,
+                                         grptr: *mut Group,
                                          buf: *mut libc::c_char,
                                          buflen: libc::size_t,
-                                         grbufp: *mut *mut Group)
+                                         grptrp: *mut *mut Group)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let team = match CLIENT.get_team() {
         Ok(team) => team,
-        Err(_) => fail!(grbufp, libc::c_int::from(NssStatus::NotFound)),
+        Err(_) => fail!(grptrp, libc::c_int::from(NssStatus::NotFound)),
     };
     let members: Vec<&str> = team.members.values().map(|m| m.login.as_str()).collect();
     if gid as u64 == team.id {
-        match unsafe { (*group).pack_args(&mut buffer, &team.name, gid as u64, &members) } {
-            Ok(_) => succeed!(grbufp, group),
-            Err(_) => fail!(grbufp, nix::Errno::ERANGE as libc::c_int),
+        match unsafe { (*grptr).pack_args(&mut buffer, &team.name, gid as u64, &members) } {
+            Ok(_) => succeed!(grptrp, grptr),
+            Err(_) => fail!(grptrp, nix::Errno::ERANGE as libc::c_int),
         }
     } else {
-        fail!(grbufp, libc::c_int::from(NssStatus::NotFound))
+        fail!(grptrp, libc::c_int::from(NssStatus::NotFound))
     }
 }
 
 #[no_mangle]
 pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char,
-                                         group: *mut Group,
+                                         grptr: *mut Group,
                                          buf: *mut libc::c_char,
                                          buflen: libc::size_t,
-                                         grbufp: *mut *mut Group)
+                                         grptrp: *mut *mut Group)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
     let team = match CLIENT.get_team() {
         Ok(team) => team,
-        Err(_) => fail!(grbufp, libc::c_int::from(NssStatus::NotFound)),
+        Err(_) => fail!(grptrp, libc::c_int::from(NssStatus::NotFound)),
     };
     let members: Vec<&str> = team.members.values().map(|m| m.login.as_str()).collect();
     if name == team.name {
-        match unsafe { (*group).pack_args(&mut buffer, &team.name, team.id, &members) } {
-            Ok(_) => succeed!(grbufp, group),
-            Err(_) => fail!(grbufp, nix::Errno::ERANGE as libc::c_int),
+        match unsafe { (*grptr).pack_args(&mut buffer, &team.name, team.id, &members) } {
+            Ok(_) => succeed!(grptrp, grptr),
+            Err(_) => fail!(grptrp, nix::Errno::ERANGE as libc::c_int),
         }
     }
-    fail!(grbufp, libc::c_int::from(NssStatus::NotFound))
+    fail!(grptrp, libc::c_int::from(NssStatus::NotFound))
 }
 
 #[no_mangle]
@@ -292,26 +292,26 @@ pub extern "C" fn _nss_ghteam_setgrent() -> libc::c_int {
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getgrent_r(grbuf: *mut Group,
+pub extern "C" fn _nss_ghteam_getgrent_r(grptr: *mut Group,
                                          buf: *mut libc::c_char,
                                          buflen: libc::size_t,
-                                         grbufp: *mut *mut Group)
+                                         grptrp: *mut *mut Group)
                                          -> libc::c_int {
     let (idx, idx_file, list) = match runfiles::open() {
         Ok(ret) => ret,
-        Err(_) => fail!(grbufp, libc::c_int::from(NssStatus::Unavail)),
+        Err(_) => fail!(grptrp, libc::c_int::from(NssStatus::Unavail)),
     };
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let words: Vec<&str> = line.split("\t").collect();
         let member_names: Vec<&str> = words[2].split(" ").collect();
         let gid = words[1].parse::<u64>().unwrap();
-        match unsafe { (*grbuf).pack_args(&mut buffer, words[0], gid, &member_names) } {
-            Ok(_) => succeed!(grbufp, grbuf, runfiles::increment(idx, idx_file)),
-            Err(_) => fail!(grbufp, nix::Errno::ERANGE as libc::c_int),
+        match unsafe { (*grptr).pack_args(&mut buffer, words[0], gid, &member_names) } {
+            Ok(_) => succeed!(grptrp, grptr, runfiles::increment(idx, idx_file)),
+            Err(_) => fail!(grptrp, nix::Errno::ERANGE as libc::c_int),
         }
     }
-    fail!(grbufp, libc::c_int::from(NssStatus::Unavail))
+    fail!(grptrp, libc::c_int::from(NssStatus::Unavail))
 }
 
 #[no_mangle]
