@@ -81,15 +81,13 @@ pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char,
         Ok(team) => team,
         Err(_) => fail!(pwptrp, libc::c_int::from(NssStatus::NotFound)),
     };
-    match team.members.get(&name) {
-        Some(member) => {
-            match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, team.id, &CONFIG) } {
-                Ok(_) => succeed!(pwptrp, pwptr),
-                Err(_) => fail!(pwptrp, nix::Errno::ERANGE as libc::c_int),
-            }
+    if let Some(member) = team.members.get(&name) {
+        match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, team.id, &CONFIG) } {
+            Ok(_) => succeed!(pwptrp, pwptr),
+            Err(_) => fail!(pwptrp, nix::Errno::ERANGE as libc::c_int),
         }
-        None => fail!(pwptrp, libc::c_int::from(NssStatus::NotFound)),
     }
+    fail!(pwptrp, libc::c_int::from(NssStatus::NotFound))
 }
 
 #[no_mangle]
@@ -174,15 +172,13 @@ pub extern "C" fn _nss_ghteam_getspnam_r(cnameptr: *const libc::c_char,
         Ok(team) => team,
         Err(_) => fail!(spptrp, libc::c_int::from(NssStatus::NotFound)),
     };
-    match team.members.get(&name) {
-        Some(member) => {
-            match unsafe { (*spptr).pack_args(&mut buffer, &member.login, &CONFIG) } {
-                Ok(_) => succeed!(spptrp, spptr),
-                Err(_) => fail!(spptrp, nix::Errno::ERANGE as libc::c_int),
-            }
+    if let Some(member) = team.members.get(&name) {
+        match unsafe { (*spptr).pack_args(&mut buffer, &member.login, &CONFIG) } {
+            Ok(_) => succeed!(spptrp, spptr),
+            Err(_) => fail!(spptrp, nix::Errno::ERANGE as libc::c_int),
         }
-        None => fail!(spptrp, libc::c_int::from(NssStatus::NotFound)),
     }
+    fail!(spptrp, libc::c_int::from(NssStatus::NotFound))
 }
 
 #[no_mangle]
@@ -247,9 +243,8 @@ pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t,
             Ok(_) => succeed!(grptrp, grptr),
             Err(_) => fail!(grptrp, nix::Errno::ERANGE as libc::c_int),
         }
-    } else {
-        fail!(grptrp, libc::c_int::from(NssStatus::NotFound))
     }
+    fail!(grptrp, libc::c_int::from(NssStatus::NotFound))
 }
 
 #[no_mangle]
