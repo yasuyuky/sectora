@@ -99,11 +99,12 @@ impl GithubClient {
     }
 
     pub fn get_team(&self) -> Result<Team, CliError> {
-        let teams: HashMap<String, Team> = self.get_team_map()?;
-        if let Some(team) = teams.get(&self.conf.team.clone()) {
-            Ok(Team { name: self.conf.group.clone().unwrap_or(team.name.clone()),
-                      id: self.conf.gid.unwrap_or(team.id),
-                      members: self.get_members(team.id)?, })
+        let mut teams: HashMap<String, Team> = self.get_team_map()?;
+        if let Some(mut team) = teams.get_mut(&self.conf.team.clone()) {
+            team.members = self.get_members(team.get_gid())?;
+            team.set_gid(self.conf.gid.clone());
+            team.set_group(self.conf.group.clone());
+            Ok(team.clone())
         } else {
             Err(CliError::from(std::io::Error::new(std::io::ErrorKind::NotFound, "Team not found")))
         }
@@ -115,7 +116,7 @@ impl GithubClient {
         let teams = serde_json::from_str::<Vec<Team>>(&content)?;
         let mut team_map = HashMap::new();
         for team in teams {
-            team_map.insert(team.name.clone(), team);
+            team_map.insert(team.get_group(), team);
         }
         Ok(team_map)
     }

@@ -61,13 +61,26 @@ impl UserConfig {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Team {
-    pub id: u64,
-    pub name: String,
+    id: u64,
+    name: String,
+    #[serde(default = "default_gid")]
+    gid: Option<u64>,
+    #[serde(default = "default_group")]
+    group: Option<String>,
     #[serde(default = "empty_members")]
     pub members: HashMap<String, Member>,
 }
 
+fn default_gid() -> Option<u64> { None }
+fn default_group() -> Option<String> { None }
 fn empty_members() -> HashMap<String, Member> { HashMap::new() }
+
+impl Team {
+    pub fn set_gid(&mut self, gid: Option<u64>) { self.gid = gid }
+    pub fn set_group(&mut self, group: Option<String>) { self.group = group }
+    pub fn get_gid(&self) -> u64 { self.gid.unwrap_or(self.id) }
+    pub fn get_group(&self) -> String { self.group.clone().unwrap_or(self.name.clone()) }
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Member {

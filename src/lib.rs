@@ -82,7 +82,7 @@ pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char,
         Err(_) => fail!(pwptrp, libc::c_int::from(NssStatus::NotFound)),
     };
     if let Some(member) = team.members.get(&name) {
-        match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, team.id, &CONFIG) } {
+        match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, team.get_gid(), &CONFIG) } {
             Ok(_) => succeed!(pwptrp, pwptr),
             Err(_) => fail!(pwptrp, nix::Errno::ERANGE as libc::c_int),
         }
@@ -104,7 +104,7 @@ pub extern "C" fn _nss_ghteam_getpwuid_r(uid: libc::uid_t,
     };
     for member in team.members.values() {
         if uid == member.id as libc::uid_t {
-            match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, team.id, &CONFIG) } {
+            match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, team.get_gid(), &CONFIG) } {
                 Ok(_) => succeed!(pwptrp, pwptr),
                 Err(_) => fail!(pwptrp, nix::Errno::ERANGE as libc::c_int),
             }
@@ -124,7 +124,7 @@ pub extern "C" fn _nss_ghteam_setpwent() -> libc::c_int {
         Err(_) => return libc::c_int::from(NssStatus::Success),
     };
     for member in team.members.values() {
-        list_file.write(format!("{}\t{}\t{}\n", member.login, member.id, team.id).as_bytes())
+        list_file.write(format!("{}\t{}\t{}\n", member.login, member.id, team.get_gid()).as_bytes())
                  .unwrap();
     }
     libc::c_int::from(NssStatus::Success)
@@ -238,8 +238,8 @@ pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t,
         Err(_) => fail!(grptrp, libc::c_int::from(NssStatus::NotFound)),
     };
     let members: Vec<&str> = team.members.values().map(|m| m.login.as_str()).collect();
-    if gid as u64 == team.id {
-        match unsafe { (*grptr).pack_args(&mut buffer, &team.name, gid as u64, &members) } {
+    if gid as u64 == team.get_gid() {
+        match unsafe { (*grptr).pack_args(&mut buffer, &team.get_group(), gid as u64, &members) } {
             Ok(_) => succeed!(grptrp, grptr),
             Err(_) => fail!(grptrp, nix::Errno::ERANGE as libc::c_int),
         }
@@ -261,8 +261,8 @@ pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char,
         Err(_) => fail!(grptrp, libc::c_int::from(NssStatus::NotFound)),
     };
     let members: Vec<&str> = team.members.values().map(|m| m.login.as_str()).collect();
-    if name == team.name {
-        match unsafe { (*grptr).pack_args(&mut buffer, &team.name, team.id, &members) } {
+    if name == team.get_group() {
+        match unsafe { (*grptr).pack_args(&mut buffer, &team.get_group(), team.get_gid(), &members) } {
             Ok(_) => succeed!(grptrp, grptr),
             Err(_) => fail!(grptrp, nix::Errno::ERANGE as libc::c_int),
         }
@@ -281,7 +281,7 @@ pub extern "C" fn _nss_ghteam_setgrent() -> libc::c_int {
         Err(_) => return libc::c_int::from(NssStatus::Success),
     };
     let member_names = team.members.values().map(|x| x.login.as_str()).collect::<Vec<&str>>().join(" ");
-    list_file.write(format!("{}\t{}\t{}\n", team.name, team.id, member_names).as_bytes())
+    list_file.write(format!("{}\t{}\t{}\n", team.get_group(), team.get_gid(), member_names).as_bytes())
              .unwrap();
     libc::c_int::from(NssStatus::Success)
 }
