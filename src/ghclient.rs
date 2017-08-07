@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::collections::HashMap;
+use std::io::{Error, ErrorKind};
 
 use glob::glob;
 use reqwest;
@@ -103,7 +104,7 @@ impl GithubClient {
         if let Some(team) = teams.get(&self.conf.team.clone()) {
             Ok(team.clone())
         } else {
-            Err(CliError::from(std::io::Error::new(std::io::ErrorKind::NotFound, "Team not found")))
+            Err(CliError::from(Error::new(ErrorKind::NotFound, "Team not found")))
         }
     }
 
