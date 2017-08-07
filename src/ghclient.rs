@@ -1,4 +1,4 @@
-use structs::{CliError, Config, UserConfig, Member, Team, PublicKey};
+use structs::{CliError, Config, UserConfig, Member, Team, TeamGroup, PublicKey};
 use std;
 use std::fs::File;
 use std::io::prelude::*;
@@ -98,25 +98,26 @@ impl GithubClient {
         Ok(team.members.contains_key(user))
     }
 
-    pub fn get_team(&self) -> Result<Team, CliError> {
-        let mut teams: HashMap<String, Team> = self.get_team_map()?;
-        if let Some(mut team) = teams.get_mut(&self.conf.team.clone()) {
-            team.members = self.get_members(team.get_gid())?;
-            team.set_gid(self.conf.gid.clone());
-            team.set_group(self.conf.group.clone());
+    pub fn get_team(&self) -> Result<TeamGroup, CliError> {
+        let teams: HashMap<String, TeamGroup> = self.get_team_map()?;
+        if let Some(team) = teams.get(&self.conf.team.clone()) {
             Ok(team.clone())
         } else {
             Err(CliError::from(std::io::Error::new(std::io::ErrorKind::NotFound, "Team not found")))
         }
     }
 
-    fn get_team_map(&self) -> Result<HashMap<String, Team>, CliError> {
+    fn get_team_map(&self) -> Result<HashMap<String, TeamGroup>, CliError> {
         let url = format!("{}/orgs/{}/teams", self.conf.endpoint, self.conf.org);
         let content = self.get_content(&url)?;
         let teams = serde_json::from_str::<Vec<Team>>(&content)?;
         let mut team_map = HashMap::new();
         for team in teams {
-            team_map.insert(team.get_group(), team);
+            team_map.insert(team.name.clone(),
+                            TeamGroup { team: team.clone(),
+                                        gid: self.conf.gid.clone(),
+                                        group: self.conf.group.clone(),
+                                        members: self.get_members(team.id)?, });
         }
         Ok(team_map)
     }
