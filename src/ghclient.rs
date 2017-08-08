@@ -4,7 +4,6 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::collections::HashMap;
-use std::io::{Error, ErrorKind};
 
 use glob::glob;
 use reqwest;
@@ -95,17 +94,17 @@ impl GithubClient {
 
     #[allow(dead_code)]
     pub fn check_pam(&self, user: &str) -> Result<bool, CliError> {
-        let team = self.get_team()?;
-        Ok(team.members.contains_key(user))
+        let teams = self.get_teams();
+        Ok(teams.iter().any(|team| team.members.contains_key(user)))
     }
 
-    pub fn get_team(&self) -> Result<TeamGroup, CliError> {
-        let teams: HashMap<String, TeamGroup> = self.get_team_map()?;
-        if let Some(team) = teams.get(&self.conf.team.clone()) {
-            Ok(team.clone())
-        } else {
-            Err(CliError::from(Error::new(ErrorKind::NotFound, "Team not found")))
+    pub fn get_teams(&self) -> Vec<TeamGroup> {
+        if let Ok(teams) = self.get_team_map() {
+            if let Some(team) = teams.get(&self.conf.team.clone()) {
+                return vec![team.clone()];
+            }
         }
+        Vec::new()
     }
 
     fn get_team_map(&self) -> Result<HashMap<String, TeamGroup>, CliError> {
