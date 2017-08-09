@@ -100,9 +100,7 @@ impl GithubClient {
 
     pub fn get_teams(&self) -> Vec<TeamGroup> {
         if let Ok(teams) = self.get_team_map() {
-            if let Some(team) = teams.get(&self.conf.team.clone()) {
-                return vec![team.clone()];
-            }
+            return teams.values().map(|x| x.clone()).collect::<Vec<TeamGroup>>();
         }
         Vec::new()
     }
@@ -112,12 +110,16 @@ impl GithubClient {
         let content = self.get_content(&url)?;
         let teams = serde_json::from_str::<Vec<Team>>(&content)?;
         let mut team_map = HashMap::new();
-        for team in teams {
-            team_map.insert(team.name.clone(),
-                            TeamGroup { team: team.clone(),
-                                        gid: self.conf.gid.clone(),
-                                        group: self.conf.group.clone(),
-                                        members: self.get_members(team.id)?, });
+        for team_conf in self.conf.team.clone() {
+            for team in teams.clone() {
+                if team.name == team_conf.name {
+                    team_map.insert(team.name.clone(),
+                                    TeamGroup { team: team.clone(),
+                                                gid: team_conf.gid.clone(),
+                                                group: team_conf.group.clone(),
+                                                members: self.get_members(team.id)?, });
+                }
+            }
         }
         Ok(team_map)
     }

@@ -10,9 +10,7 @@ use toml;
 pub struct Config {
     pub token: String,
     pub org: String,
-    pub team: String,
-    pub gid: Option<u64>,
-    pub group: Option<String>,
+    pub team: Vec<TeamConfig>,
     #[serde(default = "default_endpoint")]
     pub endpoint: String,
     #[serde(default = "default_home")]
@@ -63,6 +61,13 @@ impl UserConfig {
 pub struct Team {
     pub id: u64,
     pub name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TeamConfig {
+    pub name: String,
+    pub gid: Option<u64>,
+    pub group: Option<String>,
 }
 
 #[derive(Debug, Clone)]

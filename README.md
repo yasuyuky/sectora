@@ -42,12 +42,18 @@ Place `libnss_ghteam.so` to `/usr/lib/`.
 
 ### Place config file for this program.
 
-The minimal setting is as follows.
+The minimal setting is like as follows.
 
 ```
 token = "YOUR_PERSONAL_TOKEN_STRING"
 org = "YOUR_ORGANIZATION"
-team = "YOUR_TEAM"
+[[team]]
+name = "YOUR_TEAM1"
+gid = YOUR_GID1
+[[team]]
+name = "YOUR_TEAM2"
+gid = YOUR_GID1
+group = "YOUR_GROUP_NAME"
 ```
 
 See `struct Config` on `structs.rs` for details.
