@@ -98,30 +98,27 @@ impl GithubClient {
         Ok(teams.iter().any(|team| team.members.contains_key(user)))
     }
 
-    pub fn get_teams(&self) -> Vec<TeamGroup> {
-        if let Ok(teams) = self.get_team_map() {
-            return teams.values().map(|x| x.clone()).collect::<Vec<TeamGroup>>();
+    pub fn get_teams(&self) -> Vec<TeamGroup> { self.get_teams_result().unwrap_or(Vec::new()) }
+
+    fn get_teams_result(&self) -> Result<Vec<TeamGroup>, CliError> {
+        let ghteams = self.get_ghteam_map()?;
+        let mut teams = Vec::new();
+        for team_conf in &self.conf.team {
+            if let &Some(ghteam) = &ghteams.get(&team_conf.name) {
+                teams.push(TeamGroup { team: ghteam.clone(),
+                                       gid: team_conf.gid.clone(),
+                                       group: team_conf.group.clone(),
+                                       members: self.get_members(ghteam.id)?, });
+            }
         }
-        Vec::new()
+        Ok(teams)
     }
 
-    fn get_team_map(&self) -> Result<HashMap<String, TeamGroup>, CliError> {
+    fn get_ghteam_map(&self) -> Result<HashMap<String, Team>, CliError> {
         let url = format!("{}/orgs/{}/teams", self.conf.endpoint, self.conf.org);
         let content = self.get_content(&url)?;
         let teams = serde_json::from_str::<Vec<Team>>(&content)?;
-        let mut team_map = HashMap::new();
-        for team_conf in self.conf.team.clone() {
-            for team in teams.clone() {
-                if team.name == team_conf.name {
-                    team_map.insert(team.name.clone(),
-                                    TeamGroup { team: team.clone(),
-                                                gid: team_conf.gid.clone(),
-                                                group: team_conf.group.clone(),
-                                                members: self.get_members(team.id)?, });
-                }
-            }
-        }
-        Ok(team_map)
+        Ok(teams.iter().map(|t| (t.name.clone(), t.clone())).collect())
     }
 
     fn get_members(&self, mid: u64) -> Result<HashMap<String, Member>, CliError> {
