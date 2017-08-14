@@ -125,11 +125,7 @@ impl GithubClient {
         let url = format!("{}/teams/{}/members", self.conf.endpoint, mid);
         let content = self.get_content(&url)?;
         let members = serde_json::from_str::<Vec<Member>>(&content)?;
-        let mut member_map = HashMap::new();
-        for member in members {
-            member_map.insert(member.login.clone(), member);
-        }
-        Ok(member_map)
+        Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
     }
 
     fn get_user_conf(&self, user: &str) -> Result<UserConfig, CliError> {
