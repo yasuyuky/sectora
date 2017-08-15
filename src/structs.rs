@@ -79,10 +79,11 @@ pub struct TeamGroup {
 }
 
 impl TeamGroup {
+    #[allow(dead_code)]
     pub fn get_gid(&self) -> u64 { self.gid.unwrap_or(self.team.id) }
+    #[allow(dead_code)]
     pub fn get_group(&self) -> String { self.group.clone().unwrap_or(self.team.name.clone()) }
 }
-
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Member {
