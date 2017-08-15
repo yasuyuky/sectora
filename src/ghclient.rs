@@ -1,8 +1,7 @@
-use structs::{CliError, Config, UserConfig, Member, Team, TeamGroup, PublicKey};
+use structs::{CliError, Config, Member, Team, TeamGroup, PublicKey};
 use std;
 use std::fs::File;
 use std::io::prelude::*;
-use std::path::Path;
 use std::collections::HashMap;
 
 use glob::glob;
@@ -126,11 +125,6 @@ impl GithubClient {
         let content = self.get_content(&url)?;
         let members = serde_json::from_str::<Vec<Member>>(&content)?;
         Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
-    }
-
-    fn get_user_conf(&self, user: &str) -> Result<UserConfig, CliError> {
-        let home = self.conf.home.replace("{}", user);
-        UserConfig::new(&Path::new(&home).join(&self.conf.user_conf_path))
     }
 
     #[allow(dead_code)]
