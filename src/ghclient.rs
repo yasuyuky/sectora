@@ -130,9 +130,7 @@ impl GithubClient {
     #[allow(dead_code)]
     pub fn clear_all_caches(&self) -> Result<(), CliError> {
         let mut path = std::env::temp_dir();
-        path.push("ghteam-auth-cache");
-        path.push("**");
-        path.push("*");
+        path.push("ghteam-auth-cache/**/*");
         for entry in glob(&path.to_str().unwrap()).unwrap() {
             match entry {
                 Ok(path) => {
