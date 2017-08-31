@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"]
 
 [dependencies]
-clap = "2.19"
+clap = "2.26.0"
 toml = "0.4.0"
 reqwest = "0.5.1"
 serde = "1.0.2"
