@@ -49,7 +49,7 @@ impl GithubClient {
 
     fn get_content_from_url(&self, url: &str) -> Result<String, CliError> {
         let token = String::from("token ") + &self.conf.token;
-        let res = self.client.get(url).header(Authorization(token)).send();
+        let res = self.client.get(url)?.header(Authorization(token)).send();
         let mut content = String::new();
         res?.read_to_string(&mut content)?;
         self.store_content_to_cache(url, &content)?;
