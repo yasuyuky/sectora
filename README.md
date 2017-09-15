@@ -117,7 +117,7 @@ To set personal settings, use `$HOME/.config/ghteam-auth.toml` like this.
 
 ```toml
 sh = "/path/to/login/shell"
-pass = PASSWORD_HASH_STRING
+pass = "PASSWORD_HASH_STRING"
 ```
 
 Use `mkpasswd` command to create your `PASSWORD_HASH_STRING`
