@@ -3,7 +3,6 @@ extern crate clap;
 use clap::{Arg, App, SubCommand};
 extern crate toml;
 extern crate reqwest;
-extern crate serde;
 extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
@@ -11,8 +10,6 @@ extern crate glob;
 
 #[macro_use]
 extern crate lazy_static;
-
-extern crate libc;
 
 mod structs;
 mod ghclient;
