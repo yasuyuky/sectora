@@ -1,0 +1,77 @@
+---
+- name: copy ghteam-auth binary executable
+  copy:
+    src: "{{ target_dir }}/ghteam-auth"
+    dest: /usr/sbin/ghteam-auth
+    mode: 0755
+
+- name: copy ghteam-auth key script executable
+  copy:
+    src: ./ghteam-auth.sh
+    dest: /usr/sbin/ghteam-auth.sh
+    mode: 0700
+
+- name: copy libnss_ghteam shared object
+  copy:
+    src: "{{ target_dir }}/libnss_ghteam.so"
+    dest: /usr/lib/libnss_ghteam.so
+
+- name: create link for shared object
+  file:
+    src: /usr/lib/libnss_ghteam.so
+    dest: /usr/lib/libnss_ghteam.so.2
+    state: link
+
+- name: create config
+  template:
+    src: ghteam-auth.conf
+    dest: /etc/ghteam-auth.conf
+
+- name: configure sudoers
+  lineinfile:
+    path: /etc/sudoers
+    state: present
+    regexp: '^%{{ (item.group is defined and item.group) or item.name }} ALL='
+    line: '%{{ (item.group is defined and item.group) or item.name }}  ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
+  when: (ghteam_sudoers is defined) and (ghteam_sudoers == true)
+  with_items:
+    '{{ ghteam_teams }}'
+
+- name: configure sshd_config
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '{{ item.regexp }}'
+    line: '{{ item.line }}'
+    validate: '/usr/sbin/sshd -t -f %s'
+  with_items:
+    - regexp: '^AuthorizedKeysCommandUser\s'
+      line: 'AuthorizedKeysCommandUser root'
+    - regexp: '^AuthorizedKeysCommand\s'
+      line: 'AuthorizedKeysCommand /usr/sbin/ghteam-auth.sh'
+      # line: 'AuthorizedKeysCommand /usr/sbin/ghteam-auth key %u'
+    - regexp: '^UsePAM\s'
+      line: 'UsePAM yes'
+  notify:
+    - restart sshd
+
+- name: configure nss switch
+  lineinfile:
+    path: /etc/nsswitch.conf
+    regexp: '{{ item.regexp }}'
+    line: '{{ item.line }}'
+    backrefs: yes
+  with_items:
+    - {regexp: '^passwd:\s+(.*)$', line: 'passwd: files ghteam'}
+    - {regexp: '^shadow:\s+(.*)$', line: 'shadow: files ghteam'}
+    - {regexp: '^group:\s+(.*)$',  line: 'group:  files ghteam'}
+
+- name: pam configuration
+  lineinfile:
+    path: /etc/pam.d/sshd
+    line: '{{ item.line }}'
+    state: '{{ item.state }}'
+  with_items:
+    - {line: 'auth sufficient pam_exec.so quiet expose_authtok /usr/sbin/ghteam-auth pam', state: 'present'}
+    - {line: 'auth optional pam_unix.so not_set_pass use_first_pass nodelay', state: 'present'}
+    - {line: 'session required pam_mkhomedir.so skel: /etc/skel/ umask: 0022', state: 'present'}

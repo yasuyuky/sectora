@@ -1,0 +1,18 @@
+- hosts: all
+  become: yes
+  become_method: sudo
+  become_user: root
+  vars:
+    target_dir: "../target/YOUR_TARGET_TRIPLE/release"
+    ghteam_token: "YOUR_TOKEN"
+    ghteam_org: "YOUR_ORGANIZATION"
+    # ghteam_home: "/path/to/home/{}"
+    # ghteam_cache_duration: 7200
+    # ghteam_sudoers: true
+    # ghteam_user_conf_path: "path/to/relative/path/of/user/conf/from/home"
+    ghteam_teams:
+      - name: "YOUR_TEAM1"
+        group: "YOUR_GRUP2"
+        gid: YOUR_GID
+  roles:
+    - ghteam-auth
