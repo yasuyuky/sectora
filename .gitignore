@@ -1,2 +1,5 @@
 target
 .cargo*
+*.retry
+hosts-*
+*.local.yml
