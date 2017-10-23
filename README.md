@@ -30,6 +30,8 @@ See Makefile for details
 4. Configure sshd
 5. Configure PAM
 
+[A setting example of ansible is available](https://github.com/yasuyuky/ghteam-auth/blob/master/ansible/)
+
 ### Copy executable file and shared object to each path
 
 #### Copy executable file
