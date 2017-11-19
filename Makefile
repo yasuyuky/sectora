@@ -40,12 +40,22 @@ $(ARM_TARGET_DIR)/libnss_ghteam.so: src/lib.rs $(SRCS)
 	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo build --lib --release --target=$(ARM_TARGET)
 
 
-.PHONY: clean
+.PHONY: clean clean-x64 clean-arm clean-exe clean-lib
 
-clean:
+clean-x64:
+	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo clean
+
+clean-arm:
+	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo clean
+
+clean-exe:
 	rm $(X64_TARGET_DIR)/ghteam-auth
-	rm $(X64_TARGET_DIR)/libnss_ghteam.so
 	rm $(ARM_TARGET_DIR)/ghteam-auth
+
+clean-lib:
+	rm $(X64_TARGET_DIR)/libnss_ghteam.so
 	rm $(ARM_TARGET_DIR)/libnss_ghteam.so
 
-
+clean:
+	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo clean
+	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo clean
