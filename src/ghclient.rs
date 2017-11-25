@@ -15,12 +15,12 @@ pub struct GithubClient {
 }
 
 impl GithubClient {
-    pub fn new(config: &Config) -> Result<GithubClient, CliError> {
+    pub fn new(config: &Config) -> GithubClient {
         if std::env::var("SSL_CERT_FILE").is_err() {
             std::env::set_var("SSL_CERT_FILE", &config.cert_path);
         }
-        let client = reqwest::Client::new()?;
-        Ok(GithubClient { client: client, conf: config.clone() })
+        GithubClient { client: reqwest::Client::new(),
+                       conf: config.clone(), }
     }
 
     fn get_cache_path(url: &str) -> std::path::PathBuf {
@@ -49,7 +49,7 @@ impl GithubClient {
 
     fn get_content_from_url(&self, url: &str) -> Result<String, CliError> {
         let token = String::from("token ") + &self.conf.token;
-        let res = self.client.get(url)?.header(Authorization(token)).send();
+        let res = self.client.get(url).header(Authorization(token)).send();
         let mut content = String::new();
         res?.read_to_string(&mut content)?;
         self.store_content_to_cache(url, &content)?;

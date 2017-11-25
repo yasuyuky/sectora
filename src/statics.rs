@@ -17,11 +17,5 @@ lazy_static! {
             std::process::exit(11);
         }
     };
-    pub static ref CLIENT:GithubClient = match GithubClient::new(&CONFIG) {
-        Ok(client) => client,
-        Err(err) => {
-            println!("Failed to open github client [{:?}]", err);
-            std::process::exit(21);
-        }
-    };
+    pub static ref CLIENT:GithubClient = GithubClient::new(&CONFIG);
 }
