@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: /tmp/ghteam-auth
     docker:
-      - image: yasuyuky/rust-ssl-static
+      - image: yasuyuky/rust-ssl-static:1.22.1
     steps:
       - checkout
       - run: cargo build
