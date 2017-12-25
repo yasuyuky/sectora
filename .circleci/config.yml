@@ -7,3 +7,11 @@ jobs:
     steps:
       - checkout
       - run: cargo build
+
+  build-arm:
+    working_directory: /tmp/ghteam-auth
+    docker:
+      - image: yasuyuky/rust-arm:1.22.1
+    steps:
+      - checkout
+      - run: cargo build
