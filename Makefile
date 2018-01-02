@@ -1,9 +1,10 @@
+RUST_VER=1.22.1
 X64_TARGET=x86_64-unknown-linux-gnu
 ARM_TARGET=arm-unknown-linux-gnueabihf
 X64_TARGET_DIR=target/$(X64_TARGET)/release
 ARM_TARGET_DIR=target/$(ARM_TARGET)/release
-X64_BUILD_IMG=yasuyuky/rust-ssl-static
-ARM_BUILD_IMG=yasuyuky/rust-arm
+X64_BUILD_IMG=yasuyuky/rust-ssl-static:${RUST_VER}
+ARM_BUILD_IMG=yasuyuky/rust-arm:${RUST_VER}
 X64_BUILD_VOL_OPT= -v ${PWD}/.cargo-x64/registry:/root/.cargo/registry -v ${PWD}:/source
 ARM_BUILD_VOL_OPT= -v ${PWD}/.cargo-arm/registry:/root/.cargo/registry -v ${PWD}:/source
 DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
