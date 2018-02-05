@@ -19,7 +19,13 @@ impl GithubClient {
         if std::env::var("SSL_CERT_FILE").is_err() {
             std::env::set_var("SSL_CERT_FILE", &config.cert_path);
         }
-        GithubClient { client: reqwest::Client::new(),
+        GithubClient { client: match config.proxy_url {
+                           Some(ref proxy_url) => {
+                               let p = reqwest::Proxy::all(proxy_url).unwrap();
+                               reqwest::Client::builder().proxy(p).build().unwrap()
+                           }
+                           None => reqwest::Client::new(),
+                       },
                        conf: config.clone(), }
     }
 

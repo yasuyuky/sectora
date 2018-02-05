@@ -23,6 +23,7 @@ pub struct Config {
     pub cert_path: String,
     #[serde(default = "default_user_conf_path")]
     pub user_conf_path: String,
+    pub proxy_url: Option<String>,
 }
 
 fn default_endpoint() -> String { String::from("https://api.github.com") }
