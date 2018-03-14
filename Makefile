@@ -1,4 +1,4 @@
-RUST_VER=1.22.1
+RUST_VER=1.24.1
 X64_TARGET=x86_64-unknown-linux-gnu
 ARM_TARGET=arm-unknown-linux-gnueabihf
 X64_TARGET_DIR=target/$(X64_TARGET)/release
