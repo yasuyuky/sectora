@@ -1,13 +1,12 @@
-use structs::{CliError, Config, Member, Team, TeamGroup, PublicKey};
-use std;
-use std::fs::File;
-use std::io::prelude::*;
-use std::collections::HashMap;
-
 use glob::glob;
 use reqwest;
 use reqwest::header::Authorization;
 use serde_json;
+use std;
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::prelude::*;
+use structs::{CliError, Config, Member, PublicKey, Team, TeamGroup};
 
 pub struct GithubClient {
     client: reqwest::Client,
@@ -64,21 +63,19 @@ impl GithubClient {
 
     fn get_content(&self, url: &str) -> Result<String, CliError> {
         match self.load_content_from_cache(url) {
-            Ok((metadata, cache_content)) => {
-                match std::time::SystemTime::now().duration_since(metadata.modified()?) {
-                    Ok(caching_duration) => {
-                        if caching_duration.as_secs() > self.conf.cache_duration {
-                            match self.get_content_from_url(url) {
-                                Ok(content_from_url) => Ok(content_from_url),
-                                Err(_) => Ok(cache_content),
-                            }
-                        } else {
-                            Ok(cache_content)
+            Ok((metadata, cache_content)) => match std::time::SystemTime::now().duration_since(metadata.modified()?) {
+                Ok(caching_duration) => {
+                    if caching_duration.as_secs() > self.conf.cache_duration {
+                        match self.get_content_from_url(url) {
+                            Ok(content_from_url) => Ok(content_from_url),
+                            Err(_) => Ok(cache_content),
                         }
+                    } else {
+                        Ok(cache_content)
                     }
-                    Err(_) => Ok(cache_content),
                 }
-            }
+                Err(_) => Ok(cache_content),
+            },
             Err(_) => self.get_content_from_url(url),
         }
     }
@@ -94,7 +91,9 @@ impl GithubClient {
         let url = format!("{}/users/{}/keys", self.conf.endpoint, user);
         let content = self.get_content(&url)?;
         let keys = serde_json::from_str::<Vec<PublicKey>>(&content)?;
-        Ok(keys.iter().map(|k| k.key.clone()).collect::<Vec<String>>().join("\n"))
+        Ok(keys.iter().map(|k| k.key.clone())
+               .collect::<Vec<String>>()
+               .join("\n"))
     }
 
     #[allow(dead_code)]
@@ -130,7 +129,9 @@ impl GithubClient {
         let url = format!("{}/teams/{}/members", self.conf.endpoint, mid);
         let content = self.get_content(&url)?;
         let members = serde_json::from_str::<Vec<Member>>(&content)?;
-        Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
+        Ok(members.iter()
+                  .map(|m| (m.login.clone(), m.clone()))
+                  .collect())
     }
 
     #[allow(dead_code)]

@@ -1,8 +1,8 @@
+use Config;
+use buffer::Buffer;
+use libc;
 use std::io::Error;
 use std::path::Path;
-use libc;
-use buffer::Buffer;
-use Config;
 use structs::UserConfig;
 
 #[repr(C)]
@@ -17,15 +17,8 @@ pub struct Passwd {
 }
 
 impl Passwd {
-    fn pack(&mut self,
-            buf: &mut Buffer,
-            name: &str,
-            passwd: &str,
-            uid: libc::uid_t,
-            gid: libc::gid_t,
-            gecos: &str,
-            dir: &str,
-            shell: &str)
+    fn pack(&mut self, buf: &mut Buffer, name: &str, passwd: &str, uid: libc::uid_t, gid: libc::gid_t, gecos: &str,
+            dir: &str, shell: &str)
             -> Result<(), Error> {
         self.name = buf.write_string(name)?;
         self.passwd = buf.write_string(passwd)?;
@@ -42,13 +35,26 @@ impl Passwd {
         let sh: String = match UserConfig::new(&Path::new(&home).join(&conf.user_conf_path)) {
             Ok(personal) => {
                 match personal.sh {
-                    Some(sh) => if Path::new(&sh).exists() { sh } else { conf.sh.clone() },
+                    Some(sh) => {
+                        if Path::new(&sh).exists() {
+                            sh
+                        } else {
+                            conf.sh.clone()
+                        }
+                    }
                     None => conf.sh.clone(),
                 }
             }
             Err(_) => conf.sh.clone(),
         };
-        self.pack(buf, name, "x", id as libc::uid_t, gid as libc::gid_t, "", &home, &sh)
+        self.pack(buf,
+                  name,
+                  "x",
+                  id as libc::uid_t,
+                  gid as libc::gid_t,
+                  "",
+                  &home,
+                  &sh)
     }
 }
 
@@ -66,17 +72,8 @@ pub struct Spwd {
 }
 
 impl Spwd {
-    fn pack(&mut self,
-            buf: &mut Buffer,
-            namp: &str,
-            pwdp: &str,
-            lstchg: libc::c_long,
-            min: libc::c_long,
-            max: libc::c_long,
-            warn: libc::c_long,
-            inact: libc::c_long,
-            expire: libc::c_long,
-            flag: libc::c_ulong)
+    fn pack(&mut self, buf: &mut Buffer, namp: &str, pwdp: &str, lstchg: libc::c_long, min: libc::c_long,
+            max: libc::c_long, warn: libc::c_long, inact: libc::c_long, expire: libc::c_long, flag: libc::c_ulong)
             -> Result<(), Error> {
         self.namp = buf.write_string(namp)?;
         self.pwdp = buf.write_string(pwdp)?;
@@ -105,7 +102,6 @@ impl Spwd {
     }
 }
 
-
 #[repr(C)]
 pub struct Group {
     name: *mut libc::c_char,
@@ -115,12 +111,7 @@ pub struct Group {
 }
 
 impl Group {
-    fn pack(&mut self,
-            buf: &mut Buffer,
-            name: &str,
-            passwd: &str,
-            gid: libc::gid_t,
-            mem: &Vec<&str>)
+    fn pack(&mut self, buf: &mut Buffer, name: &str, passwd: &str, gid: libc::gid_t, mem: &Vec<&str>)
             -> Result<(), Error> {
         self.name = buf.write_string(name)?;
         self.passwd = buf.write_string(passwd)?;

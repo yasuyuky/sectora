@@ -1,16 +1,16 @@
-extern crate toml;
-extern crate reqwest;
-extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
 extern crate glob;
 extern crate nix;
+extern crate reqwest;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
+extern crate toml;
 
 #[macro_use]
 extern crate lazy_static;
 
-use std::io::{Write, BufRead};
 use std::ffi::CStr;
+use std::io::{BufRead, Write};
 extern crate libc;
 
 mod structs;
@@ -19,7 +19,7 @@ mod ghclient;
 mod buffer;
 use buffer::Buffer;
 mod cstructs;
-use cstructs::{Passwd, Spwd, Group};
+use cstructs::{Group, Passwd, Spwd};
 mod runfiles;
 mod statics;
 use statics::{CLIENT, CONFIG};
@@ -68,17 +68,20 @@ macro_rules! fail {
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char,
-                                         pwptr: *mut Passwd,
-                                         buf: *mut libc::c_char,
-                                         buflen: libc::size_t,
-                                         pwptrp: *mut *mut Passwd)
+pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char, pwptr: *mut Passwd, buf: *mut libc::c_char,
+                                         buflen: libc::size_t, pwptrp: *mut *mut Passwd)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
     for team in CLIENT.get_teams() {
         if let Some(member) = team.members.get(&name) {
-            match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, team.get_gid(), &CONFIG) } {
+            match unsafe {
+                      (*pwptr).pack_args(&mut buffer,
+                                         &member.login,
+                                         member.id,
+                                         team.get_gid(),
+                                         &CONFIG)
+                  } {
                 Ok(_) => succeed!(pwptrp, pwptr),
                 Err(_) => fail!(pwptrp, nix::Errno::ERANGE as libc::c_int),
             }
@@ -88,17 +91,20 @@ pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char,
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getpwuid_r(uid: libc::uid_t,
-                                         pwptr: *mut Passwd,
-                                         buf: *mut libc::c_char,
-                                         buflen: libc::size_t,
-                                         pwptrp: *mut *mut Passwd)
+pub extern "C" fn _nss_ghteam_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, buf: *mut libc::c_char,
+                                         buflen: libc::size_t, pwptrp: *mut *mut Passwd)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     for team in CLIENT.get_teams() {
         for member in team.members.values() {
             if uid == member.id as libc::uid_t {
-                match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, team.get_gid(), &CONFIG) } {
+                match unsafe {
+                          (*pwptr).pack_args(&mut buffer,
+                                             &member.login,
+                                             member.id,
+                                             team.get_gid(),
+                                             &CONFIG)
+                      } {
                     Ok(_) => succeed!(pwptrp, pwptr),
                     Err(_) => fail!(pwptrp, nix::Errno::ERANGE as libc::c_int),
                 }
@@ -124,9 +130,7 @@ pub extern "C" fn _nss_ghteam_setpwent() -> libc::c_int {
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getpwent_r(pwptr: *mut Passwd,
-                                         buf: *mut libc::c_char,
-                                         buflen: libc::size_t,
+pub extern "C" fn _nss_ghteam_getpwent_r(pwptr: *mut Passwd, buf: *mut libc::c_char, buflen: libc::size_t,
                                          pwptrp: *mut *mut Passwd)
                                          -> libc::c_int {
     let (idx, idx_file, list) = match runfiles::open() {
@@ -153,11 +157,8 @@ pub extern "C" fn _nss_ghteam_endpwent() -> libc::c_int {
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getspnam_r(cnameptr: *const libc::c_char,
-                                         spptr: *mut Spwd,
-                                         buf: *mut libc::c_char,
-                                         buflen: libc::size_t,
-                                         spptrp: *mut *mut Spwd)
+pub extern "C" fn _nss_ghteam_getspnam_r(cnameptr: *const libc::c_char, spptr: *mut Spwd, buf: *mut libc::c_char,
+                                         buflen: libc::size_t, spptrp: *mut *mut Spwd)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
@@ -188,9 +189,7 @@ pub extern "C" fn _nss_ghteam_setspent() -> libc::c_int {
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getspent_r(spptr: *mut Spwd,
-                                         buf: *mut libc::c_char,
-                                         buflen: libc::size_t,
+pub extern "C" fn _nss_ghteam_getspent_r(spptr: *mut Spwd, buf: *mut libc::c_char, buflen: libc::size_t,
                                          spptrp: *mut *mut Spwd)
                                          -> libc::c_int {
     let (idx, idx_file, list) = match runfiles::open() {
@@ -215,11 +214,8 @@ pub extern "C" fn _nss_ghteam_endspent() -> libc::c_int {
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t,
-                                         grptr: *mut Group,
-                                         buf: *mut libc::c_char,
-                                         buflen: libc::size_t,
-                                         grptrp: *mut *mut Group)
+pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t, grptr: *mut Group, buf: *mut libc::c_char,
+                                         buflen: libc::size_t, grptrp: *mut *mut Group)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     for team in CLIENT.get_teams() {
@@ -235,11 +231,8 @@ pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t,
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char,
-                                         grptr: *mut Group,
-                                         buf: *mut libc::c_char,
-                                         buflen: libc::size_t,
-                                         grptrp: *mut *mut Group)
+pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char, grptr: *mut Group, buf: *mut libc::c_char,
+                                         buflen: libc::size_t, grptrp: *mut *mut Group)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
@@ -262,17 +255,26 @@ pub extern "C" fn _nss_ghteam_setgrent() -> libc::c_int {
         Err(_) => return libc::c_int::from(NssStatus::Success),
     };
     for team in CLIENT.get_teams() {
-        let member_names = team.members.values().map(|x| x.login.as_str()).collect::<Vec<&str>>().join(" ");
-        list_file.write(format!("{}\t{}\t{}\n", team.get_group(), team.get_gid(), member_names).as_bytes())
-                 .unwrap();
+        let member_names = team.members.values()
+                               .map(|x| x.login.as_str())
+                               .collect::<Vec<&str>>()
+                               .join(" ");
+        list_file
+            .write(
+                format!(
+                    "{}\t{}\t{}\n",
+                    team.get_group(),
+                    team.get_gid(),
+                    member_names
+                ).as_bytes(),
+            )
+            .unwrap();
     }
     libc::c_int::from(NssStatus::Success)
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getgrent_r(grptr: *mut Group,
-                                         buf: *mut libc::c_char,
-                                         buflen: libc::size_t,
+pub extern "C" fn _nss_ghteam_getgrent_r(grptr: *mut Group, buf: *mut libc::c_char, buflen: libc::size_t,
                                          grptrp: *mut *mut Group)
                                          -> libc::c_int {
     let (idx, idx_file, list) = match runfiles::open() {

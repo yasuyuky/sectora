@@ -1,9 +1,9 @@
-use serde_json;
 use reqwest;
+use serde_json;
 use std;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
-use std::collections::HashMap;
 use toml;
 
 #[derive(Deserialize, Debug, Clone)]

@@ -1,6 +1,6 @@
 use libc;
 use std::fs::{create_dir_all, remove_file, File, OpenOptions};
-use std::io::{Read, Write, Seek, SeekFrom, Error, BufReader};
+use std::io::{BufReader, Error, Read, Seek, SeekFrom, Write};
 
 const RUN_DIR: &str = "/var/run/ghteam-auth";
 
@@ -14,10 +14,9 @@ pub fn create() -> Result<File, Error> {
 
 pub fn open() -> Result<(usize, File, BufReader<File>), Error> {
     let pid = unsafe { libc::getpid() };
-    let mut idx_file: File = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open(format!("{}/{}.index", RUN_DIR, pid))?;
+    let mut idx_file: File = OpenOptions::new().read(true)
+                                               .write(true)
+                                               .open(format!("{}/{}.index", RUN_DIR, pid))?;
     let mut idx_string = String::new();
     idx_file.read_to_string(&mut idx_string)?;
     let idx: usize = idx_string.parse().unwrap();

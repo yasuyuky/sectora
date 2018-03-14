@@ -1,9 +1,9 @@
+use ghclient::GithubClient;
 use std;
 use std::env;
-use std::string::String;
 use std::path::Path;
+use std::string::String;
 use structs::Config;
-use ghclient::GithubClient;
 
 lazy_static! {
     static ref DEFAULT_CONF_PATH_STR:String = String::from("/etc/ghteam-auth.conf");
