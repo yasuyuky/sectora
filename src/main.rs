@@ -35,8 +35,10 @@ fn main() {
                                      .get_matches();
 
     match app.subcommand() {
-        ("key", Some(sub)) => CLIENT.print_user_public_key(sub.value_of("USER").unwrap())
-                                    .unwrap(),
+        ("key", Some(sub)) => match CLIENT.print_user_public_key(sub.value_of("USER").unwrap()) {
+            Ok(_) => std::process::exit(0),
+            Err(_) => std::process::exit(21),
+        },
         ("check", Some(sub)) => match structs::Config::new(std::path::Path::new(sub.value_of("CONF").unwrap())) {
             Ok(_) => std::process::exit(0),
             Err(_) => std::process::exit(11),
