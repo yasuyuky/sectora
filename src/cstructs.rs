@@ -33,18 +33,16 @@ impl Passwd {
     pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, gid: u64, conf: &Config) -> Result<(), Error> {
         let home = conf.home.replace("{}", name);
         let sh: String = match UserConfig::new(&Path::new(&home).join(&conf.user_conf_path)) {
-            Ok(personal) => {
-                match personal.sh {
-                    Some(sh) => {
-                        if Path::new(&sh).exists() {
-                            sh
-                        } else {
-                            conf.sh.clone()
-                        }
+            Ok(personal) => match personal.sh {
+                Some(sh) => {
+                    if Path::new(&sh).exists() {
+                        sh
+                    } else {
+                        conf.sh.clone()
                     }
-                    None => conf.sh.clone(),
                 }
-            }
+                None => conf.sh.clone(),
+            },
             Err(_) => conf.sh.clone(),
         };
         self.pack(buf,
@@ -90,12 +88,10 @@ impl Spwd {
     pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, conf: &Config) -> Result<(), Error> {
         let home = conf.home.replace("{}", name);
         let pass: String = match UserConfig::new(&Path::new(&home).join(&conf.user_conf_path)) {
-            Ok(personal) => {
-                match personal.pass {
-                    Some(pass) => pass,
-                    None => String::from("*"),
-                }
-            }
+            Ok(personal) => match personal.pass {
+                Some(pass) => pass,
+                None => String::from("*"),
+            },
             Err(_) => String::from("*"),
         };
         self.pack(buf, name, &pass, -1, -1, -1, -1, -1, -1, 0)

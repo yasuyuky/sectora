@@ -35,29 +35,23 @@ fn main() {
                                      .get_matches();
 
     match app.subcommand() {
-        ("key", Some(sub)) => {
-            CLIENT.print_user_public_key(sub.value_of("USER").unwrap())
-                  .unwrap()
-        }
-        ("check", Some(sub)) => {
-            match structs::Config::new(std::path::Path::new(sub.value_of("CONF").unwrap())) {
-                Ok(_) => std::process::exit(0),
-                Err(_) => std::process::exit(11),
-            }
-        }
+        ("key", Some(sub)) => CLIENT.print_user_public_key(sub.value_of("USER").unwrap())
+                                    .unwrap(),
+        ("check", Some(sub)) => match structs::Config::new(std::path::Path::new(sub.value_of("CONF").unwrap())) {
+            Ok(_) => std::process::exit(0),
+            Err(_) => std::process::exit(11),
+        },
         ("cleanup", Some(_)) => CLIENT.clear_all_caches().unwrap(),
-        ("pam", Some(_)) => {
-            match std::env::var("PAM_USER") {
-                Ok(user) => {
-                    if CLIENT.check_pam(&user).unwrap() {
-                        std::process::exit(0);
-                    } else {
-                        std::process::exit(1)
-                    }
+        ("pam", Some(_)) => match std::env::var("PAM_USER") {
+            Ok(user) => {
+                if CLIENT.check_pam(&user).unwrap() {
+                    std::process::exit(0);
+                } else {
+                    std::process::exit(1)
                 }
-                Err(e) => println!("PAM_USER: {}", e),
             }
-        }
+            Err(e) => println!("PAM_USER: {}", e),
+        },
         (&_, _) => println!("{}", app.usage()),
     }
 }
