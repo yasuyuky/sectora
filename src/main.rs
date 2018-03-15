@@ -34,22 +34,26 @@ fn main() {
                                                                                .arg(conf_arg))
                                      .get_matches();
 
+    use std::env;
+    use std::path::Path;
+    use std::process;
+
     match app.subcommand() {
         ("key", Some(sub)) => match CLIENT.print_user_public_key(sub.value_of("USER").unwrap()) {
-            Ok(_) => std::process::exit(0),
-            Err(_) => std::process::exit(21),
+            Ok(_) => process::exit(0),
+            Err(_) => process::exit(21),
         },
-        ("check", Some(sub)) => match structs::Config::new(std::path::Path::new(sub.value_of("CONF").unwrap())) {
-            Ok(_) => std::process::exit(0),
-            Err(_) => std::process::exit(11),
+        ("check", Some(sub)) => match structs::Config::new(Path::new(sub.value_of("CONF").unwrap())) {
+            Ok(_) => process::exit(0),
+            Err(_) => process::exit(11),
         },
         ("cleanup", Some(_)) => CLIENT.clear_all_caches().unwrap(),
-        ("pam", Some(_)) => match std::env::var("PAM_USER") {
+        ("pam", Some(_)) => match env::var("PAM_USER") {
             Ok(user) => {
                 if CLIENT.check_pam(&user).unwrap() {
-                    std::process::exit(0);
+                    process::exit(0);
                 } else {
-                    std::process::exit(1)
+                    process::exit(1)
                 }
             }
             Err(e) => println!("PAM_USER: {}", e),
