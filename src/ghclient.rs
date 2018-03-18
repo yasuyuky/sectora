@@ -109,14 +109,14 @@ impl GithubClient {
     }
 
     fn get_teams_result(&self) -> Result<Vec<SectorGroup>, CliError> {
-        let ghteams = self.get_team_map()?;
+        let gh_teams = self.get_team_map()?;
         let mut teams = Vec::new();
         for team_conf in &self.conf.team {
-            if let &Some(ghteam) = &ghteams.get(&team_conf.name) {
-                teams.push(SectorGroup { sector: Sector::from(ghteam.clone()),
+            if let &Some(gh_team) = &gh_teams.get(&team_conf.name) {
+                teams.push(SectorGroup { sector: Sector::from(gh_team.clone()),
                                          gid: team_conf.gid.clone(),
                                          group: team_conf.group.clone(),
-                                         members: self.get_team_members(ghteam.id)?, });
+                                         members: self.get_team_members(gh_team.id)?, });
             }
         }
         Ok(teams)
@@ -139,14 +139,14 @@ impl GithubClient {
     }
 
     fn get_repos_result(&self) -> Result<Vec<SectorGroup>, CliError> {
-        let ghrepos = self.get_repo_map()?;
+        let gh_repos = self.get_repo_map()?;
         let mut repos = Vec::new();
         for repo_conf in &self.conf.repo {
-            if let &Some(ghrepo) = &ghrepos.get(&repo_conf.name) {
-                repos.push(SectorGroup { sector: Sector::from(ghrepo.clone()),
+            if let &Some(gh_repo) = &gh_repos.get(&repo_conf.name) {
+                repos.push(SectorGroup { sector: Sector::from(gh_repo.clone()),
                                          gid: repo_conf.gid.clone(),
                                          group: repo_conf.group.clone(),
-                                         members: self.get_repo_collaborators(&ghrepo.name)?, });
+                                         members: self.get_repo_collaborators(&gh_repo.name)?, });
             }
         }
         Ok(repos)
