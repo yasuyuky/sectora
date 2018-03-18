@@ -10,8 +10,10 @@ use toml;
 pub struct Config {
     pub token: String,
     pub org: String,
+    #[serde(default = "default_team")]
     pub team: Vec<TeamConfig>,
-    pub repo: Option<Vec<RepoConfig>>,
+    #[serde(default = "default_repo")]
+    pub repo: Vec<RepoConfig>,
     #[serde(default = "default_endpoint")]
     pub endpoint: String,
     #[serde(default = "default_home")]
@@ -27,6 +29,8 @@ pub struct Config {
     pub proxy_url: Option<String>,
 }
 
+fn default_team() -> Vec<TeamConfig> { Vec::new() }
+fn default_repo() -> Vec<RepoConfig> { Vec::new() }
 fn default_endpoint() -> String { String::from("https://api.github.com") }
 fn default_home() -> String { String::from("/home/{}") }
 fn default_sh() -> String { String::from("/bin/bash") }
