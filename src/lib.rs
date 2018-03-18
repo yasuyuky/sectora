@@ -73,13 +73,13 @@ pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char, pwptr: *
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    for team in CLIENT.get_teams() {
-        if let Some(member) = team.members.get(&name) {
+    for sector in CLIENT.get_sectors() {
+        if let Some(member) = sector.members.get(&name) {
             match unsafe {
                       (*pwptr).pack_args(&mut buffer,
                                          &member.login,
                                          member.id,
-                                         team.get_gid(),
+                                         sector.get_gid(),
                                          &CONFIG)
                   } {
                 Ok(_) => succeed!(pwptrp, pwptr),
@@ -95,14 +95,14 @@ pub extern "C" fn _nss_ghteam_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, b
                                          buflen: libc::size_t, pwptrp: *mut *mut Passwd)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    for team in CLIENT.get_teams() {
-        for member in team.members.values() {
+    for sector in CLIENT.get_sectors() {
+        for member in sector.members.values() {
             if uid == member.id as libc::uid_t {
                 match unsafe {
                           (*pwptr).pack_args(&mut buffer,
                                              &member.login,
                                              member.id,
-                                             team.get_gid(),
+                                             sector.get_gid(),
                                              &CONFIG)
                       } {
                     Ok(_) => succeed!(pwptrp, pwptr),
@@ -120,9 +120,9 @@ pub extern "C" fn _nss_ghteam_setpwent() -> libc::c_int {
         Ok(ret) => ret,
         Err(_) => return libc::c_int::from(NssStatus::Success),
     };
-    for team in CLIENT.get_teams() {
-        for member in team.members.values() {
-            list_file.write(format!("{}\t{}\t{}\n", member.login, member.id, team.get_gid()).as_bytes())
+    for sector in CLIENT.get_sectors() {
+        for member in sector.members.values() {
+            list_file.write(format!("{}\t{}\t{}\n", member.login, member.id, sector.get_gid()).as_bytes())
                      .unwrap();
         }
     }
@@ -162,8 +162,8 @@ pub extern "C" fn _nss_ghteam_getspnam_r(cnameptr: *const libc::c_char, spptr: *
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    for team in CLIENT.get_teams() {
-        if let Some(member) = team.members.get(&name) {
+    for sector in CLIENT.get_sectors() {
+        if let Some(member) = sector.members.get(&name) {
             match unsafe { (*spptr).pack_args(&mut buffer, &member.login, &CONFIG) } {
                 Ok(_) => succeed!(spptrp, spptr),
                 Err(_) => fail!(spptrp, nix::Errno::ERANGE as libc::c_int),
@@ -179,8 +179,8 @@ pub extern "C" fn _nss_ghteam_setspent() -> libc::c_int {
         Ok(ret) => ret,
         Err(_) => return libc::c_int::from(NssStatus::Success),
     };
-    for team in CLIENT.get_teams() {
-        for member in team.members.values() {
+    for sector in CLIENT.get_sectors() {
+        for member in sector.members.values() {
             list_file.write(format!("{}\t{}\n", member.login, member.id).as_bytes())
                      .unwrap();
         }
@@ -218,10 +218,10 @@ pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t, grptr: *mut Group, bu
                                          buflen: libc::size_t, grptrp: *mut *mut Group)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    for team in CLIENT.get_teams() {
-        let members: Vec<&str> = team.members.values().map(|m| m.login.as_str()).collect();
-        if gid as u64 == team.get_gid() {
-            match unsafe { (*grptr).pack_args(&mut buffer, &team.get_group(), gid as u64, &members) } {
+    for sector in CLIENT.get_sectors() {
+        let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
+        if gid as u64 == sector.get_gid() {
+            match unsafe { (*grptr).pack_args(&mut buffer, &sector.get_group(), gid as u64, &members) } {
                 Ok(_) => succeed!(grptrp, grptr),
                 Err(_) => fail!(grptrp, nix::Errno::ERANGE as libc::c_int),
             }
@@ -236,10 +236,10 @@ pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char, grptr: *
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    for team in CLIENT.get_teams() {
-        let members: Vec<&str> = team.members.values().map(|m| m.login.as_str()).collect();
-        if name == team.get_group() {
-            match unsafe { (*grptr).pack_args(&mut buffer, &team.get_group(), team.get_gid(), &members) } {
+    for sector in CLIENT.get_sectors() {
+        let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
+        if name == sector.get_group() {
+            match unsafe { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
                 Ok(_) => succeed!(grptrp, grptr),
                 Err(_) => fail!(grptrp, nix::Errno::ERANGE as libc::c_int),
             }
@@ -254,17 +254,18 @@ pub extern "C" fn _nss_ghteam_setgrent() -> libc::c_int {
         Ok(ret) => ret,
         Err(_) => return libc::c_int::from(NssStatus::Success),
     };
-    for team in CLIENT.get_teams() {
-        let member_names = team.members.values()
-                               .map(|x| x.login.as_str())
-                               .collect::<Vec<&str>>()
-                               .join(" ");
+    for sector in CLIENT.get_sectors() {
+        let member_names = sector.members
+                                 .values()
+                                 .map(|x| x.login.as_str())
+                                 .collect::<Vec<&str>>()
+                                 .join(" ");
         list_file
             .write(
                 format!(
                     "{}\t{}\t{}\n",
-                    team.get_group(),
-                    team.get_gid(),
+                    sector.get_group(),
+                    sector.get_gid(),
                     member_names
                 ).as_bytes(),
             )
