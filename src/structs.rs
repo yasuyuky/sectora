@@ -11,6 +11,7 @@ pub struct Config {
     pub token: String,
     pub org: String,
     pub team: Vec<TeamConfig>,
+    pub repo: Option<Vec<RepoConfig>>,
     #[serde(default = "default_endpoint")]
     pub endpoint: String,
     #[serde(default = "default_home")]
@@ -66,6 +67,13 @@ pub struct Team {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TeamConfig {
+    pub name: String,
+    pub gid: Option<u64>,
+    pub group: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct RepoConfig {
     pub name: String,
     pub gid: Option<u64>,
     pub group: Option<String>,
