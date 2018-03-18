@@ -77,6 +77,12 @@ pub struct TeamConfig {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Repo {
+    pub id: u64,
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RepoConfig {
     pub name: String,
     pub gid: Option<u64>,
@@ -101,6 +107,14 @@ impl From<Team> for Sector {
         Self { id: team.id,
                name: team.name,
                sector_type: SectorType::Team, }
+    }
+}
+
+impl From<Repo> for Sector {
+    fn from(repo: Repo) -> Self {
+        Self { id: repo.id,
+               name: repo.name,
+               sector_type: SectorType::Repo, }
     }
 }
 
