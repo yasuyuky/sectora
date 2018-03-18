@@ -105,27 +105,27 @@ impl GithubClient {
     pub fn get_sectors(&self) -> Vec<SectorGroup> { self.get_teams_result().unwrap_or(Vec::new()) }
 
     fn get_teams_result(&self) -> Result<Vec<SectorGroup>, CliError> {
-        let ghteams = self.get_ghteam_map()?;
+        let ghteams = self.get_team_map()?;
         let mut teams = Vec::new();
         for team_conf in &self.conf.team {
             if let &Some(ghteam) = &ghteams.get(&team_conf.name) {
                 teams.push(SectorGroup { sector: Sector::from(ghteam.clone()),
                                          gid: team_conf.gid.clone(),
                                          group: team_conf.group.clone(),
-                                         members: self.get_members(ghteam.id)?, });
+                                         members: self.get_team_members(ghteam.id)?, });
             }
         }
         Ok(teams)
     }
 
-    fn get_ghteam_map(&self) -> Result<HashMap<String, Team>, CliError> {
+    fn get_team_map(&self) -> Result<HashMap<String, Team>, CliError> {
         let url = format!("{}/orgs/{}/teams", self.conf.endpoint, self.conf.org);
         let content = self.get_content(&url)?;
         let teams = serde_json::from_str::<Vec<Team>>(&content)?;
         Ok(teams.iter().map(|t| (t.name.clone(), t.clone())).collect())
     }
 
-    fn get_members(&self, mid: u64) -> Result<HashMap<String, Member>, CliError> {
+    fn get_team_members(&self, mid: u64) -> Result<HashMap<String, Member>, CliError> {
         let url = format!("{}/teams/{}/members", self.conf.endpoint, mid);
         let content = self.get_content(&url)?;
         let members = serde_json::from_str::<Vec<Member>>(&content)?;
