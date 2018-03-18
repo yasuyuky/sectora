@@ -79,19 +79,40 @@ pub struct RepoConfig {
     pub group: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum SectorType {
+    Team,
+    Repo,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Sector {
+    pub id: u64,
+    pub name: String,
+    pub sector_type: SectorType,
+}
+
+impl From<Team> for Sector {
+    fn from(team: Team) -> Self {
+        Self { id: team.id,
+               name: team.name,
+               sector_type: SectorType::Team, }
+    }
+}
+
 #[derive(Debug, Clone)]
-pub struct TeamGroup {
-    pub team: Team,
+pub struct SectorGroup {
+    pub sector: Sector,
     pub gid: Option<u64>,
     pub group: Option<String>,
     pub members: HashMap<String, Member>,
 }
 
-impl TeamGroup {
+impl SectorGroup {
     #[allow(dead_code)]
-    pub fn get_gid(&self) -> u64 { self.gid.unwrap_or(self.team.id) }
+    pub fn get_gid(&self) -> u64 { self.gid.unwrap_or(self.sector.id) }
     #[allow(dead_code)]
-    pub fn get_group(&self) -> String { self.group.clone().unwrap_or(self.team.name.clone()) }
+    pub fn get_group(&self) -> String { self.group.clone().unwrap_or(self.sector.name.clone()) }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

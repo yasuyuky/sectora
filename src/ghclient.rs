@@ -6,7 +6,7 @@ use std;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
-use structs::{CliError, Config, Member, PublicKey, Team, TeamGroup};
+use structs::{CliError, Config, Member, PublicKey, Sector, SectorGroup, Team};
 
 pub struct GithubClient {
     client: reqwest::Client,
@@ -102,17 +102,17 @@ impl GithubClient {
         Ok(teams.iter().any(|team| team.members.contains_key(user)))
     }
 
-    pub fn get_teams(&self) -> Vec<TeamGroup> { self.get_teams_result().unwrap_or(Vec::new()) }
+    pub fn get_teams(&self) -> Vec<SectorGroup> { self.get_teams_result().unwrap_or(Vec::new()) }
 
-    fn get_teams_result(&self) -> Result<Vec<TeamGroup>, CliError> {
+    fn get_teams_result(&self) -> Result<Vec<SectorGroup>, CliError> {
         let ghteams = self.get_ghteam_map()?;
         let mut teams = Vec::new();
         for team_conf in &self.conf.team {
             if let &Some(ghteam) = &ghteams.get(&team_conf.name) {
-                teams.push(TeamGroup { team: ghteam.clone(),
-                                       gid: team_conf.gid.clone(),
-                                       group: team_conf.group.clone(),
-                                       members: self.get_members(ghteam.id)?, });
+                teams.push(SectorGroup { sector: Sector::from(ghteam.clone()),
+                                         gid: team_conf.gid.clone(),
+                                         group: team_conf.group.clone(),
+                                         members: self.get_members(ghteam.id)?, });
             }
         }
         Ok(teams)
