@@ -4,15 +4,19 @@
   become_user: root
   vars:
     target_dir: "../target/YOUR_TARGET_TRIPLE/release"
-    ghteam_token: "YOUR_TOKEN"
-    ghteam_org: "YOUR_ORGANIZATION"
-    # ghteam_home: "/path/to/home/{}"
-    # ghteam_cache_duration: 7200
-    # ghteam_sudoers: true
-    # ghteam_user_conf_path: "path/to/relative/path/of/user/conf/from/home"
-    ghteam_teams:
+    gh_token: "YOUR_TOKEN"
+    gh_org: "YOUR_ORGANIZATION"
+    # gh_home: "/path/to/home/{}"
+    # gh_cache_duration: 7200
+    # gh_sudoers: true
+    # gh_user_conf_path: "path/to/relative/path/of/user/conf/from/home"
+    gh_teams:
       - name: "YOUR_TEAM1"
-        group: "YOUR_GRUP2"
-        gid: YOUR_GID
+        group: "YOUR_GROUP1"
+        gid: YOUR_GID1
+    gh_repo:
+      - name: "YOUR_REPO1"
+        group: "YOUR_GROUP1"
+        gid: YOUR_GID2
   roles:
     - ghteam-auth
