@@ -34,7 +34,7 @@
     regexp: '^%{{ (item.group is defined and item.group) or item.name }} ALL='
     line: '%{{ (item.group is defined and item.group) or item.name }}  ALL=(ALL) NOPASSWD: ALL'
     validate: 'visudo -cf %s'
-  when: (gh_sudoers is defined) and (gh_sudoers == true)
+  when: (item.sudoers is defined) and (item.sudoers == true)
   with_items:
     '{{ gh_teams }}'
 

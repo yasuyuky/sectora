@@ -8,15 +8,16 @@
     gh_org: "YOUR_ORGANIZATION"
     # gh_home: "/path/to/home/{}"
     # gh_cache_duration: 7200
-    # gh_sudoers: true
     # gh_user_conf_path: "path/to/relative/path/of/user/conf/from/home"
     gh_teams:
       - name: "YOUR_TEAM1"
         group: "YOUR_GROUP1"
         gid: YOUR_GID1
+        sudoers: true # or false
     gh_repo:
       - name: "YOUR_REPO1"
         group: "YOUR_GROUP1"
         gid: YOUR_GID2
+        sudoers: false # or true
   roles:
     - ghteam-auth
