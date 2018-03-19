@@ -6,7 +6,7 @@ use std;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
-use structs::{CliError, Config, Member, PublicKey, Team, TeamGroup};
+use structs::{CliError, Config, Member, PublicKey, Repo, Sector, SectorGroup, Team};
 
 pub struct GithubClient {
     client: reqwest::Client,
@@ -98,35 +98,70 @@ impl GithubClient {
 
     #[allow(dead_code)]
     pub fn check_pam(&self, user: &str) -> Result<bool, CliError> {
-        let teams = self.get_teams();
-        Ok(teams.iter().any(|team| team.members.contains_key(user)))
+        let sectors = self.get_sectors();
+        Ok(sectors.iter().any(|team| team.members.contains_key(user)))
     }
 
-    pub fn get_teams(&self) -> Vec<TeamGroup> { self.get_teams_result().unwrap_or(Vec::new()) }
+    pub fn get_sectors(&self) -> Vec<SectorGroup> {
+        let mut sectors: Vec<SectorGroup> = self.get_teams_result().unwrap_or(Vec::new());
+        sectors.append(&mut self.get_repos_result().unwrap_or(Vec::new()));
+        sectors
+    }
 
-    fn get_teams_result(&self) -> Result<Vec<TeamGroup>, CliError> {
-        let ghteams = self.get_ghteam_map()?;
+    fn get_teams_result(&self) -> Result<Vec<SectorGroup>, CliError> {
+        let gh_teams = self.get_team_map()?;
         let mut teams = Vec::new();
         for team_conf in &self.conf.team {
-            if let &Some(ghteam) = &ghteams.get(&team_conf.name) {
-                teams.push(TeamGroup { team: ghteam.clone(),
-                                       gid: team_conf.gid.clone(),
-                                       group: team_conf.group.clone(),
-                                       members: self.get_members(ghteam.id)?, });
+            if let &Some(gh_team) = &gh_teams.get(&team_conf.name) {
+                teams.push(SectorGroup { sector: Sector::from(gh_team.clone()),
+                                         gid: team_conf.gid.clone(),
+                                         group: team_conf.group.clone(),
+                                         members: self.get_team_members(gh_team.id)?, });
             }
         }
         Ok(teams)
     }
 
-    fn get_ghteam_map(&self) -> Result<HashMap<String, Team>, CliError> {
+    fn get_team_map(&self) -> Result<HashMap<String, Team>, CliError> {
         let url = format!("{}/orgs/{}/teams", self.conf.endpoint, self.conf.org);
         let content = self.get_content(&url)?;
         let teams = serde_json::from_str::<Vec<Team>>(&content)?;
         Ok(teams.iter().map(|t| (t.name.clone(), t.clone())).collect())
     }
 
-    fn get_members(&self, mid: u64) -> Result<HashMap<String, Member>, CliError> {
+    fn get_team_members(&self, mid: u64) -> Result<HashMap<String, Member>, CliError> {
         let url = format!("{}/teams/{}/members", self.conf.endpoint, mid);
+        let content = self.get_content(&url)?;
+        let members = serde_json::from_str::<Vec<Member>>(&content)?;
+        Ok(members.iter()
+                  .map(|m| (m.login.clone(), m.clone()))
+                  .collect())
+    }
+
+    fn get_repos_result(&self) -> Result<Vec<SectorGroup>, CliError> {
+        let gh_repos = self.get_repo_map()?;
+        let mut repos = Vec::new();
+        for repo_conf in &self.conf.repo {
+            if let &Some(gh_repo) = &gh_repos.get(&repo_conf.name) {
+                repos.push(SectorGroup { sector: Sector::from(gh_repo.clone()),
+                                         gid: repo_conf.gid.clone(),
+                                         group: repo_conf.group.clone(),
+                                         members: self.get_repo_collaborators(&gh_repo.name)?, });
+            }
+        }
+        Ok(repos)
+    }
+
+    fn get_repo_map(&self) -> Result<HashMap<String, Repo>, CliError> {
+        let url = format!("{}/orgs/{}/repos", self.conf.endpoint, self.conf.org);
+        let content = self.get_content(&url)?;
+        let repos = serde_json::from_str::<Vec<Repo>>(&content)?;
+        Ok(repos.iter().map(|t| (t.name.clone(), t.clone())).collect())
+    }
+
+    fn get_repo_collaborators(&self, repo_name: &str) -> Result<HashMap<String, Member>, CliError> {
+        let url = format!("{}/repos/{}/{}/collaborators?affiliation=outside",
+                          self.conf.endpoint, self.conf.org, repo_name);
         let content = self.get_content(&url)?;
         let members = serde_json::from_str::<Vec<Member>>(&content)?;
         Ok(members.iter()

@@ -10,7 +10,10 @@ use toml;
 pub struct Config {
     pub token: String,
     pub org: String,
+    #[serde(default = "default_team")]
     pub team: Vec<TeamConfig>,
+    #[serde(default = "default_repo")]
+    pub repo: Vec<RepoConfig>,
     #[serde(default = "default_endpoint")]
     pub endpoint: String,
     #[serde(default = "default_home")]
@@ -26,6 +29,8 @@ pub struct Config {
     pub proxy_url: Option<String>,
 }
 
+fn default_team() -> Vec<TeamConfig> { Vec::new() }
+fn default_repo() -> Vec<RepoConfig> { Vec::new() }
 fn default_endpoint() -> String { String::from("https://api.github.com") }
 fn default_home() -> String { String::from("/home/{}") }
 fn default_sh() -> String { String::from("/bin/bash") }
@@ -71,19 +76,61 @@ pub struct TeamConfig {
     pub group: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Repo {
+    pub id: u64,
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct RepoConfig {
+    pub name: String,
+    pub gid: Option<u64>,
+    pub group: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum SectorType {
+    Team,
+    Repo,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Sector {
+    pub id: u64,
+    pub name: String,
+    pub sector_type: SectorType,
+}
+
+impl From<Team> for Sector {
+    fn from(team: Team) -> Self {
+        Self { id: team.id,
+               name: team.name,
+               sector_type: SectorType::Team, }
+    }
+}
+
+impl From<Repo> for Sector {
+    fn from(repo: Repo) -> Self {
+        Self { id: repo.id,
+               name: repo.name,
+               sector_type: SectorType::Repo, }
+    }
+}
+
 #[derive(Debug, Clone)]
-pub struct TeamGroup {
-    pub team: Team,
+pub struct SectorGroup {
+    pub sector: Sector,
     pub gid: Option<u64>,
     pub group: Option<String>,
     pub members: HashMap<String, Member>,
 }
 
-impl TeamGroup {
+impl SectorGroup {
     #[allow(dead_code)]
-    pub fn get_gid(&self) -> u64 { self.gid.unwrap_or(self.team.id) }
+    pub fn get_gid(&self) -> u64 { self.gid.unwrap_or(self.sector.id) }
     #[allow(dead_code)]
-    pub fn get_group(&self) -> String { self.group.clone().unwrap_or(self.team.name.clone()) }
+    pub fn get_group(&self) -> String { self.group.clone().unwrap_or(self.sector.name.clone()) }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
