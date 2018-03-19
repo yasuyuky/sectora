@@ -2,7 +2,7 @@ use libc;
 use std::fs::{create_dir_all, remove_file, File, OpenOptions};
 use std::io::{BufReader, Error, Read, Seek, SeekFrom, Write};
 
-const RUN_DIR: &str = "/var/run/ghteam-auth";
+const RUN_DIR: &str = "/var/run/sectora";
 
 pub fn create() -> Result<File, Error> {
     let pid = unsafe { libc::getpid() };

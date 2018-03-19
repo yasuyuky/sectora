@@ -15,29 +15,29 @@ all: x64 arm
 
 x64: x64-exe x64-lib
 
-x64-exe: $(X64_TARGET_DIR)/ghteam-auth
+x64-exe: $(X64_TARGET_DIR)/sectora
 
-x64-lib: $(X64_TARGET_DIR)/libnss_ghteam.so
+x64-lib: $(X64_TARGET_DIR)/libnss_sectora.so
 
 arm: arm-exe arm-lib
 
-arm-exe: $(ARM_TARGET_DIR)/ghteam-auth
+arm-exe: $(ARM_TARGET_DIR)/sectora
 
-arm-lib: $(ARM_TARGET_DIR)/libnss_ghteam.so
+arm-lib: $(ARM_TARGET_DIR)/libnss_sectora.so
 
 enter-build-image:
 	docker run -it --rm -v ${PWD}:/source $(X64_BUILD_IMG) bash
 
-$(X64_TARGET_DIR)/ghteam-auth: src/main.rs $(SRCS)
-	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo build --bin ghteam-auth --release --target=$(X64_TARGET)
+$(X64_TARGET_DIR)/sectora: src/main.rs $(SRCS)
+	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo build --bin sectora --release --target=$(X64_TARGET)
 
-$(X64_TARGET_DIR)/libnss_ghteam.so: src/lib.rs $(SRCS)
+$(X64_TARGET_DIR)/libnss_sectora.so: src/lib.rs $(SRCS)
 	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo build --lib --release --target=$(X64_TARGET)
 
-$(ARM_TARGET_DIR)/ghteam-auth: src/main.rs $(SRCS)
-	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo build --bin ghteam-auth --release --target=$(ARM_TARGET)
+$(ARM_TARGET_DIR)/sectora: src/main.rs $(SRCS)
+	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo build --bin sectora --release --target=$(ARM_TARGET)
 
-$(ARM_TARGET_DIR)/libnss_ghteam.so: src/lib.rs $(SRCS)
+$(ARM_TARGET_DIR)/libnss_sectora.so: src/lib.rs $(SRCS)
 	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo build --lib --release --target=$(ARM_TARGET)
 
 
@@ -50,12 +50,12 @@ clean-arm:
 	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo clean
 
 clean-exe:
-	rm $(X64_TARGET_DIR)/ghteam-auth
-	rm $(ARM_TARGET_DIR)/ghteam-auth
+	rm $(X64_TARGET_DIR)/sectora
+	rm $(ARM_TARGET_DIR)/sectora
 
 clean-lib:
-	rm $(X64_TARGET_DIR)/libnss_ghteam.so
-	rm $(ARM_TARGET_DIR)/libnss_ghteam.so
+	rm $(X64_TARGET_DIR)/libnss_sectora.so
+	rm $(ARM_TARGET_DIR)/libnss_sectora.so
 
 clean:
 	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo clean

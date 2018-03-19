@@ -30,7 +30,7 @@ impl GithubClient {
 
     fn get_cache_path(url: &str) -> std::path::PathBuf {
         let mut path = std::env::temp_dir();
-        path.push("ghteam-auth-cache");
+        path.push("sectora-cache");
         path.push(url);
         path
     }
@@ -172,7 +172,7 @@ impl GithubClient {
     #[allow(dead_code)]
     pub fn clear_all_caches(&self) -> Result<(), CliError> {
         let mut path = std::env::temp_dir();
-        path.push("ghteam-auth-cache/**/*");
+        path.push("sectora-cache/**/*");
         for entry in glob(&path.to_str().unwrap()).unwrap() {
             match entry {
                 Ok(path) => {

@@ -20,4 +20,4 @@
         gid: YOUR_GID2
         sudoers: false # or true
   roles:
-    - ghteam-auth
+    - sectora

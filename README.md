@@ -1,12 +1,17 @@
-# ghteam-auth
+# Sectora
 
-The program for ssh auth using github team.
-Inspired by [Octopass](https://github.com/linyows/octopass).
+**Sector A**uthentication
+
+(formerly named as **ghteam-auth**)
+
+The program for ssh authentication using github team/repo.
+
+
 Implemented with Rust.
 
 ## How to build
 
-[![CircleCI](https://circleci.com/gh/yasuyuky/ghteam-auth.svg?style=svg)](https://circleci.com/gh/yasuyuky/ghteam-auth)
+[![CircleCI](https://circleci.com/gh/yasuyuky/sectora.svg?style=svg)](https://circleci.com/gh/yasuyuky/sectora)
 
 ### On linux
 
@@ -30,17 +35,17 @@ See Makefile for details
 4. Configure sshd
 5. Configure PAM
 
-[A setting example of ansible is available](https://github.com/yasuyuky/ghteam-auth/blob/master/ansible/)
+[A setting example of ansible is available](https://github.com/yasuyuky/sectora/blob/master/ansible/)
 
 ### Copy executable file and shared object to each path
 
 #### Copy executable file
 
-Place `ghteam-auth` to `/usr/sbin/`.
+Place `sectora` to `/usr/sbin/`.
 
 #### Copy shared object
 
-Place `libnss_ghteam.so` to `/usr/lib/`.
+Place `libnss_sectora.so` to `/usr/lib/`.
 
 ### Place config file for this program.
 
@@ -65,9 +70,9 @@ See `struct Config` on `structs.rs` for details.
 Add the following lines to `/etc/nsswitch.conf`
 
 ```
-passwd: files ghteam
-shadow: files ghteam
-group:  files ghteam
+passwd: files sectora
+shadow: files sectora
+group:  files sectora
 ```
 
 ### Configure sshd
@@ -76,7 +81,7 @@ Add the following lines to `/etc/ssh/sshd_config`.
 
 ```
 AuthorizedKeysCommandUser root
-AuthorizedKeysCommand /usr/sbin/ghteam-auth key %u
+AuthorizedKeysCommand /usr/sbin/sectora key %u
 UsePAM yes
 ```
 
@@ -84,16 +89,16 @@ UsePAM yes
 
 In the case of old sshd, you need to create the following shell script and put it in your PATH.
 
-```ghteam-auth.sh
+```sectora.sh
 #!/bin/bash
-/usr/sbin/ghteam-auth key $1
+/usr/sbin/sectora key $1
 ```
 
 And sshd_config should look like this
 
 ```
 AuthorizedKeysCommandUser root
-AuthorizedKeysCommand /usr/sbin/ghteam-auth.sh
+AuthorizedKeysCommand /usr/sbin/sectora.sh
 UsePAM yes
 ```
 
@@ -102,7 +107,7 @@ UsePAM yes
 Add the following lines to `/etc/pam.d/sshd`.
 
 ```
-auth requisite pam_exec.so quiet expose_authtok /usr/sbin/ghteam-auth pam
+auth requisite pam_exec.so quiet expose_authtok /usr/sbin/sectora pam
 auth optional pam_unix.so not_set_pass use_first_pass nodelay
 session required pam_mkhomedir.so skel: /etc/skel/ umask: 0022
 ```
@@ -115,7 +120,7 @@ And comment out the following line.
 
 ## Personal settings
 
-To set personal settings, use `$HOME/.config/ghteam-auth.toml` like this.
+To set personal settings, use `$HOME/.config/sectora.toml` like this.
 
 ```toml
 sh = "/path/to/login/shell"
@@ -135,5 +140,5 @@ MIT
 
 ## Special thanks
 
-This program is deeply inspired by [Octopass](https://github.com/linyows/octopass).
+This program is inspired by [Octopass](https://github.com/linyows/octopass).
 Thank you.

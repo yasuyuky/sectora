@@ -68,7 +68,7 @@ macro_rules! fail {
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char, pwptr: *mut Passwd, buf: *mut libc::c_char,
+pub extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, pwptr: *mut Passwd, buf: *mut libc::c_char,
                                          buflen: libc::size_t, pwptrp: *mut *mut Passwd)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
@@ -91,7 +91,7 @@ pub extern "C" fn _nss_ghteam_getpwnam_r(cnameptr: *const libc::c_char, pwptr: *
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, buf: *mut libc::c_char,
+pub extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, buf: *mut libc::c_char,
                                          buflen: libc::size_t, pwptrp: *mut *mut Passwd)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
@@ -115,7 +115,7 @@ pub extern "C" fn _nss_ghteam_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, b
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_setpwent() -> libc::c_int {
+pub extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
     let mut list_file = match runfiles::create() {
         Ok(ret) => ret,
         Err(_) => return libc::c_int::from(NssStatus::Success),
@@ -130,7 +130,7 @@ pub extern "C" fn _nss_ghteam_setpwent() -> libc::c_int {
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getpwent_r(pwptr: *mut Passwd, buf: *mut libc::c_char, buflen: libc::size_t,
+pub extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut libc::c_char, buflen: libc::size_t,
                                          pwptrp: *mut *mut Passwd)
                                          -> libc::c_int {
     let (idx, idx_file, list) = match runfiles::open() {
@@ -151,13 +151,13 @@ pub extern "C" fn _nss_ghteam_getpwent_r(pwptr: *mut Passwd, buf: *mut libc::c_c
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_endpwent() -> libc::c_int {
+pub extern "C" fn _nss_sectora_endpwent() -> libc::c_int {
     runfiles::cleanup().unwrap_or(());
     libc::c_int::from(NssStatus::Success)
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getspnam_r(cnameptr: *const libc::c_char, spptr: *mut Spwd, buf: *mut libc::c_char,
+pub extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, spptr: *mut Spwd, buf: *mut libc::c_char,
                                          buflen: libc::size_t, spptrp: *mut *mut Spwd)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
@@ -174,7 +174,7 @@ pub extern "C" fn _nss_ghteam_getspnam_r(cnameptr: *const libc::c_char, spptr: *
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_setspent() -> libc::c_int {
+pub extern "C" fn _nss_sectora_setspent() -> libc::c_int {
     let mut list_file = match runfiles::create() {
         Ok(ret) => ret,
         Err(_) => return libc::c_int::from(NssStatus::Success),
@@ -189,7 +189,7 @@ pub extern "C" fn _nss_ghteam_setspent() -> libc::c_int {
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getspent_r(spptr: *mut Spwd, buf: *mut libc::c_char, buflen: libc::size_t,
+pub extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut libc::c_char, buflen: libc::size_t,
                                          spptrp: *mut *mut Spwd)
                                          -> libc::c_int {
     let (idx, idx_file, list) = match runfiles::open() {
@@ -208,13 +208,13 @@ pub extern "C" fn _nss_ghteam_getspent_r(spptr: *mut Spwd, buf: *mut libc::c_cha
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_endspent() -> libc::c_int {
+pub extern "C" fn _nss_sectora_endspent() -> libc::c_int {
     runfiles::cleanup().unwrap_or(());
     libc::c_int::from(NssStatus::Success)
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t, grptr: *mut Group, buf: *mut libc::c_char,
+pub extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut Group, buf: *mut libc::c_char,
                                          buflen: libc::size_t, grptrp: *mut *mut Group)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
@@ -231,7 +231,7 @@ pub extern "C" fn _nss_ghteam_getgrgid_r(gid: libc::gid_t, grptr: *mut Group, bu
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char, grptr: *mut Group, buf: *mut libc::c_char,
+pub extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, grptr: *mut Group, buf: *mut libc::c_char,
                                          buflen: libc::size_t, grptrp: *mut *mut Group)
                                          -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
@@ -249,7 +249,7 @@ pub extern "C" fn _nss_ghteam_getgrnam_r(cnameptr: *const libc::c_char, grptr: *
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_setgrent() -> libc::c_int {
+pub extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
     let mut list_file = match runfiles::create() {
         Ok(ret) => ret,
         Err(_) => return libc::c_int::from(NssStatus::Success),
@@ -275,7 +275,7 @@ pub extern "C" fn _nss_ghteam_setgrent() -> libc::c_int {
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_getgrent_r(grptr: *mut Group, buf: *mut libc::c_char, buflen: libc::size_t,
+pub extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut libc::c_char, buflen: libc::size_t,
                                          grptrp: *mut *mut Group)
                                          -> libc::c_int {
     let (idx, idx_file, list) = match runfiles::open() {
@@ -296,7 +296,7 @@ pub extern "C" fn _nss_ghteam_getgrent_r(grptr: *mut Group, buf: *mut libc::c_ch
 }
 
 #[no_mangle]
-pub extern "C" fn _nss_ghteam_endgrent() -> libc::c_int {
+pub extern "C" fn _nss_sectora_endgrent() -> libc::c_int {
     runfiles::cleanup().unwrap_or(());
     libc::c_int::from(NssStatus::Success)
 }

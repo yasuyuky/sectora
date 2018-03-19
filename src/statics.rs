@@ -6,8 +6,8 @@ use std::string::String;
 use structs::Config;
 
 lazy_static! {
-    static ref DEFAULT_CONF_PATH_STR:String = String::from("/etc/ghteam-auth.conf");
-    static ref CONF_PATH_STR:String = env::var("GHTEAMAUTH_CONFIG").unwrap_or(DEFAULT_CONF_PATH_STR.clone());
+    static ref DEFAULT_CONF_PATH_STR:String = String::from("/etc/sectora.conf");
+    static ref CONF_PATH_STR:String = env::var("SECTORA_CONFIG").unwrap_or(DEFAULT_CONF_PATH_STR.clone());
     static ref CONF_PATH:&'static Path = Path::new(&(*CONF_PATH_STR));
     pub static ref CONFIG:Config = match Config::new(&CONF_PATH) {
         Ok(config) => config,
