@@ -1,5 +1,5 @@
 [package]
-name = "ghteam-auth"
+name = "sectora"
 version = "0.1.0"
 authors = ["Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"]
 
@@ -16,10 +16,10 @@ lazy_static = "1.0.0"
 nix = "0.9.0"
 
 [[bin]]
-name = "ghteam-auth"
+name = "sectora"
 path = "src/main.rs"
 
 [lib]
-name = "nss_ghteam"
+name = "nss_sectora"
 path = "src/lib.rs"
 crate-type = ["cdylib"]

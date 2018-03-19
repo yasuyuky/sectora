@@ -1,7 +1,7 @@
 version: 2
 jobs:
   build:
-    working_directory: /tmp/ghteam-auth
+    working_directory: /tmp/sectora
     docker:
       - image: yasuyuky/rust-ssl-static:1.24.1
     steps:
@@ -9,7 +9,7 @@ jobs:
       - run: cargo build
 
   build-arm:
-    working_directory: /tmp/ghteam-auth
+    working_directory: /tmp/sectora
     docker:
       - image: yasuyuky/rust-arm:1.24.1
     steps:
