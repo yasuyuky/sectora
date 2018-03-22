@@ -4,8 +4,7 @@
 
 (formerly named as **ghteam-auth**)
 
-The program for ssh authentication using github team/repo.
-
+Using this program, you can grant login privileges on your servers to github team members or outside collaborators of your repository.
 
 Implemented with Rust.
 
