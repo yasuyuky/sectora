@@ -19,10 +19,10 @@ mod statics;
 use statics::CLIENT;
 
 macro_rules! syslog {
-    ($msg:expr) => (
+    ($level:path, $msg:expr) => (
         unsafe {
             libc::openlog("sectora".as_ptr() as *const i8, libc::LOG_PID, libc::LOG_AUTH);
-            libc::syslog(libc::LOG_NOTICE, $msg.as_ptr() as *const i8);
+            libc::syslog($level, $msg.as_ptr() as *const i8);
             libc::closelog();
         }
     )
@@ -53,11 +53,11 @@ fn main() {
     match app.subcommand() {
         ("key", Some(sub)) => match CLIENT.print_user_public_key(sub.value_of("USER").unwrap()) {
             Ok(_) => {
-                syslog!("sectora key (success).");
+                syslog!(libc::LOG_NOTICE, "sectora key (success).");
                 process::exit(0)
             }
             Err(_) => {
-                syslog!("sectora key (fail).");
+                syslog!(libc::LOG_WARNING, "sectora key (fail).");
                 process::exit(21)
             }
         },
@@ -69,10 +69,10 @@ fn main() {
         ("pam", Some(_)) => match env::var("PAM_USER") {
             Ok(user) => {
                 if CLIENT.check_pam(&user).unwrap() {
-                    syslog!("sectora pam (success).");
+                    syslog!(libc::LOG_NOTICE, "sectora pam (success).");
                     process::exit(0);
                 } else {
-                    syslog!("sectora pam (fail).");
+                    syslog!(libc::LOG_WARNING, "sectora pam (fail).");
                     process::exit(1)
                 }
             }
