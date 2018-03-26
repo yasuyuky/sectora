@@ -45,7 +45,7 @@ impl From<NssStatus> for libc::c_int {
 
 fn string_from(cstrptr: *const libc::c_char) -> String {
     let cstr: &CStr = unsafe { CStr::from_ptr(cstrptr) };
-    String::from(cstr.to_str().unwrap())
+    String::from(cstr.to_str().unwrap_or(""))
 }
 
 macro_rules! succeed {
