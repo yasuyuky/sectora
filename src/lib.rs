@@ -232,7 +232,6 @@ pub extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut Group, b
 pub extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, grptr: *mut Group, buf: *mut libc::c_char,
                                           buflen: libc::size_t, errnop: *mut libc::c_int)
                                           -> libc::c_int {
-    syslog!(libc::LOG_NOTICE, "_nss_sectora_getgrnam_r");
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
     for sector in CLIENT.get_sectors() {
