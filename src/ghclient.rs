@@ -53,12 +53,29 @@ impl GithubClient {
     }
 
     fn get_content_from_url(&self, url: &str) -> Result<String, CliError> {
-        let token = String::from("token ") + &self.conf.token;
-        let res = self.client.get(url).header(Authorization(token)).send();
-        let mut content = String::new();
-        res?.read_to_string(&mut content)?;
+        let mut all_contents: Vec<serde_json::value::Value> = Vec::new();
+        let mut page = 1;
+        loop {
+            let mut new_array = self.get_content_from_url_page(url, page)?;
+            if new_array.is_empty() {
+                break;
+            }
+            all_contents.append(&mut new_array);
+            page += 1;
+        }
+        let content = serde_json::ser::to_string(&all_contents)?;
         self.store_content_to_cache(url, &content)?;
         Ok(content)
+    }
+
+    fn get_content_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::value::Value>, CliError> {
+        let token = String::from("token ") + &self.conf.token;
+        let sep = if url.contains("?") { "&" } else { "?" };
+        let url_p = format!("{}{}page={}", url, sep, page);
+        let res = self.client.get(&url_p).header(Authorization(token)).send();
+        let mut content = String::new();
+        res?.read_to_string(&mut content)?;
+        Ok(serde_json::from_str::<Vec<serde_json::value::Value>>(&content)?)
     }
 
     fn get_content(&self, url: &str) -> Result<String, CliError> {
