@@ -49,27 +49,25 @@ fn string_from(cstrptr: *const libc::c_char) -> String {
 }
 
 macro_rules! succeed {
-    ($ret_struct_p:ident,$ret_struct:ident) => {{
-        unsafe { *$ret_struct_p = $ret_struct };
+    () => {{
         return libc::c_int::from(NssStatus::Success);
     }};
-    ($ret_struct_p:ident,$ret_struct:ident,$finalize:expr) => {{
+    ($finalize:expr) => {{
         $finalize;
-        unsafe { *$ret_struct_p = $ret_struct };
         return libc::c_int::from(NssStatus::Success);
     }}
 }
 
 macro_rules! fail {
-    ($ret_struct_p:ident, $return_val:expr) => {{
-        unsafe { *$ret_struct_p = std::ptr::null_mut() };
-        return $return_val;
+    ($err_no_p:ident, $err_no:expr, $return_val:expr) => {{
+        unsafe { *$err_no_p = $err_no as libc::c_int};
+        return libc::c_int::from($return_val);
     }}
 }
 
 #[no_mangle]
 pub extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, pwptr: *mut Passwd, buf: *mut libc::c_char,
-                                          buflen: libc::size_t, pwptrp: *mut *mut Passwd)
+                                          buflen: libc::size_t, errnop: *mut libc::c_int)
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
@@ -82,17 +80,17 @@ pub extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, pwptr: 
                                          sector.get_gid(),
                                          &CONFIG)
                   } {
-                Ok(_) => succeed!(pwptrp, pwptr),
-                Err(_) => fail!(pwptrp, nix::Errno::ERANGE as libc::c_int),
+                Ok(_) => succeed!(),
+                Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
             }
         }
     }
-    fail!(pwptrp, libc::c_int::from(NssStatus::NotFound))
+    fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound)
 }
 
 #[no_mangle]
 pub extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, buf: *mut libc::c_char,
-                                          buflen: libc::size_t, pwptrp: *mut *mut Passwd)
+                                          buflen: libc::size_t, errnop: *mut libc::c_int)
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     for sector in CLIENT.get_sectors() {
@@ -105,13 +103,13 @@ pub extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, 
                                              sector.get_gid(),
                                              &CONFIG)
                       } {
-                    Ok(_) => succeed!(pwptrp, pwptr),
-                    Err(_) => fail!(pwptrp, nix::Errno::ERANGE as libc::c_int),
+                    Ok(_) => succeed!(),
+                    Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
                 }
             }
         }
     }
-    fail!(pwptrp, libc::c_int::from(NssStatus::NotFound))
+    fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound)
 }
 
 #[no_mangle]
@@ -131,11 +129,11 @@ pub extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
 
 #[no_mangle]
 pub extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut libc::c_char, buflen: libc::size_t,
-                                          pwptrp: *mut *mut Passwd)
+                                          errnop: *mut libc::c_int)
                                           -> libc::c_int {
     let (idx, idx_file, list) = match runfiles::open() {
         Ok(ret) => ret,
-        Err(_) => fail!(pwptrp, libc::c_int::from(NssStatus::Unavail)),
+        Err(_) => fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound),
     };
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
@@ -143,11 +141,11 @@ pub extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut libc::c_
         let id = words[1].parse::<u64>().unwrap();
         let gid = words[2].parse::<u64>().unwrap();
         match unsafe { (*pwptr).pack_args(&mut buffer, words[0], id, gid, &CONFIG) } {
-            Ok(_) => succeed!(pwptrp, pwptr, runfiles::increment(idx, idx_file)),
-            Err(_) => fail!(pwptrp, nix::Errno::ERANGE as libc::c_int),
+            Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
+            Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
         }
     }
-    fail!(pwptrp, libc::c_int::from(NssStatus::Unavail))
+    fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound)
 }
 
 #[no_mangle]
@@ -158,19 +156,19 @@ pub extern "C" fn _nss_sectora_endpwent() -> libc::c_int {
 
 #[no_mangle]
 pub extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, spptr: *mut Spwd, buf: *mut libc::c_char,
-                                          buflen: libc::size_t, spptrp: *mut *mut Spwd)
+                                          buflen: libc::size_t, errnop: *mut libc::c_int)
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
     for sector in CLIENT.get_sectors() {
         if let Some(member) = sector.members.get(&name) {
             match unsafe { (*spptr).pack_args(&mut buffer, &member.login, &CONFIG) } {
-                Ok(_) => succeed!(spptrp, spptr),
-                Err(_) => fail!(spptrp, nix::Errno::ERANGE as libc::c_int),
+                Ok(_) => succeed!(),
+                Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
             }
         }
     }
-    fail!(spptrp, libc::c_int::from(NssStatus::NotFound))
+    fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound)
 }
 
 #[no_mangle]
@@ -190,21 +188,21 @@ pub extern "C" fn _nss_sectora_setspent() -> libc::c_int {
 
 #[no_mangle]
 pub extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut libc::c_char, buflen: libc::size_t,
-                                          spptrp: *mut *mut Spwd)
+                                          errnop: *mut libc::c_int)
                                           -> libc::c_int {
     let (idx, idx_file, list) = match runfiles::open() {
         Ok(ret) => ret,
-        Err(_) => fail!(spptrp, libc::c_int::from(NssStatus::Unavail)),
+        Err(_) => fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound),
     };
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let words: Vec<&str> = line.split("\t").collect();
         match unsafe { (*spptr).pack_args(&mut buffer, words[0], &CONFIG) } {
-            Ok(_) => succeed!(spptrp, spptr, runfiles::increment(idx, idx_file)),
-            Err(_) => fail!(spptrp, nix::Errno::ERANGE as libc::c_int),
+            Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
+            Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
         }
     }
-    fail!(spptrp, libc::c_int::from(NssStatus::Unavail))
+    fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound)
 }
 
 #[no_mangle]
@@ -215,37 +213,38 @@ pub extern "C" fn _nss_sectora_endspent() -> libc::c_int {
 
 #[no_mangle]
 pub extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut Group, buf: *mut libc::c_char,
-                                          buflen: libc::size_t, grptrp: *mut *mut Group)
+                                          buflen: libc::size_t, errnop: *mut libc::c_int)
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     for sector in CLIENT.get_sectors() {
         let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
         if gid as u64 == sector.get_gid() {
             match unsafe { (*grptr).pack_args(&mut buffer, &sector.get_group(), gid as u64, &members) } {
-                Ok(_) => succeed!(grptrp, grptr),
-                Err(_) => fail!(grptrp, nix::Errno::ERANGE as libc::c_int),
+                Ok(_) => succeed!(),
+                Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
             }
         }
     }
-    fail!(grptrp, libc::c_int::from(NssStatus::NotFound))
+    fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound)
 }
 
 #[no_mangle]
 pub extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, grptr: *mut Group, buf: *mut libc::c_char,
-                                          buflen: libc::size_t, grptrp: *mut *mut Group)
+                                          buflen: libc::size_t, errnop: *mut libc::c_int)
                                           -> libc::c_int {
+    syslog!(libc::LOG_NOTICE, "_nss_sectora_getgrnam_r");
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
     for sector in CLIENT.get_sectors() {
         let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
         if name == sector.get_group() {
             match unsafe { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
-                Ok(_) => succeed!(grptrp, grptr),
-                Err(_) => fail!(grptrp, nix::Errno::ERANGE as libc::c_int),
+                Ok(_) => succeed!(),
+                Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
             }
         }
     }
-    fail!(grptrp, libc::c_int::from(NssStatus::NotFound))
+    fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound)
 }
 
 #[no_mangle]
@@ -276,11 +275,11 @@ pub extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
 
 #[no_mangle]
 pub extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut libc::c_char, buflen: libc::size_t,
-                                          grptrp: *mut *mut Group)
+                                          errnop: *mut libc::c_int)
                                           -> libc::c_int {
     let (idx, idx_file, list) = match runfiles::open() {
         Ok(ret) => ret,
-        Err(_) => fail!(grptrp, libc::c_int::from(NssStatus::Unavail)),
+        Err(_) => fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound),
     };
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
@@ -288,11 +287,11 @@ pub extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut libc::c_c
         let member_names: Vec<&str> = words[2].split(" ").collect();
         let gid = words[1].parse::<u64>().unwrap();
         match unsafe { (*grptr).pack_args(&mut buffer, words[0], gid, &member_names) } {
-            Ok(_) => succeed!(grptrp, grptr, runfiles::increment(idx, idx_file)),
-            Err(_) => fail!(grptrp, nix::Errno::ERANGE as libc::c_int),
+            Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
+            Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
         }
     }
-    fail!(grptrp, libc::c_int::from(NssStatus::Unavail))
+    fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound)
 }
 
 #[no_mangle]
