@@ -170,8 +170,7 @@ impl GithubClient {
     }
 
     fn get_repo_map(&self) -> Result<HashMap<String, Repo>, CliError> {
-        let url = format!("{}/orgs/{}/repos?per_page=100",
-                          self.conf.endpoint, self.conf.org);
+        let url = format!("{}/orgs/{}/repos", self.conf.endpoint, self.conf.org);
         let content = self.get_content(&url)?;
         let repos = serde_json::from_str::<Vec<Repo>>(&content)?;
         Ok(repos.iter().map(|t| (t.name.clone(), t.clone())).collect())
