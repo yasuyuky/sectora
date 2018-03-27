@@ -18,7 +18,7 @@ impl Buffer {
     }
 
     fn write(&mut self, data: *const libc::c_char, len: usize) -> Result<*mut libc::c_char, Error> {
-        if self.buflen < len as libc::size_t {
+        if self.buflen < len + self.offset as libc::size_t {
             return Err(Error::new(ErrorKind::AddrNotAvailable, "ERANGE"));
         }
         unsafe {
@@ -34,7 +34,7 @@ impl Buffer {
         use std::mem::size_of;
         let step = std::cmp::max(size_of::<*mut libc::c_char>() / size_of::<libc::c_char>(),
                                  1);
-        if self.buflen < (ptrs.len() + 1) * step as libc::size_t {
+        if self.buflen < (((ptrs.len() + 1) * step) as isize + self.offset) as libc::size_t {
             return Err(Error::new(ErrorKind::AddrNotAvailable, "ERANGE"));
         }
         unsafe {
