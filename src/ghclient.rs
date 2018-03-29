@@ -115,14 +115,14 @@ impl GithubClient {
 
     #[allow(dead_code)]
     pub fn check_pam(&self, user: &str) -> Result<bool, CliError> {
-        let sectors = self.get_sectors();
+        let sectors = self.get_sectors()?;
         Ok(sectors.iter().any(|team| team.members.contains_key(user)))
     }
 
-    pub fn get_sectors(&self) -> Vec<SectorGroup> {
-        let mut sectors: Vec<SectorGroup> = self.get_teams_result().unwrap_or(Vec::new());
-        sectors.append(&mut self.get_repos_result().unwrap_or(Vec::new()));
-        sectors
+    pub fn get_sectors(&self) -> Result<Vec<SectorGroup>, CliError> {
+        let mut sectors: Vec<SectorGroup> = self.get_teams_result()?;
+        sectors.append(&mut self.get_repos_result()?);
+        Ok(sectors)
     }
 
     fn get_teams_result(&self) -> Result<Vec<SectorGroup>, CliError> {
