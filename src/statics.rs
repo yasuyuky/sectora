@@ -14,7 +14,7 @@ lazy_static! {
         Err(err) => {
             println!("Failed to open configuration file: {:?}", *CONF_PATH);
             println!("[{:?}]", err);
-            std::process::exit(11);
+            std::process::exit(-2);
         }
     };
     pub static ref CLIENT:GithubClient = GithubClient::new(&CONFIG);
