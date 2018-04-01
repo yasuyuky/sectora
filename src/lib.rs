@@ -15,8 +15,8 @@ extern crate libc;
 
 mod structs;
 use structs::Config;
-mod ghclient;
 mod buffer;
+mod ghclient;
 use buffer::Buffer;
 mod cstructs;
 use cstructs::{Group, Passwd, Spwd};
@@ -55,14 +55,14 @@ macro_rules! succeed {
     ($finalize:expr) => {{
         $finalize;
         return libc::c_int::from(NssStatus::Success);
-    }}
+    }};
 }
 
 macro_rules! fail {
     ($err_no_p:ident, $err_no:expr, $return_val:expr) => {{
-        unsafe { *$err_no_p = $err_no as libc::c_int};
+        unsafe { *$err_no_p = $err_no as libc::c_int };
         return libc::c_int::from($return_val);
-    }}
+    }};
 }
 
 #[no_mangle]
@@ -72,20 +72,18 @@ pub extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, pwptr: 
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
     match CLIENT.get_sectors() {
-        Ok(sectors) => for sector in sectors {
-            if let Some(member) = sector.members.get(&name) {
-                match unsafe {
-                          (*pwptr).pack_args(&mut buffer,
-                                             &member.login,
-                                             member.id,
-                                             sector.get_gid(),
-                                             &CONFIG)
-                      } {
-                    Ok(_) => succeed!(),
-                    Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
+        Ok(sectors) => {
+            for sector in sectors {
+                if let Some(member) = sector.members.get(&name) {
+                    match unsafe {
+                              (*pwptr).pack_args(&mut buffer, &member.login, member.id, sector.get_gid(), &CONFIG)
+                          } {
+                        Ok(_) => succeed!(),
+                        Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
+                    }
                 }
             }
-        },
+        }
         Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
     }
     fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound)
@@ -97,22 +95,20 @@ pub extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, 
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     match CLIENT.get_sectors() {
-        Ok(sectors) => for sector in sectors {
-            for member in sector.members.values() {
-                if uid == member.id as libc::uid_t {
-                    match unsafe {
-                              (*pwptr).pack_args(&mut buffer,
-                                                 &member.login,
-                                                 member.id,
-                                                 sector.get_gid(),
-                                                 &CONFIG)
-                          } {
-                        Ok(_) => succeed!(),
-                        Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
+        Ok(sectors) => {
+            for sector in sectors {
+                for member in sector.members.values() {
+                    if uid == member.id as libc::uid_t {
+                        match unsafe {
+                                  (*pwptr).pack_args(&mut buffer, &member.login, member.id, sector.get_gid(), &CONFIG)
+                              } {
+                            Ok(_) => succeed!(),
+                            Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
+                        }
                     }
                 }
             }
-        },
+        }
         Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
     }
     fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound)
@@ -125,12 +121,14 @@ pub extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
         Err(_) => return libc::c_int::from(NssStatus::Success),
     };
     match CLIENT.get_sectors() {
-        Ok(sectors) => for sector in sectors {
-            for member in sector.members.values() {
-                list_file.write(format!("{}\t{}\t{}\n", member.login, member.id, sector.get_gid()).as_bytes())
-                         .unwrap();
+        Ok(sectors) => {
+            for sector in sectors {
+                for member in sector.members.values() {
+                    list_file.write(format!("{}\t{}\t{}\n", member.login, member.id, sector.get_gid()).as_bytes())
+                             .unwrap();
+                }
             }
-        },
+        }
         Err(_) => return libc::c_int::from(NssStatus::TryAgain),
     }
     libc::c_int::from(NssStatus::Success)
@@ -170,14 +168,16 @@ pub extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, spptr: 
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
     match CLIENT.get_sectors() {
-        Ok(sectors) => for sector in sectors {
-            if let Some(member) = sector.members.get(&name) {
-                match unsafe { (*spptr).pack_args(&mut buffer, &member.login, &CONFIG) } {
-                    Ok(_) => succeed!(),
-                    Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
+        Ok(sectors) => {
+            for sector in sectors {
+                if let Some(member) = sector.members.get(&name) {
+                    match unsafe { (*spptr).pack_args(&mut buffer, &member.login, &CONFIG) } {
+                        Ok(_) => succeed!(),
+                        Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
+                    }
                 }
             }
-        },
+        }
 
         Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
     }
@@ -191,12 +191,14 @@ pub extern "C" fn _nss_sectora_setspent() -> libc::c_int {
         Err(_) => return libc::c_int::from(NssStatus::Success),
     };
     match CLIENT.get_sectors() {
-        Ok(sectors) => for sector in sectors {
-            for member in sector.members.values() {
-                list_file.write(format!("{}\t{}\n", member.login, member.id).as_bytes())
-                         .unwrap();
+        Ok(sectors) => {
+            for sector in sectors {
+                for member in sector.members.values() {
+                    list_file.write(format!("{}\t{}\n", member.login, member.id).as_bytes())
+                             .unwrap();
+                }
             }
-        },
+        }
         Err(_) => return libc::c_int::from(NssStatus::TryAgain),
     }
     libc::c_int::from(NssStatus::Success)
@@ -233,15 +235,17 @@ pub extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut Group, b
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     match CLIENT.get_sectors() {
-        Ok(sectors) => for sector in sectors {
-            let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
-            if gid as u64 == sector.get_gid() {
-                match unsafe { (*grptr).pack_args(&mut buffer, &sector.get_group(), gid as u64, &members) } {
-                    Ok(_) => succeed!(),
-                    Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
+        Ok(sectors) => {
+            for sector in sectors {
+                let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
+                if gid as u64 == sector.get_gid() {
+                    match unsafe { (*grptr).pack_args(&mut buffer, &sector.get_group(), gid as u64, &members) } {
+                        Ok(_) => succeed!(),
+                        Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
+                    }
                 }
             }
-        },
+        }
 
         Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
     }
@@ -255,15 +259,17 @@ pub extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, grptr: 
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
     match CLIENT.get_sectors() {
-        Ok(sectors) => for sector in sectors {
-            let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
-            if name == sector.get_group() {
-                match unsafe { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
-                    Ok(_) => succeed!(),
-                    Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
+        Ok(sectors) => {
+            for sector in sectors {
+                let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
+                if name == sector.get_group() {
+                    match unsafe { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
+                        Ok(_) => succeed!(),
+                        Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
+                    }
                 }
             }
-        },
+        }
         Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
     }
     fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound)
@@ -277,23 +283,18 @@ pub extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
     };
 
     match CLIENT.get_sectors() {
-        Ok(sectors) => for sector in sectors {
-            let member_names = sector.members
-                                     .values()
-                                     .map(|x| x.login.as_str())
-                                     .collect::<Vec<&str>>()
-                                     .join(" ");
-            list_file
-            .write(
-                format!(
-                    "{}\t{}\t{}\n",
-                    sector.get_group(),
-                    sector.get_gid(),
-                    member_names
-                ).as_bytes(),
-            )
-            .unwrap();
-        },
+        Ok(sectors) => {
+            for sector in sectors {
+                let member_names = sector.members
+                                         .values()
+                                         .map(|x| x.login.as_str())
+                                         .collect::<Vec<&str>>()
+                                         .join(" ");
+                list_file.write(format!("{}\t{}\t{}\n", sector.get_group(), sector.get_gid(), member_names).as_bytes())
+                         .unwrap();
+            }
+        }
+
         Err(_) => return libc::c_int::from(NssStatus::TryAgain),
     }
     libc::c_int::from(NssStatus::Success)

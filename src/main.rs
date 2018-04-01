@@ -13,20 +13,16 @@ extern crate lazy_static;
 
 extern crate libc;
 
-mod structs;
 mod ghclient;
 mod statics;
+mod structs;
 #[macro_use]
 mod syslog;
 use statics::CLIENT;
 
 fn main() {
-    let user_arg = Arg::with_name("USER").required(true)
-                                         .index(1)
-                                         .help("user name");
-    let conf_arg = Arg::with_name("CONF").required(true)
-                                         .index(1)
-                                         .help("conf path");
+    let user_arg = Arg::with_name("USER").required(true).index(1).help("user name");
+    let conf_arg = Arg::with_name("CONF").required(true).index(1).help("conf path");
     let app = App::new(crate_name!()).version(crate_version!())
                                      .author(crate_authors!())
                                      .about(crate_description!())

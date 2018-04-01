@@ -108,9 +108,7 @@ impl GithubClient {
         let url = format!("{}/users/{}/keys", self.conf.endpoint, user);
         let content = self.get_content(&url)?;
         let keys = serde_json::from_str::<Vec<PublicKey>>(&content)?;
-        Ok(keys.iter().map(|k| k.key.clone())
-               .collect::<Vec<String>>()
-               .join("\n"))
+        Ok(keys.iter().map(|k| k.key.clone()).collect::<Vec<String>>().join("\n"))
     }
 
     #[allow(dead_code)]
@@ -150,9 +148,7 @@ impl GithubClient {
         let url = format!("{}/teams/{}/members", self.conf.endpoint, mid);
         let content = self.get_content(&url)?;
         let members = serde_json::from_str::<Vec<Member>>(&content)?;
-        Ok(members.iter()
-                  .map(|m| (m.login.clone(), m.clone()))
-                  .collect())
+        Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
     }
 
     fn get_repos_result(&self) -> Result<Vec<SectorGroup>, CliError> {
@@ -181,9 +177,7 @@ impl GithubClient {
                           self.conf.endpoint, self.conf.org, repo_name);
         let content = self.get_content(&url)?;
         let members = serde_json::from_str::<Vec<Member>>(&content)?;
-        Ok(members.iter()
-                  .map(|m| (m.login.clone(), m.clone()))
-                  .collect())
+        Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
     }
 
     #[allow(dead_code)]

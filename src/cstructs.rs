@@ -45,14 +45,7 @@ impl Passwd {
             },
             Err(_) => conf.sh.clone(),
         };
-        self.pack(buf,
-                  name,
-                  "x",
-                  id as libc::uid_t,
-                  gid as libc::gid_t,
-                  "",
-                  &home,
-                  &sh)
+        self.pack(buf, name, "x", id as libc::uid_t, gid as libc::gid_t, "", &home, &sh)
     }
 }
 
