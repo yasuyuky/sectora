@@ -118,7 +118,7 @@ pub extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, 
 pub extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
     let mut list_file = match runfiles::create() {
         Ok(ret) => ret,
-        Err(_) => return libc::c_int::from(NssStatus::Success),
+        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
     };
     match CLIENT.get_sectors() {
         Ok(sectors) => {
@@ -188,7 +188,7 @@ pub extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, spptr: 
 pub extern "C" fn _nss_sectora_setspent() -> libc::c_int {
     let mut list_file = match runfiles::create() {
         Ok(ret) => ret,
-        Err(_) => return libc::c_int::from(NssStatus::Success),
+        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
     };
     match CLIENT.get_sectors() {
         Ok(sectors) => {
@@ -279,7 +279,7 @@ pub extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, grptr: 
 pub extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
     let mut list_file = match runfiles::create() {
         Ok(ret) => ret,
-        Err(_) => return libc::c_int::from(NssStatus::Success),
+        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
     };
 
     match CLIENT.get_sectors() {
