@@ -1,4 +1,4 @@
-use reqwest;
+use hyper;
 use serde_json;
 use std;
 use std::collections::HashMap;
@@ -148,20 +148,20 @@ pub struct PublicKey {
 #[derive(Debug)]
 pub enum CliError {
     Serde(serde_json::Error),
-    Reqwest(reqwest::Error),
     Io(std::io::Error),
     Toml(toml::de::Error),
+    Hyper(hyper::Error),
 }
 
 impl From<serde_json::Error> for CliError {
     fn from(err: serde_json::Error) -> CliError { CliError::Serde(err) }
-}
-impl From<reqwest::Error> for CliError {
-    fn from(err: reqwest::Error) -> CliError { CliError::Reqwest(err) }
 }
 impl From<std::io::Error> for CliError {
     fn from(err: std::io::Error) -> CliError { CliError::Io(err) }
 }
 impl From<toml::de::Error> for CliError {
     fn from(err: toml::de::Error) -> CliError { CliError::Toml(err) }
+}
+impl From<hyper::Error> for CliError {
+    fn from(err: hyper::Error) -> CliError { CliError::Hyper(err) }
 }

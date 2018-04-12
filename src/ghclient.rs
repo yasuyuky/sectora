@@ -1,6 +1,4 @@
 use glob::glob;
-use reqwest;
-use reqwest::header::Authorization;
 use serde_json;
 use std;
 use std::collections::HashMap;
@@ -8,8 +6,13 @@ use std::fs::File;
 use std::io::prelude::*;
 use structs::{CliError, Config, Member, PublicKey, Repo, Sector, SectorGroup, Team};
 
+use futures::future::Future;
+use futures::stream::Stream;
+use hyper::{header, Client, Method, Request};
+use hyper_rustls::HttpsConnector;
+use tokio_core::reactor;
+
 pub struct GithubClient {
-    client: reqwest::Client,
     conf: Config,
 }
 
@@ -18,14 +21,7 @@ impl GithubClient {
         if std::env::var("SSL_CERT_FILE").is_err() {
             std::env::set_var("SSL_CERT_FILE", &config.cert_path);
         }
-        GithubClient { client: match config.proxy_url {
-                           Some(ref proxy_url) => {
-                               let p = reqwest::Proxy::all(proxy_url).unwrap();
-                               reqwest::Client::builder().proxy(p).build().unwrap()
-                           }
-                           None => reqwest::Client::new(),
-                       },
-                       conf: config.clone(), }
+        GithubClient { conf: config.clone() }
     }
 
     fn get_cache_path(url: &str) -> std::path::PathBuf {
@@ -72,10 +68,20 @@ impl GithubClient {
         let token = String::from("token ") + &self.conf.token;
         let sep = if url.contains("?") { "&" } else { "?" };
         let url_p = format!("{}{}page={}", url, sep, page);
-        let res = self.client.get(&url_p).header(Authorization(token)).send();
-        let mut content = String::new();
-        res?.read_to_string(&mut content)?;
-        Ok(serde_json::from_str::<Vec<serde_json::value::Value>>(&content)?)
+        let mut req: Request = Request::new(Method::Get, url_p.parse().unwrap());
+        req.headers_mut().set(header::Authorization(token));
+        req.headers_mut().set(header::UserAgent::new("sectora"));
+        let mut core = reactor::Core::new()?;
+        let client = Client::configure().connector(HttpsConnector::new(4, &core.handle()))
+                                        .build(&core.handle());
+        let work = client.request(req).and_then(|res| {
+            res.body().concat2().and_then(move |body| {
+                let v =
+                    serde_json::from_slice::<Vec<serde_json::value::Value>>(&body).map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, format!("output:{:?}", body)))?;
+                Ok(v)
+            })
+        });
+        Ok(core.run(work)?)
     }
 
     fn get_content(&self, url: &str) -> Result<String, CliError> {

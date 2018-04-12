@@ -2,7 +2,6 @@
 extern crate clap;
 use clap::{App, Arg, SubCommand};
 extern crate glob;
-extern crate reqwest;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
@@ -19,6 +18,10 @@ mod structs;
 #[macro_use]
 mod syslog;
 use statics::CLIENT;
+extern crate futures;
+extern crate hyper;
+extern crate hyper_rustls;
+extern crate tokio_core;
 
 fn main() {
     let user_arg = Arg::with_name("USER").required(true).index(1).help("user name");

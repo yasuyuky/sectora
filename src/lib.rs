@@ -1,6 +1,5 @@
 extern crate glob;
 extern crate nix;
-extern crate reqwest;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
@@ -23,6 +22,10 @@ use cstructs::{Group, Passwd, Spwd};
 mod runfiles;
 mod statics;
 use statics::{CLIENT, CONFIG};
+extern crate futures;
+extern crate hyper;
+extern crate hyper_rustls;
+extern crate tokio_core;
 
 #[allow(dead_code)]
 enum NssStatus {
