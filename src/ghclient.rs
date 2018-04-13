@@ -64,13 +64,18 @@ impl GithubClient {
         Ok(content)
     }
 
-    fn get_content_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::value::Value>, CliError> {
+    fn build_page_request(&self, url: &str, page: u64) -> Request {
         let token = String::from("token ") + &self.conf.token;
         let sep = if url.contains("?") { "&" } else { "?" };
         let url_p = format!("{}{}page={}", url, sep, page);
         let mut req: Request = Request::new(Method::Get, url_p.parse().unwrap());
         req.headers_mut().set(header::Authorization(token));
         req.headers_mut().set(header::UserAgent::new("sectora"));
+        req
+    }
+
+    fn get_content_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::value::Value>, CliError> {
+        let req = self.build_page_request(url, page);
         let mut core = reactor::Core::new()?;
         let client = Client::configure().connector(HttpsConnector::new(4, &core.handle()))
                                         .build(&core.handle());
