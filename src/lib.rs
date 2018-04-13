@@ -13,15 +13,16 @@ use std::io::{BufRead, Write};
 extern crate libc;
 
 mod structs;
-use structs::Config;
+use structs::{CliError, Config};
 mod buffer;
 mod ghclient;
 use buffer::Buffer;
+use ghclient::GithubClient;
 mod cstructs;
 use cstructs::{Group, Passwd, Spwd};
 mod runfiles;
 mod statics;
-use statics::{CLIENT, CONFIG};
+use statics::CONF_PATH;
 extern crate futures;
 extern crate hyper;
 extern crate hyper_rustls;
@@ -51,6 +52,12 @@ fn string_from(cstrptr: *const libc::c_char) -> String {
     String::from(cstr.to_str().unwrap_or(""))
 }
 
+fn create_conf_cli() -> Result<(Config, GithubClient), CliError> {
+    let config: Config = Config::new(&CONF_PATH)?;
+    let client: GithubClient = GithubClient::new(&config);
+    Ok((config, client))
+}
+
 macro_rules! succeed {
     () => {{
         return libc::c_int::from(NssStatus::Success);
@@ -74,13 +81,17 @@ pub extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, pwptr: 
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let sectors = match CLIENT.get_sectors() {
+    let (config, client) = match create_conf_cli() {
+        Ok(cc) => cc,
+        Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
+    };
+    let sectors = match client.get_sectors() {
         Ok(sectors) => sectors,
         Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
     };
     for sector in sectors {
         if let Some(member) = sector.members.get(&name) {
-            match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, sector.get_gid(), &CONFIG) } {
+            match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, sector.get_gid(), &config) } {
                 Ok(_) => succeed!(),
                 Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
             }
@@ -94,14 +105,18 @@ pub extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, 
                                           buflen: libc::size_t, errnop: *mut libc::c_int)
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let sectors = match CLIENT.get_sectors() {
+    let (config, client) = match create_conf_cli() {
+        Ok(cc) => cc,
+        Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
+    };
+    let sectors = match client.get_sectors() {
         Ok(sectors) => sectors,
         Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
     };
     for sector in sectors {
         for member in sector.members.values() {
             if uid == member.id as libc::uid_t {
-                match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, sector.get_gid(), &CONFIG) } {
+                match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, sector.get_gid(), &config) } {
                     Ok(_) => succeed!(),
                     Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
                 }
@@ -117,7 +132,11 @@ pub extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
         Ok(ret) => ret,
         Err(_) => return libc::c_int::from(NssStatus::TryAgain),
     };
-    let sectors = match CLIENT.get_sectors() {
+    let (_, client) = match create_conf_cli() {
+        Ok(cc) => cc,
+        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
+    };
+    let sectors = match client.get_sectors() {
         Ok(sectors) => sectors,
         Err(_) => return libc::c_int::from(NssStatus::TryAgain),
     };
@@ -138,12 +157,16 @@ pub extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut libc::c_
         Ok(ret) => ret,
         Err(_) => fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound),
     };
+    let (config, _) = match create_conf_cli() {
+        Ok(cc) => cc,
+        Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
+    };
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let words: Vec<&str> = line.split("\t").collect();
         let id = words[1].parse::<u64>().unwrap();
         let gid = words[2].parse::<u64>().unwrap();
-        match unsafe { (*pwptr).pack_args(&mut buffer, words[0], id, gid, &CONFIG) } {
+        match unsafe { (*pwptr).pack_args(&mut buffer, words[0], id, gid, &config) } {
             Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
             Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -163,13 +186,17 @@ pub extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, spptr: 
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let sectors = match CLIENT.get_sectors() {
+    let (config, client) = match create_conf_cli() {
+        Ok(cc) => cc,
+        Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
+    };
+    let sectors = match client.get_sectors() {
         Ok(sectors) => sectors,
         Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
     };
     for sector in sectors {
         if let Some(member) = sector.members.get(&name) {
-            match unsafe { (*spptr).pack_args(&mut buffer, &member.login, &CONFIG) } {
+            match unsafe { (*spptr).pack_args(&mut buffer, &member.login, &config) } {
                 Ok(_) => succeed!(),
                 Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
             }
@@ -184,7 +211,11 @@ pub extern "C" fn _nss_sectora_setspent() -> libc::c_int {
         Ok(ret) => ret,
         Err(_) => return libc::c_int::from(NssStatus::TryAgain),
     };
-    let sectors = match CLIENT.get_sectors() {
+    let (_, client) = match create_conf_cli() {
+        Ok(cc) => cc,
+        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
+    };
+    let sectors = match client.get_sectors() {
         Ok(sectors) => sectors,
         Err(_) => return libc::c_int::from(NssStatus::TryAgain),
     };
@@ -205,10 +236,14 @@ pub extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut libc::c_ch
         Ok(ret) => ret,
         Err(_) => fail!(errnop, nix::Errno::ENOENT, NssStatus::NotFound),
     };
+    let (config, _) = match create_conf_cli() {
+        Ok(cc) => cc,
+        Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
+    };
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let words: Vec<&str> = line.split("\t").collect();
-        match unsafe { (*spptr).pack_args(&mut buffer, words[0], &CONFIG) } {
+        match unsafe { (*spptr).pack_args(&mut buffer, words[0], &config) } {
             Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
             Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -227,7 +262,11 @@ pub extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut Group, b
                                           buflen: libc::size_t, errnop: *mut libc::c_int)
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let sectors = match CLIENT.get_sectors() {
+    let (_, client) = match create_conf_cli() {
+        Ok(cc) => cc,
+        Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
+    };
+    let sectors = match client.get_sectors() {
         Ok(sectors) => sectors,
         Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
     };
@@ -249,7 +288,11 @@ pub extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, grptr: 
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let sectors = match CLIENT.get_sectors() {
+    let (_, client) = match create_conf_cli() {
+        Ok(cc) => cc,
+        Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
+    };
+    let sectors = match client.get_sectors() {
         Ok(sectors) => sectors,
         Err(_) => fail!(errnop, nix::Errno::EAGAIN, NssStatus::TryAgain),
     };
@@ -271,7 +314,11 @@ pub extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
         Ok(ret) => ret,
         Err(_) => return libc::c_int::from(NssStatus::TryAgain),
     };
-    let sectors = match CLIENT.get_sectors() {
+    let (_, client) = match create_conf_cli() {
+        Ok(cc) => cc,
+        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
+    };
+    let sectors = match client.get_sectors() {
         Ok(sectors) => sectors,
         Err(_) => return libc::c_int::from(NssStatus::TryAgain),
     };

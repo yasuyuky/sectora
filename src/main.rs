@@ -17,7 +17,8 @@ mod statics;
 mod structs;
 #[macro_use]
 mod syslog;
-use statics::CLIENT;
+use statics::CONF_PATH;
+
 extern crate futures;
 extern crate hyper;
 extern crate hyper_rustls;
@@ -41,8 +42,17 @@ fn main() {
     use std::path::Path;
     use std::process;
 
+    let config = match structs::Config::new(&CONF_PATH) {
+        Ok(c) => c,
+        Err(_) => {
+            syslog!(libc::LOG_WARNING, "sectora fail to open config.");
+            process::exit(2);
+        }
+    };
+    let client = ghclient::GithubClient::new(&config);
+
     match app.subcommand() {
-        ("key", Some(sub)) => match CLIENT.print_user_public_key(sub.value_of("USER").unwrap()) {
+        ("key", Some(sub)) => match client.print_user_public_key(sub.value_of("USER").unwrap()) {
             Ok(_) => {
                 syslog!(libc::LOG_NOTICE, "sectora key (success).");
                 process::exit(0)
@@ -56,10 +66,10 @@ fn main() {
             Ok(_) => process::exit(0),
             Err(_) => process::exit(11),
         },
-        ("cleanup", Some(_)) => CLIENT.clear_all_caches().unwrap(),
+        ("cleanup", Some(_)) => client.clear_all_caches().unwrap(),
         ("pam", Some(_)) => match env::var("PAM_USER") {
             Ok(user) => {
-                if CLIENT.check_pam(&user).unwrap() {
+                if client.check_pam(&user).unwrap() {
                     syslog!(libc::LOG_NOTICE, "sectora pam (success).");
                     process::exit(0);
                 } else {
