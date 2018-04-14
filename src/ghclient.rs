@@ -42,7 +42,7 @@ impl GithubClient {
 
     fn store_content_to_cache(&self, url: &str, content: &str) -> Result<(), CliError> {
         let path = Self::get_cache_path(url);
-        std::fs::create_dir_all(path.parent().unwrap())?;
+        std::fs::create_dir_all(path.parent().unwrap_or(std::path::Path::new("/")))?;
         let mut f = File::create(path.to_str().unwrap())?;
         f.write(content.as_bytes())?;
         Ok(())
