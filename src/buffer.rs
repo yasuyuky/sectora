@@ -40,6 +40,8 @@ impl Buffer {
                 self.buflen -= step as libc::size_t;
             }
             *(mem.offset(ptrs.len() as isize)) = std::ptr::null_mut::<libc::c_char>();
+            self.offset += step as isize;
+            self.buflen -= step as libc::size_t;
             Ok(mem)
         }
     }
