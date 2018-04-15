@@ -164,8 +164,8 @@ pub extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut libc::c_
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let words: Vec<&str> = line.split("\t").collect();
-        let id = words[1].parse::<u64>().unwrap();
-        let gid = words[2].parse::<u64>().unwrap();
+        let id = words[1].parse::<u64>().expect("parse id");
+        let gid = words[2].parse::<u64>().expect("parse gid");
         match unsafe { (*pwptr).pack_args(&mut buffer, words[0], id, gid, &config) } {
             Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
             Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
@@ -346,7 +346,7 @@ pub extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut libc::c_c
         let mut buffer = Buffer::new(buf, buflen);
         let words: Vec<&str> = line.split("\t").collect();
         let member_names: Vec<&str> = words[2].split(" ").collect();
-        let gid = words[1].parse::<u64>().unwrap();
+        let gid = words[1].parse::<u64>().expect("parse gid");
         match unsafe { (*grptr).pack_args(&mut buffer, words[0], gid, &member_names) } {
             Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
             Err(_) => fail!(errnop, nix::Errno::ERANGE, NssStatus::TryAgain),
