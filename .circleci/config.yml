@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: /tmp/sectora
     docker:
-      - image: yasuyuky/rust-ssl-static:1.25.0
+      - image: yasuyuky/rust-stable:1.25.0
     steps:
       - checkout
       - run: cargo build
