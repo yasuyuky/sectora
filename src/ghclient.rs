@@ -1,7 +1,7 @@
 use futures::future::Future;
 use futures::stream::Stream;
 use glob::glob;
-use hyper::{header, Client, Method, Request};
+use hyper::{header, Chunk, Client, Method, Request, Response};
 use hyper_rustls::HttpsConnector;
 use serde_json;
 use std;
@@ -78,14 +78,10 @@ impl GithubClient {
         let mut core = reactor::Core::new()?;
         let client = Client::configure().connector(HttpsConnector::new(4, &core.handle()))
                                         .build(&core.handle());
-        let work = client.request(req).and_then(|res| {
-            res.body().concat2().and_then(move |body| {
-                let v =
-                    serde_json::from_slice::<Vec<serde_json::value::Value>>(&body).map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, format!("output:{:?}", body)))?;
-                Ok(v)
-            })
-        });
-        Ok(core.run(work)?)
+        let to_io = |e| std::io::Error::new(std::io::ErrorKind::Other, e);
+        let parse_body = |body: Chunk| Ok(serde_json::from_slice::<Vec<_>>(&body).map_err(to_io)?);
+        let handle_response = |res: Response| res.body().concat2().and_then(parse_body);
+        Ok(core.run(client.request(req).and_then(handle_response))?)
     }
 
     fn get_content(&self, url: &str) -> Result<String, CliError> {
