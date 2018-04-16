@@ -1,28 +1,26 @@
 #[macro_use]
 extern crate clap;
-use clap::{App, Arg, SubCommand};
+extern crate futures;
 extern crate glob;
+extern crate hyper;
+extern crate hyper_rustls;
+#[macro_use]
+extern crate lazy_static;
+extern crate libc;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate tokio_core;
 extern crate toml;
-
-#[macro_use]
-extern crate lazy_static;
-
-extern crate libc;
 
 mod ghclient;
 mod statics;
 mod structs;
 #[macro_use]
 mod syslog;
-use statics::CONF_PATH;
 
-extern crate futures;
-extern crate hyper;
-extern crate hyper_rustls;
-extern crate tokio_core;
+use clap::{App, Arg, SubCommand};
+use statics::CONF_PATH;
 
 fn main() {
     let user_arg = Arg::with_name("USER").required(true).index(1).help("user name");

@@ -1,33 +1,32 @@
+extern crate futures;
 extern crate glob;
+extern crate hyper;
+extern crate hyper_rustls;
+#[macro_use]
+extern crate lazy_static;
+extern crate libc;
 extern crate nix;
-use nix::errno::Errno;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate tokio_core;
 extern crate toml;
 
-#[macro_use]
-extern crate lazy_static;
-
-use std::ffi::CStr;
-use std::io::{BufRead, Write};
-extern crate libc;
-
-mod structs;
-use structs::{CliError, Config};
 mod buffer;
-mod ghclient;
-use buffer::Buffer;
-use ghclient::GithubClient;
 mod cstructs;
-use cstructs::{Group, Passwd, Spwd};
+mod ghclient;
 mod runfiles;
 mod statics;
+mod structs;
+
+use buffer::Buffer;
+use cstructs::{Group, Passwd, Spwd};
+use ghclient::GithubClient;
+use nix::errno::Errno;
 use statics::CONF_PATH;
-extern crate futures;
-extern crate hyper;
-extern crate hyper_rustls;
-extern crate tokio_core;
+use std::ffi::CStr;
+use std::io::{BufRead, Write};
+use structs::{CliError, Config};
 
 #[allow(dead_code)]
 enum NssStatus {

@@ -1,9 +1,9 @@
-use Config;
 use buffer::Buffer;
 use libc;
 use std::io::Error;
 use std::path::Path;
 use structs::UserConfig;
+use Config;
 
 #[repr(C)]
 pub struct Passwd {

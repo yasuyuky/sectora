@@ -1,5 +1,5 @@
+use libc;
 use std;
-extern crate libc;
 use std::ffi::CString;
 use std::io::{Error, ErrorKind};
 

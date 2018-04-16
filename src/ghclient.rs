@@ -1,15 +1,14 @@
+use futures::future::Future;
+use futures::stream::Stream;
 use glob::glob;
+use hyper::{header, Client, Method, Request};
+use hyper_rustls::HttpsConnector;
 use serde_json;
 use std;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use structs::{CliError, Config, Member, PublicKey, Repo, Sector, SectorGroup, Team};
-
-use futures::future::Future;
-use futures::stream::Stream;
-use hyper::{header, Client, Method, Request};
-use hyper_rustls::HttpsConnector;
 use tokio_core::reactor;
 
 pub struct GithubClient {
