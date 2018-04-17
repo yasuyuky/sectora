@@ -50,35 +50,36 @@ fn main() {
     use std::env;
     use std::process;
 
-    let config = match structs::Config::new(&CONF_PATH) {
-        Ok(c) => c,
-        Err(_) => {
-            syslog!(libc::LOG_WARNING, "sectora fail to open config.");
-            process::exit(2);
-        }
-    };
-    let client = ghclient::GithubClient::new(&config);
-
     match command {
         Command::Check { confpath } => match structs::Config::new(&confpath) {
             Ok(_) => process::exit(0),
             Err(_) => process::exit(11),
         },
-        Command::Key { user } => match client.print_user_public_key(&user) {
-            Ok(_) => process::exit(0),
-            Err(_) => process::exit(21),
-        },
+        Command::Key { user } => {
+            match structs::Config::new(&CONF_PATH).and_then(|conf| Ok(ghclient::GithubClient::new(&conf)))
+                                                  .and_then(|client| client.print_user_public_key(&user))
+            {
+                Ok(_) => process::exit(0),
+                Err(_) => process::exit(21),
+            }
+        }
         Command::Pam => match env::var("PAM_USER") {
-            Ok(user) => match client.check_pam(&user) {
+            Ok(user) => match structs::Config::new(&CONF_PATH).and_then(|conf| Ok(ghclient::GithubClient::new(&conf)))
+                                                              .and_then(|client| client.check_pam(&user))
+            {
                 Ok(true) => process::exit(0),
                 Ok(false) => process::exit(1),
                 Err(_) => process::exit(31),
             },
             Err(_) => process::exit(41),
         },
-        Command::CleanUp => match client.clear_all_caches() {
-            Ok(_) => process::exit(0),
-            Err(_) => process::exit(51),
-        },
+        Command::CleanUp => {
+            match structs::Config::new(&CONF_PATH).and_then(|conf| Ok(ghclient::GithubClient::new(&conf)))
+                                                  .and_then(|client| client.clear_all_caches())
+            {
+                Ok(_) => process::exit(0),
+                Err(_) => process::exit(51),
+            }
+        }
     };
 }
