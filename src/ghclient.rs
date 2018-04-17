@@ -12,7 +12,7 @@ use structs::{CliError, Config, Member, PublicKey, Repo, Sector, SectorGroup, Te
 use tokio_core::reactor;
 
 pub struct GithubClient {
-    conf: Config,
+    pub conf: Config,
 }
 
 impl GithubClient {
