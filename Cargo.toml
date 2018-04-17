@@ -4,7 +4,6 @@ version = "0.1.0"
 authors = ["Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"]
 
 [dependencies]
-clap = "2.31.2"
 toml = "0.4.5"
 serde = "1.0.38"
 serde_derive = "1.0.38"
@@ -17,6 +16,7 @@ hyper = "0.11.25"
 hyper-rustls = "0.12.0"
 tokio-core = "0.1.16"
 futures = "0.1.17"
+structopt = "0.2"
 
 [[bin]]
 name = "sectora"

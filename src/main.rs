@@ -1,5 +1,3 @@
-#[macro_use]
-extern crate clap;
 extern crate futures;
 extern crate glob;
 extern crate hyper;
@@ -10,6 +8,8 @@ extern crate libc;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+#[macro_use]
+extern crate structopt;
 extern crate tokio_core;
 extern crate toml;
 
@@ -19,25 +19,35 @@ mod structs;
 #[macro_use]
 mod syslog;
 
-use clap::{App, Arg, SubCommand};
 use statics::CONF_PATH;
+use structopt::StructOpt;
+
+#[derive(Debug, StructOpt)]
+enum Command {
+    /// Gets user public key
+    #[structopt(name = "key")]
+    Key {
+        #[structopt(parse(from_str))]
+        user: String,
+    },
+    /// Executes pam check
+    #[structopt(name = "pam")]
+    Pam,
+    /// Check configuration
+    #[structopt(name = "check")]
+    Check {
+        #[structopt(parse(from_os_str))]
+        confpath: std::path::PathBuf,
+    },
+    /// Cleans caches up
+    #[structopt(name = "cleanup")]
+    CleanUp,
+}
 
 fn main() {
-    let user_arg = Arg::with_name("USER").required(true).index(1).help("user name");
-    let conf_arg = Arg::with_name("CONF").required(true).index(1).help("conf path");
-    let app = App::new(crate_name!()).version(crate_version!())
-                                     .author(crate_authors!())
-                                     .about(crate_description!())
-                                     .subcommand(SubCommand::with_name("key").about("Gets user public key")
-                                                                             .arg(user_arg))
-                                     .subcommand(SubCommand::with_name("pam").about("Executes pam check"))
-                                     .subcommand(SubCommand::with_name("cleanup").about("Cleans caches up"))
-                                     .subcommand(SubCommand::with_name("check").about("Check configuration")
-                                                                               .arg(conf_arg))
-                                     .get_matches();
+    let command = Command::from_args();
 
     use std::env;
-    use std::path::Path;
     use std::process;
 
     let config = match structs::Config::new(&CONF_PATH) {
@@ -49,34 +59,26 @@ fn main() {
     };
     let client = ghclient::GithubClient::new(&config);
 
-    match app.subcommand() {
-        ("key", Some(sub)) => match client.print_user_public_key(sub.value_of("USER").unwrap()) {
-            Ok(_) => {
-                syslog!(libc::LOG_NOTICE, "sectora key (success).");
-                process::exit(0)
-            }
-            Err(_) => {
-                syslog!(libc::LOG_WARNING, "sectora key (fail).");
-                process::exit(21)
-            }
-        },
-        ("check", Some(sub)) => match structs::Config::new(Path::new(sub.value_of("CONF").unwrap())) {
+    match command {
+        Command::Check { confpath } => match structs::Config::new(&confpath) {
             Ok(_) => process::exit(0),
             Err(_) => process::exit(11),
         },
-        ("cleanup", Some(_)) => client.clear_all_caches().unwrap(),
-        ("pam", Some(_)) => match env::var("PAM_USER") {
-            Ok(user) => {
-                if client.check_pam(&user).unwrap() {
-                    syslog!(libc::LOG_NOTICE, "sectora pam (success).");
-                    process::exit(0);
-                } else {
-                    syslog!(libc::LOG_WARNING, "sectora pam (fail).");
-                    process::exit(1)
-                }
-            }
-            Err(e) => println!("PAM_USER: {}", e),
+        Command::Key { user } => match client.print_user_public_key(&user) {
+            Ok(_) => process::exit(0),
+            Err(_) => process::exit(21),
         },
-        (&_, _) => println!("{}", app.usage()),
-    }
+        Command::Pam => match env::var("PAM_USER") {
+            Ok(user) => match client.check_pam(&user) {
+                Ok(true) => process::exit(0),
+                Ok(false) => process::exit(1),
+                Err(_) => process::exit(31),
+            },
+            Err(_) => process::exit(41),
+        },
+        Command::CleanUp => match client.clear_all_caches() {
+            Ok(_) => process::exit(0),
+            Err(_) => process::exit(51),
+        },
+    };
 }
