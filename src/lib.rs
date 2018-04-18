@@ -26,7 +26,7 @@ use nix::errno::Errno;
 use statics::CONF_PATH;
 use std::ffi::CStr;
 use std::io::{BufRead, Write};
-use structs::{CliError, Config};
+use structs::Config;
 
 #[allow(dead_code)]
 enum NssStatus {
@@ -69,20 +69,32 @@ macro_rules! fail {
     }};
 }
 
+macro_rules! get_or_again {
+    ($getter:expr) => {{
+        match $getter {
+            Ok(ret) => ret,
+            Err(_) => return libc::c_int::from(NssStatus::TryAgain),
+        }
+    }};
+    ($getter:expr, $err_no_p:ident) => {{
+        match $getter {
+            Ok(ret) => ret,
+            Err(_) => {
+                unsafe { *$err_no_p = Errno::EAGAIN as libc::c_int };
+                return libc::c_int::from(NssStatus::TryAgain);
+            }
+        }
+    }};
+}
+
 #[no_mangle]
 pub extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, pwptr: *mut Passwd, buf: *mut libc::c_char,
                                           buflen: libc::size_t, errnop: *mut libc::c_int)
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let client = match Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf))) {
-        Ok(client) => client,
-        Err(_) => fail!(errnop, Errno::EAGAIN, NssStatus::TryAgain),
-    };
-    let sectors = match client.get_sectors() {
-        Ok(sectors) => sectors,
-        Err(_) => fail!(errnop, Errno::EAGAIN, NssStatus::TryAgain),
-    };
+    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
+    let sectors = get_or_again!(client.get_sectors(), errnop);
     for sector in sectors {
         if let Some(member) = sector.members.get(&name) {
             match unsafe { (*pwptr).pack_args(&mut buffer, &member.login, member.id, sector.get_gid(), &client.conf) } {
@@ -99,14 +111,8 @@ pub extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, 
                                           buflen: libc::size_t, errnop: *mut libc::c_int)
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let client = match Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf))) {
-        Ok(client) => client,
-        Err(_) => fail!(errnop, Errno::EAGAIN, NssStatus::TryAgain),
-    };
-    let sectors = match client.get_sectors() {
-        Ok(sectors) => sectors,
-        Err(_) => fail!(errnop, Errno::EAGAIN, NssStatus::TryAgain),
-    };
+    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
+    let sectors = get_or_again!(client.get_sectors(), errnop);
     for sector in sectors {
         for member in sector.members.values() {
             if uid == member.id as libc::uid_t {
@@ -124,18 +130,9 @@ pub extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, 
 
 #[no_mangle]
 pub extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
-    let mut list_file = match runfiles::create() {
-        Ok(ret) => ret,
-        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
-    };
-    let client = match Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf))) {
-        Ok(client) => client,
-        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
-    };
-    let sectors = match client.get_sectors() {
-        Ok(sectors) => sectors,
-        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
-    };
+    let mut list_file = get_or_again!(runfiles::create());
+    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))));
+    let sectors = get_or_again!(client.get_sectors());
     for sector in sectors {
         for member in sector.members.values() {
             list_file.write(format!("{}\t{}\t{}\n", member.login, member.id, sector.get_gid()).as_bytes())
@@ -149,14 +146,8 @@ pub extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
 pub extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut libc::c_char, buflen: libc::size_t,
                                           errnop: *mut libc::c_int)
                                           -> libc::c_int {
-    let (idx, idx_file, list) = match runfiles::open() {
-        Ok(ret) => ret,
-        Err(_) => fail!(errnop, Errno::ENOENT, NssStatus::NotFound),
-    };
-    let client = match Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf))) {
-        Ok(client) => client,
-        Err(_) => fail!(errnop, Errno::EAGAIN, NssStatus::TryAgain),
-    };
+    let (idx, idx_file, list) = get_or_again!(runfiles::open(), errnop);
+    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let words: Vec<&str> = line.split("\t").collect();
@@ -182,14 +173,8 @@ pub extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, spptr: 
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let client = match Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf))) {
-        Ok(client) => client,
-        Err(_) => fail!(errnop, Errno::EAGAIN, NssStatus::TryAgain),
-    };
-    let sectors = match client.get_sectors() {
-        Ok(sectors) => sectors,
-        Err(_) => fail!(errnop, Errno::EAGAIN, NssStatus::TryAgain),
-    };
+    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
+    let sectors = get_or_again!(client.get_sectors(), errnop);
     for sector in sectors {
         if let Some(member) = sector.members.get(&name) {
             match unsafe { (*spptr).pack_args(&mut buffer, &member.login, &client.conf) } {
@@ -203,18 +188,9 @@ pub extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, spptr: 
 
 #[no_mangle]
 pub extern "C" fn _nss_sectora_setspent() -> libc::c_int {
-    let mut list_file = match runfiles::create() {
-        Ok(ret) => ret,
-        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
-    };
-    let client = match Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf))) {
-        Ok(client) => client,
-        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
-    };
-    let sectors = match client.get_sectors() {
-        Ok(sectors) => sectors,
-        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
-    };
+    let mut list_file = get_or_again!(runfiles::create());
+    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))));
+    let sectors = get_or_again!(client.get_sectors());
     for sector in sectors {
         for member in sector.members.values() {
             list_file.write(format!("{}\t{}\n", member.login, member.id).as_bytes())
@@ -228,14 +204,8 @@ pub extern "C" fn _nss_sectora_setspent() -> libc::c_int {
 pub extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut libc::c_char, buflen: libc::size_t,
                                           errnop: *mut libc::c_int)
                                           -> libc::c_int {
-    let (idx, idx_file, list) = match runfiles::open() {
-        Ok(ret) => ret,
-        Err(_) => fail!(errnop, Errno::ENOENT, NssStatus::NotFound),
-    };
-    let client = match Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf))) {
-        Ok(client) => client,
-        Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
-    };
+    let (idx, idx_file, list) = get_or_again!(runfiles::open(), errnop);
+    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let words: Vec<&str> = line.split("\t").collect();
@@ -258,14 +228,8 @@ pub extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut Group, b
                                           buflen: libc::size_t, errnop: *mut libc::c_int)
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let client = match Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf))) {
-        Ok(client) => client,
-        Err(_) => fail!(errnop, Errno::EAGAIN, NssStatus::TryAgain),
-    };
-    let sectors = match client.get_sectors() {
-        Ok(sectors) => sectors,
-        Err(_) => fail!(errnop, Errno::EAGAIN, NssStatus::TryAgain),
-    };
+    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
+    let sectors = get_or_again!(client.get_sectors(), errnop);
     for sector in sectors {
         let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
         if gid as u64 == sector.get_gid() {
@@ -284,14 +248,8 @@ pub extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, grptr: 
                                           -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let client = match Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf))) {
-        Ok(client) => client,
-        Err(_) => fail!(errnop, Errno::EAGAIN, NssStatus::TryAgain),
-    };
-    let sectors = match client.get_sectors() {
-        Ok(sectors) => sectors,
-        Err(_) => fail!(errnop, Errno::EAGAIN, NssStatus::TryAgain),
-    };
+    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
+    let sectors = get_or_again!(client.get_sectors(), errnop);
     for sector in sectors {
         let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
         if name == sector.get_group() {
@@ -306,18 +264,9 @@ pub extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, grptr: 
 
 #[no_mangle]
 pub extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
-    let mut list_file = match runfiles::create() {
-        Ok(ret) => ret,
-        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
-    };
-    let client = match Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf))) {
-        Ok(client) => client,
-        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
-    };
-    let sectors = match client.get_sectors() {
-        Ok(sectors) => sectors,
-        Err(_) => return libc::c_int::from(NssStatus::TryAgain),
-    };
+    let mut list_file = get_or_again!(runfiles::create());
+    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))));
+    let sectors = get_or_again!(client.get_sectors());
     for sector in sectors {
         let member_names = sector.members
                                  .values()
@@ -334,10 +283,7 @@ pub extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
 pub extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut libc::c_char, buflen: libc::size_t,
                                           errnop: *mut libc::c_int)
                                           -> libc::c_int {
-    let (idx, idx_file, list) = match runfiles::open() {
-        Ok(ret) => ret,
-        Err(_) => fail!(errnop, Errno::ENOENT, NssStatus::NotFound),
-    };
+    let (idx, idx_file, list) = get_or_again!(runfiles::open(), errnop);
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let words: Vec<&str> = line.split("\t").collect();
