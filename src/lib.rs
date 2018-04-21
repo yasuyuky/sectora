@@ -26,7 +26,7 @@ use nix::errno::Errno;
 use statics::CONF_PATH;
 use std::ffi::CStr;
 use std::io::{BufRead, Write};
-use structs::Config;
+use structs::{Config, Member, MemberGid, SectorGroup};
 
 #[allow(dead_code)]
 enum NssStatus {
@@ -135,8 +135,9 @@ pub extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
     let sectors = get_or_again!(client.get_sectors());
     for sector in sectors {
         for member in sector.members.values() {
-            list_file.write(format!("{}\t{}\t{}\n", member.login, member.id, sector.get_gid()).as_bytes())
-                     .unwrap();
+            let mg = MemberGid { member: member.clone(),
+                                 gid: sector.get_gid(), };
+            list_file.write(mg.to_string().as_bytes()).unwrap();
         }
     }
     libc::c_int::from(NssStatus::Success)
@@ -150,10 +151,8 @@ pub extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut libc::c_
     let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
-        let words: Vec<&str> = line.split("\t").collect();
-        let id = words[1].parse::<u64>().expect("parse id");
-        let gid = words[2].parse::<u64>().expect("parse gid");
-        match unsafe { (*pwptr).pack_args(&mut buffer, words[0], id, gid, &client.conf) } {
+        let mg = get_or_again!(line.parse::<MemberGid>(), errnop);
+        match unsafe { (*pwptr).pack_args(&mut buffer, &mg.member.login, mg.member.id, mg.gid, &client.conf) } {
             Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -193,8 +192,7 @@ pub extern "C" fn _nss_sectora_setspent() -> libc::c_int {
     let sectors = get_or_again!(client.get_sectors());
     for sector in sectors {
         for member in sector.members.values() {
-            list_file.write(format!("{}\t{}\n", member.login, member.id).as_bytes())
-                     .unwrap();
+            list_file.write(member.to_string().as_bytes()).unwrap();
         }
     }
     libc::c_int::from(NssStatus::Success)
@@ -208,8 +206,8 @@ pub extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut libc::c_ch
     let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
-        let words: Vec<&str> = line.split("\t").collect();
-        match unsafe { (*spptr).pack_args(&mut buffer, words[0], &client.conf) } {
+        let member = get_or_again!(line.parse::<Member>(), errnop);
+        match unsafe { (*spptr).pack_args(&mut buffer, &member.login, &client.conf) } {
             Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -268,13 +266,7 @@ pub extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
     let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))));
     let sectors = get_or_again!(client.get_sectors());
     for sector in sectors {
-        let member_names = sector.members
-                                 .values()
-                                 .map(|x| x.login.as_str())
-                                 .collect::<Vec<&str>>()
-                                 .join(" ");
-        list_file.write(format!("{}\t{}\t{}\n", sector.get_group(), sector.get_gid(), member_names).as_bytes())
-                 .unwrap();
+        list_file.write(sector.to_string().as_bytes()).unwrap();
     }
     libc::c_int::from(NssStatus::Success)
 }
@@ -286,10 +278,9 @@ pub extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut libc::c_c
     let (idx, idx_file, list) = get_or_again!(runfiles::open(), errnop);
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
-        let words: Vec<&str> = line.split("\t").collect();
-        let member_names: Vec<&str> = words[2].split(" ").collect();
-        let gid = words[1].parse::<u64>().expect("parse gid");
-        match unsafe { (*grptr).pack_args(&mut buffer, words[0], gid, &member_names) } {
+        let sector = get_or_again!(line.parse::<SectorGroup>(), errnop);
+        let members = sector.members.keys().map(|k| k.as_str()).collect();
+        match unsafe { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
             Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
