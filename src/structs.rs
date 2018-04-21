@@ -2,8 +2,10 @@ use hyper;
 use serde_json;
 use std;
 use std::collections::HashMap;
+use std::fmt;
 use std::fs::File;
 use std::io::Read;
+use std::str::FromStr;
 use toml;
 
 #[derive(Deserialize, Debug, Clone)]
@@ -95,6 +97,26 @@ pub enum SectorType {
     Repo,
 }
 
+impl fmt::Display for SectorType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &SectorType::Team => write!(f, "T"),
+            &SectorType::Repo => write!(f, "R"),
+        }
+    }
+}
+
+impl FromStr for SectorType {
+    type Err = std::io::Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "T" => Ok(SectorType::Team),
+            "R" => Ok(SectorType::Repo),
+            _ => Err(std::io::Error::new(std::io::ErrorKind::Other, "unknown sector type")),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Sector {
     pub id: u64,
@@ -118,6 +140,25 @@ impl From<Repo> for Sector {
     }
 }
 
+impl fmt::Display for Sector {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "{}:{}:{}", self.id, self.name, self.sector_type) }
+}
+
+pub enum ParseSectorError {
+    Id(std::num::ParseIntError),
+    Type(std::io::Error),
+}
+
+impl FromStr for Sector {
+    type Err = ParseSectorError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts = s.split(":").collect::<Vec<&str>>();
+        Ok(Self { id: parts[0].parse().map_err(|e| ParseSectorError::Id(e))?,
+                  name: String::from(parts[1]),
+                  sector_type: parts[2].parse().map_err(|e| ParseSectorError::Type(e))?, })
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct SectorGroup {
     pub sector: Sector,
@@ -133,10 +174,89 @@ impl SectorGroup {
     pub fn get_group(&self) -> String { self.group.clone().unwrap_or(self.sector.name.clone()) }
 }
 
+impl fmt::Display for SectorGroup {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let members_str = self.members.values()
+                              .map(|v| v.to_string())
+                              .collect::<Vec<_>>()
+                              .join(" ");
+        write!(f,
+               "{}\t{}\t{}\t{}",
+               self.sector,
+               self.gid.and_then(|i| Some(i.to_string())).unwrap_or(String::new()),
+               self.group.clone().unwrap_or(String::new()),
+               members_str)
+    }
+}
+
+pub enum ParseSectorGroupError {
+    Sector(ParseSectorError),
+    Gid(std::num::ParseIntError),
+    Member(std::num::ParseIntError),
+}
+
+impl FromStr for SectorGroup {
+    type Err = ParseSectorGroupError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts = s.split("\t").collect::<Vec<&str>>();
+        let sector = parts[0].parse().map_err(|e| ParseSectorGroupError::Sector(e))?;
+        let gid: Option<u64> = match parts[1] {
+            "" => None,
+            s => Some(s.parse::<u64>().map_err(|e| ParseSectorGroupError::Gid(e))?),
+        };
+        let group: Option<String> = match parts[2] {
+            "" => None,
+            s => Some(String::from(s)),
+        };
+        let members = parts[3].split(" ")
+                              .map(|s| s.parse::<Member>().map_err(|e| ParseSectorGroupError::Member(e)))
+                              .collect::<Result<Vec<Member>, _>>()?
+                              .into_iter()
+                              .map(|m| (m.login.clone(), m))
+                              .collect::<HashMap<_, _>>();
+        Ok(Self { sector,
+                  gid,
+                  group,
+                  members, })
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Member {
     pub id: u64,
     pub login: String,
+}
+
+impl fmt::Display for Member {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "{}:{}", self.id, self.login) }
+}
+
+impl FromStr for Member {
+    type Err = std::num::ParseIntError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts = s.split(":").collect::<Vec<&str>>();
+        Ok(Self { id: parts[0].parse()?,
+                  login: String::from(parts[1]), })
+    }
+}
+
+#[allow(dead_code)]
+pub struct MemberGid {
+    pub member: Member,
+    pub gid: u64,
+}
+
+impl fmt::Display for MemberGid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "{}|{}", self.member, self.gid) }
+}
+
+impl FromStr for MemberGid {
+    type Err = std::num::ParseIntError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts = s.split("|").collect::<Vec<&str>>();
+        Ok(Self { member: parts[0].parse()?,
+                  gid: parts[1].parse()?, })
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
