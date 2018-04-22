@@ -4,6 +4,7 @@ use glob::glob;
 use hyper::{header, Chunk, Client, Method, Request, Response};
 use hyper_rustls::HttpsConnector;
 use serde_json;
+use statics::TEMP_DIRNAME;
 use std;
 use std::collections::HashMap;
 use std::fs::File;
@@ -25,7 +26,7 @@ impl GithubClient {
 
     fn get_cache_path(url: &str) -> std::path::PathBuf {
         let mut path = std::env::temp_dir();
-        path.push("sectora-cache");
+        path.push(TEMP_DIRNAME);
         path.push(url);
         path
     }
@@ -189,7 +190,8 @@ impl GithubClient {
     #[allow(dead_code)]
     pub fn clear_all_caches(&self) -> Result<(), CliError> {
         let mut path = std::env::temp_dir();
-        path.push("sectora-cache/**/*");
+        path.push(TEMP_DIRNAME);
+        path.push("**/*");
         for entry in glob(&path.to_str().unwrap()).unwrap() {
             match entry {
                 Ok(path) => {
