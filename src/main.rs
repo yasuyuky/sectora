@@ -42,6 +42,9 @@ enum Command {
     /// Cleans caches up
     #[structopt(name = "cleanup")]
     CleanUp,
+    /// Displays version details
+    #[structopt(name = "version")]
+    Version,
 }
 
 fn main() {
@@ -80,6 +83,11 @@ fn main() {
                 Ok(_) => process::exit(0),
                 Err(_) => process::exit(51),
             }
+        }
+        Command::Version => {
+            println!("{}",
+                     concat!(env!("CARGO_PKG_VERSION"),
+                             include_str!(concat!(env!("OUT_DIR"), "/commit-info.txt"))));
         }
     };
 }
