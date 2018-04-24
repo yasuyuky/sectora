@@ -26,7 +26,7 @@ arm-exe: $(ARM_TARGET_DIR)/sectora
 arm-lib: $(ARM_TARGET_DIR)/libnss_sectora.so
 
 enter-build-image:
-	docker run -it --rm -v ${PWD}:/source $(X64_BUILD_IMG) bash
+	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) bash
 
 $(X64_TARGET_DIR)/sectora: src/main.rs $(SRCS)
 	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo build --bin sectora --release --target=$(X64_TARGET)
@@ -50,12 +50,12 @@ clean-arm:
 	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo clean
 
 clean-exe:
-	rm $(X64_TARGET_DIR)/sectora
-	rm $(ARM_TARGET_DIR)/sectora
+	rm -f $(X64_TARGET_DIR)/sectora
+	rm -f $(ARM_TARGET_DIR)/sectora
 
 clean-lib:
-	rm $(X64_TARGET_DIR)/libnss_sectora.so
-	rm $(ARM_TARGET_DIR)/libnss_sectora.so
+	rm -f $(X64_TARGET_DIR)/libnss_sectora.so
+	rm -f $(ARM_TARGET_DIR)/libnss_sectora.so
 
 clean:
 	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo clean
