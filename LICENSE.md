@@ -1,4 +1,4 @@
-Copyright (c) 2017 Yasuyuki YAMADA
+Copyright (c) 2017-2018 Yasuyuki YAMADA
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
