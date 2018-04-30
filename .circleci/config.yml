@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: /tmp/sectora
     docker:
-      - image: yasuyuky/rust-stable:1.25.0
+      - image: rust:1.25.0-stretch
     steps:
       - checkout
       - run: cargo build
