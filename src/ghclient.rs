@@ -64,14 +64,18 @@ impl GithubClient {
         Ok(content)
     }
 
-    fn build_page_request(&self, url: &str, page: u64) -> Request {
+    fn build_request(&self, url: &str) -> Request {
         let token = String::from("token ") + &self.conf.token;
-        let sep = if url.contains("?") { "&" } else { "?" };
-        let url_p = format!("{}{}page={}", url, sep, page);
-        let mut req: Request = Request::new(Method::Get, url_p.parse().unwrap());
+        let mut req: Request = Request::new(Method::Get, url.parse().unwrap());
         req.headers_mut().set(header::Authorization(token));
         req.headers_mut().set(header::UserAgent::new("sectora"));
         req
+    }
+
+    fn build_page_request(&self, url: &str, page: u64) -> Request {
+        let sep = if url.contains("?") { "&" } else { "?" };
+        let url_p = format!("{}{}page={}", url, sep, page);
+        self.build_request(&url_p)
     }
 
     fn get_content_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::value::Value>, CliError> {
