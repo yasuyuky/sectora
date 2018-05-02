@@ -31,37 +31,37 @@ impl GithubClient {
         path
     }
 
-    fn load_content_from_cache(&self, url: &str) -> Result<(std::fs::Metadata, String), CliError> {
+    fn load_contents_from_cache(&self, url: &str) -> Result<(std::fs::Metadata, String), CliError> {
         let path = Self::get_cache_path(url);
         let metadata = std::fs::metadata(path.to_str().unwrap())?;
         let mut f = File::open(path.to_str().unwrap())?;
-        let mut content = String::new();
-        f.read_to_string(&mut content)?;
-        Ok((metadata, content))
+        let mut contents = String::new();
+        f.read_to_string(&mut contents)?;
+        Ok((metadata, contents))
     }
 
-    fn store_content_to_cache(&self, url: &str, content: &str) -> Result<(), CliError> {
+    fn store_contents_to_cache(&self, url: &str, contents: &str) -> Result<(), CliError> {
         let path = Self::get_cache_path(url);
         std::fs::create_dir_all(path.parent().unwrap_or(std::path::Path::new("/")))?;
         let mut f = File::create(path.to_str().unwrap())?;
-        f.write(content.as_bytes())?;
+        f.write(contents.as_bytes())?;
         Ok(())
     }
 
-    fn get_content_from_url(&self, url: &str) -> Result<String, CliError> {
+    fn get_contents_from_url(&self, url: &str) -> Result<String, CliError> {
         let mut all_contents: Vec<serde_json::value::Value> = Vec::new();
         let mut page = 1;
         loop {
-            let mut new_array = self.get_content_from_url_page(url, page)?;
+            let mut new_array = self.get_contents_from_url_page(url, page)?;
             if new_array.is_empty() {
                 break;
             }
             all_contents.append(&mut new_array);
             page += 1;
         }
-        let content = serde_json::ser::to_string(&all_contents)?;
-        self.store_content_to_cache(url, &content)?;
-        Ok(content)
+        let contents = serde_json::ser::to_string(&all_contents)?;
+        self.store_contents_to_cache(url, &contents)?;
+        Ok(contents)
     }
 
     fn build_request(&self, url: &str) -> Request {
@@ -78,7 +78,7 @@ impl GithubClient {
         self.build_request(&url_p)
     }
 
-    fn get_content_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::value::Value>, CliError> {
+    fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::value::Value>, CliError> {
         let req = self.build_page_request(url, page);
         let mut core = reactor::Core::new()?;
         let client = Client::configure().connector(HttpsConnector::new(4, &core.handle()))
@@ -89,22 +89,22 @@ impl GithubClient {
         Ok(core.run(client.request(req).and_then(handle_response))?)
     }
 
-    fn get_content(&self, url: &str) -> Result<String, CliError> {
-        match self.load_content_from_cache(url) {
-            Ok((metadata, cache_content)) => match std::time::SystemTime::now().duration_since(metadata.modified()?) {
+    fn get_contents(&self, url: &str) -> Result<String, CliError> {
+        match self.load_contents_from_cache(url) {
+            Ok((metadata, cache_contents)) => match std::time::SystemTime::now().duration_since(metadata.modified()?) {
                 Ok(caching_duration) => {
                     if caching_duration.as_secs() > self.conf.cache_duration {
-                        match self.get_content_from_url(url) {
-                            Ok(content_from_url) => Ok(content_from_url),
-                            Err(_) => Ok(cache_content),
+                        match self.get_contents_from_url(url) {
+                            Ok(contents_from_url) => Ok(contents_from_url),
+                            Err(_) => Ok(cache_contents),
                         }
                     } else {
-                        Ok(cache_content)
+                        Ok(cache_contents)
                     }
                 }
-                Err(_) => Ok(cache_content),
+                Err(_) => Ok(cache_contents),
             },
-            Err(_) => self.get_content_from_url(url),
+            Err(_) => self.get_contents_from_url(url),
         }
     }
 
@@ -117,8 +117,8 @@ impl GithubClient {
 
     fn get_user_public_key(&self, user: &str) -> Result<String, CliError> {
         let url = format!("{}/users/{}/keys", self.conf.endpoint, user);
-        let content = self.get_content(&url)?;
-        let keys = serde_json::from_str::<Vec<PublicKey>>(&content)?;
+        let contents = self.get_contents(&url)?;
+        let keys = serde_json::from_str::<Vec<PublicKey>>(&contents)?;
         Ok(keys.iter().map(|k| k.key.clone()).collect::<Vec<String>>().join("\n"))
     }
 
@@ -150,15 +150,15 @@ impl GithubClient {
 
     fn get_team_map(&self) -> Result<HashMap<String, Team>, CliError> {
         let url = format!("{}/orgs/{}/teams", self.conf.endpoint, self.conf.org);
-        let content = self.get_content(&url)?;
-        let teams = serde_json::from_str::<Vec<Team>>(&content)?;
+        let contents = self.get_contents(&url)?;
+        let teams = serde_json::from_str::<Vec<Team>>(&contents)?;
         Ok(teams.iter().map(|t| (t.name.clone(), t.clone())).collect())
     }
 
     fn get_team_members(&self, mid: u64) -> Result<HashMap<String, Member>, CliError> {
         let url = format!("{}/teams/{}/members", self.conf.endpoint, mid);
-        let content = self.get_content(&url)?;
-        let members = serde_json::from_str::<Vec<Member>>(&content)?;
+        let contents = self.get_contents(&url)?;
+        let members = serde_json::from_str::<Vec<Member>>(&contents)?;
         Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
     }
 
@@ -178,16 +178,16 @@ impl GithubClient {
 
     fn get_repo_map(&self) -> Result<HashMap<String, Repo>, CliError> {
         let url = format!("{}/orgs/{}/repos", self.conf.endpoint, self.conf.org);
-        let content = self.get_content(&url)?;
-        let repos = serde_json::from_str::<Vec<Repo>>(&content)?;
+        let contents = self.get_contents(&url)?;
+        let repos = serde_json::from_str::<Vec<Repo>>(&contents)?;
         Ok(repos.iter().map(|t| (t.name.clone(), t.clone())).collect())
     }
 
     fn get_repo_collaborators(&self, repo_name: &str) -> Result<HashMap<String, Member>, CliError> {
         let url = format!("{}/repos/{}/{}/collaborators?affiliation=outside",
                           self.conf.endpoint, self.conf.org, repo_name);
-        let content = self.get_content(&url)?;
-        let members = serde_json::from_str::<Vec<Member>>(&content)?;
+        let contents = self.get_contents(&url)?;
+        let members = serde_json::from_str::<Vec<Member>>(&contents)?;
         Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
     }
 
