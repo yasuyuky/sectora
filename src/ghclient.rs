@@ -78,15 +78,19 @@ impl GithubClient {
         self.build_request(&url_p)
     }
 
-    fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::value::Value>, CliError> {
-        let req = self.build_page_request(url, page);
+    fn run_request(&self, req: Request) -> Result<serde_json::value::Value, CliError> {
         let mut core = reactor::Core::new()?;
         let client = Client::configure().connector(HttpsConnector::new(4, &core.handle()))
                                         .build(&core.handle());
         let to_io = |e| std::io::Error::new(std::io::ErrorKind::Other, e);
-        let parse_body = |body: Chunk| Ok(serde_json::from_slice::<Vec<_>>(&body).map_err(to_io)?);
+        let parse_body = |body: Chunk| Ok(serde_json::from_slice(&body).map_err(to_io)?);
         let handle_response = |res: Response| res.body().concat2().and_then(parse_body);
         Ok(core.run(client.request(req).and_then(handle_response))?)
+    }
+
+    fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::value::Value>, CliError> {
+        let req = self.build_page_request(url, page);
+        self.run_request(req).and_then(|v| serde_json::from_value(v).map_err(CliError::from))
     }
 
     fn get_contents(&self, url: &str) -> Result<String, CliError> {
