@@ -9,7 +9,7 @@ use std;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
-use structs::{CliError, Config, Member, PublicKey, Repo, Sector, SectorGroup, Team};
+use structs::{CliError, Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
 use tokio_core::reactor;
 
 pub struct GithubClient {
@@ -193,6 +193,19 @@ impl GithubClient {
         let contents = self.get_contents(&url)?;
         let members = serde_json::from_str::<Vec<Member>>(&contents)?;
         Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
+    }
+
+    fn get_rate_limit(&self) -> Result<RateLimit, CliError> {
+        let url = format!("{}/rate_limit", self.conf.endpoint);
+        let req = self.build_request(&url);
+        self.run_request(req).and_then(|v| serde_json::from_value(v).map_err(CliError::from))
+    }
+
+    #[allow(dead_code)]
+    pub fn print_rate_limit(&self) -> Result<(), CliError> {
+        let rate_limit = self.get_rate_limit()?;
+        println!("{:?}", rate_limit);
+        Ok(())
     }
 
     #[allow(dead_code)]
