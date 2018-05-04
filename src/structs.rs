@@ -265,6 +265,18 @@ pub struct PublicKey {
     pub key: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Rate {
+    pub limit: usize,
+    pub remaining: usize,
+    pub reset: usize,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RateLimit {
+    pub rate: Rate,
+}
+
 #[derive(Debug)]
 pub enum CliError {
     Serde(serde_json::Error),
