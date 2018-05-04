@@ -42,6 +42,9 @@ enum Command {
     /// Cleans caches up
     #[structopt(name = "cleanup")]
     CleanUp,
+    /// Get rate limit for github api
+    #[structopt(name = "ratelimit")]
+    RateLimit,
     /// Displays version details
     #[structopt(name = "version")]
     Version,
@@ -82,6 +85,14 @@ fn main() {
             {
                 Ok(_) => process::exit(0),
                 Err(_) => process::exit(51),
+            }
+        }
+        Command::RateLimit => {
+            match structs::Config::new(&CONF_PATH).and_then(|conf| Ok(ghclient::GithubClient::new(&conf)))
+                                                  .and_then(|client| client.print_rate_limit())
+            {
+                Ok(_) => process::exit(0),
+                Err(_) => process::exit(61),
             }
         }
         Command::Version => {
