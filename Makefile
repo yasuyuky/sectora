@@ -10,6 +10,7 @@ ARM_BUILD_VOL_OPT= -v ${PWD}/.cargo-arm/registry:/usr/local/cargo/registry -v ${
 DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
 ENTRIY_POINTS := src/main.rs src/lib.rs
 SRCS := $(filter-out $(ENTRIY_POINTS),$(wildcard src/*.rs))
+CARGO_FILES := Cargo.toml Cargo.lock
 
 all: x64 arm
 
@@ -28,16 +29,16 @@ arm-lib: $(ARM_TARGET_DIR)/libnss_sectora.so
 enter-build-image:
 	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) bash
 
-$(X64_TARGET_DIR)/sectora: src/main.rs $(SRCS)
+$(X64_TARGET_DIR)/sectora: src/main.rs $(SRCS) $(CARGO_FILES)
 	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo build --bin sectora --release --target=$(X64_TARGET)
 
-$(X64_TARGET_DIR)/libnss_sectora.so: src/lib.rs $(SRCS)
+$(X64_TARGET_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
 	docker run -it --rm $(X64_BUILD_VOL_OPT) $(X64_BUILD_IMG) cargo build --lib --release --target=$(X64_TARGET)
 
-$(ARM_TARGET_DIR)/sectora: src/main.rs $(SRCS)
+$(ARM_TARGET_DIR)/sectora: src/main.rs $(SRCS) $(CARGO_FILES)
 	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo build --bin sectora --release --target=$(ARM_TARGET)
 
-$(ARM_TARGET_DIR)/libnss_sectora.so: src/lib.rs $(SRCS)
+$(ARM_TARGET_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
 	docker run -it --rm $(ARM_BUILD_VOL_OPT) $(ARM_BUILD_IMG) cargo build --lib --release --target=$(ARM_TARGET)
 
 
