@@ -181,7 +181,7 @@ impl fmt::Display for SectorGroup {
                               .collect::<Vec<_>>()
                               .join(" ");
         write!(f,
-               "{}\t{}\t{}\t{}",
+               "{}\t{}\t{}\t{}\n",
                self.sector,
                self.gid.and_then(|i| Some(i.to_string())).unwrap_or(String::new()),
                self.group.clone().unwrap_or(String::new()),
