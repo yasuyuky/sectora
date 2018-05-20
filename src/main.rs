@@ -55,6 +55,7 @@ fn main() {
 
     use std::env;
     use std::process;
+    use ghclient::GithubClient;
 
     match command {
         Command::Check { confpath } => match structs::Config::new(&confpath) {
@@ -62,7 +63,7 @@ fn main() {
             Err(_) => process::exit(11),
         },
         Command::Key { user } => {
-            match structs::Config::new(&CONF_PATH).and_then(|conf| Ok(ghclient::GithubClient::new(&conf)))
+            match structs::Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
                                                   .and_then(|client| client.print_user_public_key(&user))
             {
                 Ok(_) => process::exit(0),
@@ -70,7 +71,7 @@ fn main() {
             }
         }
         Command::Pam => match env::var("PAM_USER") {
-            Ok(user) => match structs::Config::new(&CONF_PATH).and_then(|conf| Ok(ghclient::GithubClient::new(&conf)))
+            Ok(user) => match structs::Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
                                                               .and_then(|client| client.check_pam(&user))
             {
                 Ok(true) => process::exit(0),
@@ -80,7 +81,7 @@ fn main() {
             Err(_) => process::exit(41),
         },
         Command::CleanUp => {
-            match structs::Config::new(&CONF_PATH).and_then(|conf| Ok(ghclient::GithubClient::new(&conf)))
+            match structs::Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
                                                   .and_then(|client| client.clear_all_caches())
             {
                 Ok(_) => process::exit(0),
@@ -88,7 +89,7 @@ fn main() {
             }
         }
         Command::RateLimit => {
-            match structs::Config::new(&CONF_PATH).and_then(|conf| Ok(ghclient::GithubClient::new(&conf)))
+            match structs::Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
                                                   .and_then(|client| client.print_rate_limit())
             {
                 Ok(_) => process::exit(0),
