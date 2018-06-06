@@ -5,8 +5,9 @@ X64_TARGET_DIR=target/$(X64_TARGET)/release
 ARM_TARGET_DIR=target/$(ARM_TARGET)/release
 X64_BUILD_IMG=rust:${RUST_VER}-stretch
 ARM_BUILD_IMG=yasuyuky/rust-arm:${RUST_VER}
-COMMON_BUILD_OPT= -v ${PWD}:/source -w /source -e OPENSSL_STATIC=yes -e OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ -e OPENSSL_INCLUDE_DIR=/usr/include
-X64_BUILD_OPT= -v ${PWD}/.cargo-x64/registry:/usr/local/cargo/registry $(COMMON_BUILD_OPT)
+COMMON_BUILD_OPT= -v ${PWD}:/source -w /source
+OPENSSL_STATIC_OPT= -e OPENSSL_STATIC=yes -e OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ -e OPENSSL_INCLUDE_DIR=/usr/include
+X64_BUILD_OPT= -v ${PWD}/.cargo-x64/registry:/usr/local/cargo/registry $(COMMON_BUILD_OPT) $(OPENSSL_STATIC_OPT)
 ARM_BUILD_OPT= -v ${PWD}/.cargo-arm/registry:/usr/local/cargo/registry $(COMMON_BUILD_OPT)
 DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
 ENTRIY_POINTS := src/main.rs src/lib.rs
