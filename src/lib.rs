@@ -1,7 +1,6 @@
-extern crate futures;
 extern crate glob;
 extern crate hyper;
-extern crate hyper_rustls;
+extern crate hyper_tls;
 #[macro_use]
 extern crate lazy_static;
 extern crate libc;
@@ -9,7 +8,6 @@ extern crate nix;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
-extern crate tokio_core;
 extern crate toml;
 
 mod buffer;

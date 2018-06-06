@@ -1,16 +1,15 @@
-use futures::future::Future;
-use futures::stream::Stream;
 use glob::glob;
-use hyper::{header, Chunk, Client, Method, Request, Response};
-use hyper_rustls::HttpsConnector;
+use hyper::rt::{self, Future, Stream};
+use hyper::{header, Body, Chunk, Client, Request, Response};
+use hyper_tls::HttpsConnector;
 use serde_json;
 use statics::TEMP_DIRNAME;
 use std;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
+use std::sync::mpsc;
 use structs::{CliError, Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
-use tokio_core::reactor;
 
 pub struct GithubClient {
     pub conf: Config,
@@ -64,31 +63,39 @@ impl GithubClient {
         Ok(contents)
     }
 
-    fn build_request(&self, url: &str) -> Request {
+    fn build_request(&self, url: &str) -> Request<Body> {
         let token = String::from("token ") + &self.conf.token;
-        let mut req: Request = Request::new(Method::Get, url.parse().unwrap());
-        req.headers_mut().set(header::Authorization(token));
-        req.headers_mut().set(header::UserAgent::new("sectora"));
-        req
+        Request::get(url).header(header::AUTHORIZATION, token.as_str())
+                         .header(header::USER_AGENT, "sectora")
+                         .body(Body::empty())
+                         .unwrap()
     }
 
-    fn build_page_request(&self, url: &str, page: u64) -> Request {
+    fn build_page_request(&self, url: &str, page: u64) -> Request<Body> {
         let sep = if url.contains("?") { "&" } else { "?" };
         let url_p = format!("{}{}page={}", url, sep, page);
         self.build_request(&url_p)
     }
 
-    fn run_request(&self, req: Request) -> Result<serde_json::value::Value, CliError> {
-        let mut core = reactor::Core::new()?;
-        let client = Client::configure().connector(HttpsConnector::new(4, &core.handle()))
-                                        .build(&core.handle());
-        let to_io = |e| std::io::Error::new(std::io::ErrorKind::Other, e);
-        let parse_body = |body: Chunk| Ok(serde_json::from_slice(&body).map_err(to_io)?);
-        let handle_response = |res: Response| res.body().concat2().and_then(parse_body);
-        Ok(core.run(client.request(req).and_then(handle_response))?)
+    fn run_request(&self, req: Request<Body>) -> Result<serde_json::Value, CliError> {
+        let https = HttpsConnector::new(4).expect("HttpsConnector");
+        let client = Client::builder().build::<_, Body>(https);
+        let parse_body = |body: Chunk| serde_json::from_slice(&body).map_err(CliError::from);
+        let concat_response = |res: Response<Body>| res.into_body().concat2();
+        let (tx, rx) = mpsc::sync_channel(1);
+        let etx = tx.clone();
+        let send_response = move |r| tx.send(Ok(r)).expect("send response");
+        let send_err = move |e| etx.send(Err(CliError::from(e))).expect("send err");
+        rt::run(rt::lazy(move || {
+                             client.request(req)
+                                   .and_then(concat_response)
+                                   .map(send_response)
+                                   .map_err(send_err)
+                         }));
+        rx.recv().expect("recv response").and_then(parse_body)
     }
 
-    fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::value::Value>, CliError> {
+    fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::Value>, CliError> {
         let req = self.build_page_request(url, page);
         self.run_request(req).and_then(|v| serde_json::from_value(v).map_err(CliError::from))
     }
