@@ -11,6 +11,7 @@ Implemented with Rust.
 ## How to build
 
 [![CircleCI](https://circleci.com/gh/yasuyuky/sectora.svg?style=svg)](https://circleci.com/gh/yasuyuky/sectora)
+[![dependency status](https://deps.rs/repo/github/yasuyuky/sectora/status.svg)](https://deps.rs/repo/github/yasuyuky/sectora)
 
 ### On linux
 
