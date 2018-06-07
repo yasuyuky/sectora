@@ -1,4 +1,5 @@
 use glob::glob;
+use hyper::client::HttpConnector;
 use hyper::rt::{self, Future, Stream};
 use hyper::{header, Body, Chunk, Client, Request, Response};
 use hyper_tls::HttpsConnector;
@@ -77,9 +78,13 @@ impl GithubClient {
         self.build_request(&url_p)
     }
 
-    fn run_request(&self, req: Request<Body>) -> Result<Chunk, CliError> {
+    fn build_https_client(&self) -> Client<HttpsConnector<HttpConnector>> {
         let https = HttpsConnector::new(4).expect("HttpsConnector");
-        let client = Client::builder().build::<_, Body>(https);
+        Client::builder().build(https)
+    }
+
+    fn run_request(&self, req: Request<Body>) -> Result<Chunk, CliError> {
+        let client = self.build_https_client();
         let concat_response = |res: Response<Body>| res.into_body().concat2();
         let (tx, rx) = mpsc::sync_channel(1);
         let etx = tx.clone();
