@@ -69,7 +69,7 @@ impl GithubClient {
         Request::get(url).header(header::AUTHORIZATION, token.as_str())
                          .header(header::USER_AGENT, "sectora")
                          .body(Body::empty())
-                         .unwrap()
+                         .expect("Request")
     }
 
     fn build_page_request(&self, url: &str, page: u64) -> Request<Body> {
