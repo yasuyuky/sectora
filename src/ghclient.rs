@@ -78,13 +78,13 @@ impl GithubClient {
         self.build_request(&url_p)
     }
 
-    fn build_https_client(&self) -> Client<HttpsConnector<HttpConnector>> {
+    fn build_https_client() -> Client<HttpsConnector<HttpConnector>> {
         let https = HttpsConnector::new(4).expect("HttpsConnector");
         Client::builder().build(https)
     }
 
     fn run_request(&self, req: Request<Body>) -> Result<Chunk, CliError> {
-        let client = self.build_https_client();
+        let client = Self::build_https_client();
         let concat_response = |res: Response<Body>| res.into_body().concat2();
         let (tx, rx) = mpsc::sync_channel(1);
         let etx = tx.clone();
