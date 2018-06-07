@@ -77,10 +77,9 @@ impl GithubClient {
         self.build_request(&url_p)
     }
 
-    fn run_request(&self, req: Request<Body>) -> Result<serde_json::Value, CliError> {
+    fn run_request(&self, req: Request<Body>) -> Result<Chunk, CliError> {
         let https = HttpsConnector::new(4).expect("HttpsConnector");
         let client = Client::builder().build::<_, Body>(https);
-        let parse_body = |body: Chunk| serde_json::from_slice(&body).map_err(CliError::from);
         let concat_response = |res: Response<Body>| res.into_body().concat2();
         let (tx, rx) = mpsc::sync_channel(1);
         let etx = tx.clone();
@@ -92,12 +91,12 @@ impl GithubClient {
                                    .map(send_response)
                                    .map_err(send_err)
                          }));
-        rx.recv().expect("recv response").and_then(parse_body)
+        rx.recv().expect("recv response")
     }
 
     fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::Value>, CliError> {
         let req = self.build_page_request(url, page);
-        self.run_request(req).and_then(|v| serde_json::from_value(v).map_err(CliError::from))
+        self.run_request(req).and_then(|body| serde_json::from_slice(&body).map_err(CliError::from))
     }
 
     fn get_contents(&self, url: &str) -> Result<String, CliError> {
@@ -205,7 +204,7 @@ impl GithubClient {
     fn get_rate_limit(&self) -> Result<RateLimit, CliError> {
         let url = format!("{}/rate_limit", self.conf.endpoint);
         let req = self.build_request(&url);
-        self.run_request(req).and_then(|v| serde_json::from_value(v).map_err(CliError::from))
+        self.run_request(req).and_then(|body| serde_json::from_slice(&body).map_err(CliError::from))
     }
 
     #[allow(dead_code)]
