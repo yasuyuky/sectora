@@ -84,18 +84,13 @@ impl GithubClient {
     }
 
     fn run_request(&self, req: Request<Body>) -> Result<Chunk, CliError> {
-        let client = Self::build_https_client();
-        let concat_response = |res: Response<Body>| res.into_body().concat2();
+        let concat_body = |res: Response<Body>| res.into_body().concat2();
         let (tx, rx) = mpsc::sync_channel(1);
-        let etx = tx.clone();
-        let send_response = move |r| tx.send(Ok(r)).expect("send response");
-        let send_err = move |e| etx.send(Err(CliError::from(e))).expect("send err");
-        rt::run(rt::lazy(move || {
-                             client.request(req)
-                                   .and_then(concat_response)
-                                   .map(send_response)
-                                   .map_err(send_err)
-                         }));
+        let ex = tx.clone();
+        let send_res = move |r| tx.send(Ok(r)).expect("send response");
+        let send_err = move |e| ex.send(Err(CliError::from(e))).expect("send err");
+        let hc = Self::build_https_client();
+        rt::run(rt::lazy(move || hc.request(req).and_then(concat_body).map(send_res).map_err(send_err)));
         rx.recv().expect("recv response")
     }
 
