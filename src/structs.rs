@@ -1,5 +1,6 @@
 use http;
 use hyper;
+use hyper_tls;
 use serde_json;
 use std;
 use std::collections::HashMap;
@@ -285,6 +286,7 @@ pub enum CliError {
     Toml(toml::de::Error),
     Http(http::Error),
     Hyper(hyper::Error),
+    HyperTls(hyper_tls::Error),
 }
 
 impl From<serde_json::Error> for CliError {
@@ -301,4 +303,7 @@ impl From<hyper::Error> for CliError {
 }
 impl From<http::Error> for CliError {
     fn from(err: http::Error) -> CliError { CliError::Http(err) }
+}
+impl From<hyper_tls::Error> for CliError {
+    fn from(err: hyper_tls::Error) -> CliError { CliError::HyperTls(err) }
 }

@@ -78,9 +78,9 @@ impl GithubClient {
         self.build_request(&url_p)
     }
 
-    fn build_https_client() -> Client<HttpsConnector<HttpConnector>> {
-        let https = HttpsConnector::new(4).expect("HttpsConnector");
-        Client::builder().build(https)
+    fn build_https_client() -> Result<Client<HttpsConnector<HttpConnector>>, CliError> {
+        let https = HttpsConnector::new(4)?;
+        Ok(Client::builder().build(https))
     }
 
     fn run_request(&self, req: Request<Body>) -> Result<Chunk, CliError> {
@@ -89,7 +89,7 @@ impl GithubClient {
         let ex = tx.clone();
         let send_res = move |r| tx.send(Ok(r)).expect("send response");
         let send_err = move |e| ex.send(Err(CliError::from(e))).expect("send err");
-        let hc = Self::build_https_client();
+        let hc = Self::build_https_client()?;
         rt::run(rt::lazy(move || hc.request(req).and_then(concat_body).map(send_res).map_err(send_err)));
         rx.recv().expect("recv response")
     }
