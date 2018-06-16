@@ -1,3 +1,4 @@
+use http;
 use hyper;
 use serde_json;
 use std;
@@ -282,6 +283,7 @@ pub enum CliError {
     Serde(serde_json::Error),
     Io(std::io::Error),
     Toml(toml::de::Error),
+    Http(http::Error),
     Hyper(hyper::Error),
 }
 
@@ -296,4 +298,7 @@ impl From<toml::de::Error> for CliError {
 }
 impl From<hyper::Error> for CliError {
     fn from(err: hyper::Error) -> CliError { CliError::Hyper(err) }
+}
+impl From<http::Error> for CliError {
+    fn from(err: http::Error) -> CliError { CliError::Http(err) }
 }

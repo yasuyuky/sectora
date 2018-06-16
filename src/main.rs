@@ -1,4 +1,5 @@
 extern crate glob;
+extern crate http;
 extern crate hyper;
 extern crate hyper_tls;
 #[macro_use]

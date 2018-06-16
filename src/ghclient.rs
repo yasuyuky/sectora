@@ -64,15 +64,15 @@ impl GithubClient {
         Ok(contents)
     }
 
-    fn build_request(&self, url: &str) -> Request<Body> {
+    fn build_request(&self, url: &str) -> Result<Request<Body>, CliError> {
         let token = String::from("token ") + &self.conf.token;
         Request::get(url).header(header::AUTHORIZATION, token.as_str())
                          .header(header::USER_AGENT, "sectora")
                          .body(Body::empty())
-                         .expect("Request")
+                         .map_err(CliError::from)
     }
 
-    fn build_page_request(&self, url: &str, page: u64) -> Request<Body> {
+    fn build_page_request(&self, url: &str, page: u64) -> Result<Request<Body>, CliError> {
         let sep = if url.contains("?") { "&" } else { "?" };
         let url_p = format!("{}{}page={}", url, sep, page);
         self.build_request(&url_p)
@@ -95,7 +95,7 @@ impl GithubClient {
     }
 
     fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::Value>, CliError> {
-        let req = self.build_page_request(url, page);
+        let req = self.build_page_request(url, page)?;
         self.run_request(req).and_then(|body| serde_json::from_slice(&body).map_err(CliError::from))
     }
 
@@ -203,7 +203,7 @@ impl GithubClient {
 
     fn get_rate_limit(&self) -> Result<RateLimit, CliError> {
         let url = format!("{}/rate_limit", self.conf.endpoint);
-        let req = self.build_request(&url);
+        let req = self.build_request(&url)?;
         self.run_request(req).and_then(|body| serde_json::from_slice(&body).map_err(CliError::from))
     }
 
