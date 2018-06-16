@@ -178,7 +178,8 @@ impl SectorGroup {
 
 impl fmt::Display for SectorGroup {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let members_str = self.members.values()
+        let members_str = self.members
+                              .values()
                               .map(|v| v.to_string())
                               .collect::<Vec<_>>()
                               .join(" ");
