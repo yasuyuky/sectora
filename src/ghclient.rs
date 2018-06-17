@@ -79,8 +79,7 @@ impl GithubClient {
     }
 
     fn build_https_client() -> Result<Client<HttpsConnector<HttpConnector>>, CliError> {
-        let https = HttpsConnector::new(4)?;
-        Ok(Client::builder().build(https))
+        Ok(Client::builder().build(HttpsConnector::new(4)?))
     }
 
     fn run_request(&self, req: Request<Body>) -> Result<Chunk, CliError> {
