@@ -1,3 +1,4 @@
+use error::CliError;
 use glob::glob;
 use hyper::client::HttpConnector;
 use hyper::rt::{self, Future, Stream};
@@ -10,7 +11,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::sync::mpsc;
-use structs::{CliError, Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
+use structs::{Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
 
 pub struct GithubClient {
     pub conf: Config,
@@ -100,19 +101,21 @@ impl GithubClient {
 
     fn get_contents(&self, url: &str) -> Result<String, CliError> {
         match self.load_contents_from_cache(url) {
-            Ok((metadata, cache_contents)) => match std::time::SystemTime::now().duration_since(metadata.modified()?) {
-                Ok(caching_duration) => {
-                    if caching_duration.as_secs() > self.conf.cache_duration {
-                        match self.get_contents_from_url(url) {
-                            Ok(contents_from_url) => Ok(contents_from_url),
-                            Err(_) => Ok(cache_contents),
+            Ok((metadata, cache_contents)) => {
+                match std::time::SystemTime::now().duration_since(metadata.modified()?) {
+                    Ok(caching_duration) => {
+                        if caching_duration.as_secs() > self.conf.cache_duration {
+                            match self.get_contents_from_url(url) {
+                                Ok(contents_from_url) => Ok(contents_from_url),
+                                Err(_) => Ok(cache_contents),
+                            }
+                        } else {
+                            Ok(cache_contents)
                         }
-                    } else {
-                        Ok(cache_contents)
                     }
+                    Err(_) => Ok(cache_contents),
                 }
-                Err(_) => Ok(cache_contents),
-            },
+            }
             Err(_) => self.get_contents_from_url(url),
         }
     }

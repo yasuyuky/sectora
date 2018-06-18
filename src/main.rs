@@ -12,6 +12,7 @@ extern crate serde_json;
 extern crate structopt;
 extern crate toml;
 
+mod error;
 mod ghclient;
 mod statics;
 mod structs;

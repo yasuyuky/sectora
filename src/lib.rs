@@ -13,6 +13,7 @@ extern crate toml;
 
 mod buffer;
 mod cstructs;
+mod error;
 mod ghclient;
 mod runfiles;
 mod statics;
