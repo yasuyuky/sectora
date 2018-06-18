@@ -33,3 +33,14 @@ impl From<http::Error> for Error {
 impl From<hyper_tls::Error> for Error {
     fn from(err: hyper_tls::Error) -> Error { Error::HyperTls(err) }
 }
+
+pub enum ParseSectorError {
+    Id(std::num::ParseIntError),
+    Type(std::io::Error),
+}
+
+pub enum ParseSectorGroupError {
+    Sector(ParseSectorError),
+    Gid(std::num::ParseIntError),
+    Member(std::num::ParseIntError),
+}

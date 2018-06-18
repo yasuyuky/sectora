@@ -1,4 +1,4 @@
-use error::Error;
+use error::{Error, ParseSectorError, ParseSectorGroupError};
 use std;
 use std::collections::HashMap;
 use std::fmt;
@@ -143,11 +143,6 @@ impl fmt::Display for Sector {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "{}:{}:{}", self.id, self.name, self.sector_type) }
 }
 
-pub enum ParseSectorError {
-    Id(std::num::ParseIntError),
-    Type(std::io::Error),
-}
-
 impl FromStr for Sector {
     type Err = ParseSectorError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -187,12 +182,6 @@ impl fmt::Display for SectorGroup {
                self.group.clone().unwrap_or(String::new()),
                members_str)
     }
-}
-
-pub enum ParseSectorGroupError {
-    Sector(ParseSectorError),
-    Gid(std::num::ParseIntError),
-    Member(std::num::ParseIntError),
 }
 
 impl FromStr for SectorGroup {
