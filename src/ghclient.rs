@@ -1,4 +1,4 @@
-use error::CliError;
+use error::Error;
 use glob::glob;
 use hyper::client::HttpConnector;
 use hyper::rt::{self, Future, Stream};
@@ -32,7 +32,7 @@ impl GithubClient {
         path
     }
 
-    fn load_contents_from_cache(&self, url: &str) -> Result<(std::fs::Metadata, String), CliError> {
+    fn load_contents_from_cache(&self, url: &str) -> Result<(std::fs::Metadata, String), Error> {
         let path = Self::get_cache_path(url);
         let metadata = std::fs::metadata(path.to_str().unwrap())?;
         let mut f = File::open(path.to_str().unwrap())?;
@@ -41,7 +41,7 @@ impl GithubClient {
         Ok((metadata, contents))
     }
 
-    fn store_contents_to_cache(&self, url: &str, contents: &str) -> Result<(), CliError> {
+    fn store_contents_to_cache(&self, url: &str, contents: &str) -> Result<(), Error> {
         let path = Self::get_cache_path(url);
         std::fs::create_dir_all(path.parent().unwrap_or(std::path::Path::new("/")))?;
         let mut f = File::create(path.to_str().unwrap())?;
@@ -49,7 +49,7 @@ impl GithubClient {
         Ok(())
     }
 
-    fn get_contents_from_url(&self, url: &str) -> Result<String, CliError> {
+    fn get_contents_from_url(&self, url: &str) -> Result<String, Error> {
         let mut all_contents: Vec<serde_json::value::Value> = Vec::new();
         let mut page = 1;
         loop {
@@ -65,41 +65,41 @@ impl GithubClient {
         Ok(contents)
     }
 
-    fn build_request(&self, url: &str) -> Result<Request<Body>, CliError> {
+    fn build_request(&self, url: &str) -> Result<Request<Body>, Error> {
         let token = String::from("token ") + &self.conf.token;
         Request::get(url).header(header::AUTHORIZATION, token.as_str())
                          .header(header::USER_AGENT, "sectora")
                          .body(Body::empty())
-                         .map_err(CliError::from)
+                         .map_err(Error::from)
     }
 
-    fn build_page_request(&self, url: &str, page: u64) -> Result<Request<Body>, CliError> {
+    fn build_page_request(&self, url: &str, page: u64) -> Result<Request<Body>, Error> {
         let sep = if url.contains("?") { "&" } else { "?" };
         let url_p = format!("{}{}page={}", url, sep, page);
         self.build_request(&url_p)
     }
 
-    fn build_https_client() -> Result<Client<HttpsConnector<HttpConnector>>, CliError> {
+    fn build_https_client() -> Result<Client<HttpsConnector<HttpConnector>>, Error> {
         Ok(Client::builder().build(HttpsConnector::new(4)?))
     }
 
-    fn run_request(&self, req: Request<Body>) -> Result<Chunk, CliError> {
+    fn run_request(&self, req: Request<Body>) -> Result<Chunk, Error> {
         let concat_body = |res: Response<Body>| res.into_body().concat2();
         let (tx, rx) = mpsc::sync_channel(1);
         let ex = tx.clone();
         let send_res = move |r| tx.send(Ok(r)).expect("send response");
-        let send_err = move |e| ex.send(Err(CliError::from(e))).expect("send err");
+        let send_err = move |e| ex.send(Err(Error::from(e))).expect("send err");
         let hc = Self::build_https_client()?;
         rt::run(rt::lazy(move || hc.request(req).and_then(concat_body).map(send_res).map_err(send_err)));
         rx.recv().expect("recv response")
     }
 
-    fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::Value>, CliError> {
+    fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::Value>, Error> {
         let req = self.build_page_request(url, page)?;
-        self.run_request(req).and_then(|body| serde_json::from_slice(&body).map_err(CliError::from))
+        self.run_request(req).and_then(|body| serde_json::from_slice(&body).map_err(Error::from))
     }
 
-    fn get_contents(&self, url: &str) -> Result<String, CliError> {
+    fn get_contents(&self, url: &str) -> Result<String, Error> {
         match self.load_contents_from_cache(url) {
             Ok((metadata, cache_contents)) => {
                 match std::time::SystemTime::now().duration_since(metadata.modified()?) {
@@ -121,13 +121,13 @@ impl GithubClient {
     }
 
     #[allow(dead_code)]
-    pub fn print_user_public_key(&self, user: &str) -> Result<(), CliError> {
+    pub fn print_user_public_key(&self, user: &str) -> Result<(), Error> {
         let keys = self.get_user_public_key(user)?;
         println!("{}", keys);
         Ok(())
     }
 
-    fn get_user_public_key(&self, user: &str) -> Result<String, CliError> {
+    fn get_user_public_key(&self, user: &str) -> Result<String, Error> {
         let url = format!("{}/users/{}/keys", self.conf.endpoint, user);
         let contents = self.get_contents(&url)?;
         let keys = serde_json::from_str::<Vec<PublicKey>>(&contents)?;
@@ -135,18 +135,18 @@ impl GithubClient {
     }
 
     #[allow(dead_code)]
-    pub fn check_pam(&self, user: &str) -> Result<bool, CliError> {
+    pub fn check_pam(&self, user: &str) -> Result<bool, Error> {
         let sectors = self.get_sectors()?;
         Ok(sectors.iter().any(|team| team.members.contains_key(user)))
     }
 
-    pub fn get_sectors(&self) -> Result<Vec<SectorGroup>, CliError> {
+    pub fn get_sectors(&self) -> Result<Vec<SectorGroup>, Error> {
         let mut sectors: Vec<SectorGroup> = self.get_teams_result()?;
         sectors.append(&mut self.get_repos_result()?);
         Ok(sectors)
     }
 
-    fn get_teams_result(&self) -> Result<Vec<SectorGroup>, CliError> {
+    fn get_teams_result(&self) -> Result<Vec<SectorGroup>, Error> {
         let gh_teams = self.get_team_map()?;
         let mut teams = Vec::new();
         for team_conf in &self.conf.team {
@@ -160,21 +160,21 @@ impl GithubClient {
         Ok(teams)
     }
 
-    fn get_team_map(&self) -> Result<HashMap<String, Team>, CliError> {
+    fn get_team_map(&self) -> Result<HashMap<String, Team>, Error> {
         let url = format!("{}/orgs/{}/teams", self.conf.endpoint, self.conf.org);
         let contents = self.get_contents(&url)?;
         let teams = serde_json::from_str::<Vec<Team>>(&contents)?;
         Ok(teams.iter().map(|t| (t.name.clone(), t.clone())).collect())
     }
 
-    fn get_team_members(&self, mid: u64) -> Result<HashMap<String, Member>, CliError> {
+    fn get_team_members(&self, mid: u64) -> Result<HashMap<String, Member>, Error> {
         let url = format!("{}/teams/{}/members", self.conf.endpoint, mid);
         let contents = self.get_contents(&url)?;
         let members = serde_json::from_str::<Vec<Member>>(&contents)?;
         Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
     }
 
-    fn get_repos_result(&self) -> Result<Vec<SectorGroup>, CliError> {
+    fn get_repos_result(&self) -> Result<Vec<SectorGroup>, Error> {
         let gh_repos = self.get_repo_map()?;
         let mut repos = Vec::new();
         for repo_conf in &self.conf.repo {
@@ -188,14 +188,14 @@ impl GithubClient {
         Ok(repos)
     }
 
-    fn get_repo_map(&self) -> Result<HashMap<String, Repo>, CliError> {
+    fn get_repo_map(&self) -> Result<HashMap<String, Repo>, Error> {
         let url = format!("{}/orgs/{}/repos", self.conf.endpoint, self.conf.org);
         let contents = self.get_contents(&url)?;
         let repos = serde_json::from_str::<Vec<Repo>>(&contents)?;
         Ok(repos.iter().map(|t| (t.name.clone(), t.clone())).collect())
     }
 
-    fn get_repo_collaborators(&self, repo_name: &str) -> Result<HashMap<String, Member>, CliError> {
+    fn get_repo_collaborators(&self, repo_name: &str) -> Result<HashMap<String, Member>, Error> {
         let url = format!("{}/repos/{}/{}/collaborators?affiliation=outside",
                           self.conf.endpoint, self.conf.org, repo_name);
         let contents = self.get_contents(&url)?;
@@ -203,21 +203,21 @@ impl GithubClient {
         Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
     }
 
-    fn get_rate_limit(&self) -> Result<RateLimit, CliError> {
+    fn get_rate_limit(&self) -> Result<RateLimit, Error> {
         let url = format!("{}/rate_limit", self.conf.endpoint);
         let req = self.build_request(&url)?;
-        self.run_request(req).and_then(|body| serde_json::from_slice(&body).map_err(CliError::from))
+        self.run_request(req).and_then(|body| serde_json::from_slice(&body).map_err(Error::from))
     }
 
     #[allow(dead_code)]
-    pub fn print_rate_limit(&self) -> Result<(), CliError> {
+    pub fn print_rate_limit(&self) -> Result<(), Error> {
         let rate_limit = self.get_rate_limit()?;
         println!("{:?}", rate_limit);
         Ok(())
     }
 
     #[allow(dead_code)]
-    pub fn clear_all_caches(&self) -> Result<(), CliError> {
+    pub fn clear_all_caches(&self) -> Result<(), Error> {
         let mut path = std::env::temp_dir();
         path.push(TEMP_DIRNAME);
         path.push("**/*");
