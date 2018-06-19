@@ -34,9 +34,13 @@ impl From<hyper_tls::Error> for Error {
     fn from(err: hyper_tls::Error) -> Error { Error::HyperTls(err) }
 }
 
+pub enum ParseSectorTypeError {
+    UnknownType,
+}
+
 pub enum ParseSectorError {
     Id(std::num::ParseIntError),
-    Type(std::io::Error),
+    Type(ParseSectorTypeError),
 }
 
 pub enum ParseSectorGroupError {

@@ -1,4 +1,4 @@
-use error::{Error, ParseSectorError, ParseSectorGroupError};
+use error::{Error, ParseSectorError, ParseSectorGroupError, ParseSectorTypeError};
 use std;
 use std::collections::HashMap;
 use std::fmt;
@@ -106,12 +106,12 @@ impl fmt::Display for SectorType {
 }
 
 impl FromStr for SectorType {
-    type Err = std::io::Error;
+    type Err = ParseSectorTypeError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "T" => Ok(SectorType::Team),
             "R" => Ok(SectorType::Repo),
-            _ => Err(std::io::Error::new(std::io::ErrorKind::Other, "unknown sector type")),
+            _ => Err(ParseSectorTypeError::UnknownType),
         }
     }
 }
