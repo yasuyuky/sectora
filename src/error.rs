@@ -41,6 +41,7 @@ pub enum ParseSectorTypeError {
 pub enum ParseSectorError {
     Id(std::num::ParseIntError),
     Type(ParseSectorTypeError),
+    BadFormat,
 }
 
 pub enum ParseSectorGroupError {

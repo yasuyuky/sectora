@@ -147,9 +147,13 @@ impl FromStr for Sector {
     type Err = ParseSectorError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts = s.split(":").collect::<Vec<&str>>();
-        Ok(Self { id: parts[0].parse().map_err(ParseSectorError::Id)?,
-                  name: String::from(parts[1]),
-                  sector_type: parts[2].parse().map_err(ParseSectorError::Type)?, })
+        if parts.len() == 3 {
+            Ok(Self { id: parts[0].parse().map_err(ParseSectorError::Id)?,
+                      name: String::from(parts[1]),
+                      sector_type: parts[2].parse().map_err(ParseSectorError::Type)?, })
+        } else {
+            Err(ParseSectorError::BadFormat)
+        }
     }
 }
 
