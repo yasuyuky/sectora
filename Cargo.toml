@@ -15,7 +15,7 @@ lazy_static = "1.0"
 nix = "0.11"
 http = "0.1"
 hyper = "0.12"
-hyper-tls = "0.2"
+hyper-tls = "0.3"
 structopt = "0.2"
 
 [[bin]]
