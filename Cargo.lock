@@ -482,7 +482,7 @@ dependencies = [
  "libc 0.2.42 (registry+https://github.com/rust-lang/crates.io-index)",
  "nix 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.68 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive 1.0.68 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.69 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.22 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -515,7 +515,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "serde_derive"
-version = "1.0.68"
+version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "proc-macro2 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -880,7 +880,7 @@ dependencies = [
 "checksum security-framework 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "697d3f3c23a618272ead9e1fb259c1411102b31c6af8b93f1d64cca9c3b0e8e0"
 "checksum security-framework-sys 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "ab01dfbe5756785b5b4d46e0289e5a18071dfa9a7c2b24213ea00b9ef9b665bf"
 "checksum serde 1.0.68 (registry+https://github.com/rust-lang/crates.io-index)" = "429fcc4efa8a11341b5422c2ace724daba276c1748467e869478f53c0ba4562e"
-"checksum serde_derive 1.0.68 (registry+https://github.com/rust-lang/crates.io-index)" = "6a25ad0bf818ed2d180c89addbe29198d1de6c89ed08a48aa6a4d3d16a63cbfe"
+"checksum serde_derive 1.0.69 (registry+https://github.com/rust-lang/crates.io-index)" = "dd724d68017ae3a7e63600ee4b2fdb3cad2158ffd1821d44aff4580f63e2b593"
 "checksum serde_json 1.0.22 (registry+https://github.com/rust-lang/crates.io-index)" = "84b8035cabe9b35878adec8ac5fe03d5f6bc97ff6edd7ccb96b44c1276ba390e"
 "checksum slab 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "fdeff4cd9ecff59ec7e3744cbca73dfe5ac35c2aedb2cfba8a1c715a18912e9d"
 "checksum string 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "31f98b200e7caca9efca50fc0aa69cd58a5ec81d5f6e75b2f3ecaad2e998972a"
