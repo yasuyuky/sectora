@@ -14,4 +14,4 @@ jobs:
       - image: yasuyuky/rust-arm:1.27.2
     steps:
       - checkout
-      - run: cargo build
+      - run: cargo build --target=arm-unknown-linux-gnueabihf
