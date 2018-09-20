@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: /tmp/sectora
     docker:
-      - image: rust:1.28.0-stretch
+      - image: rust:1.29.0-stretch
     steps:
       - checkout
       - run: cargo build
@@ -11,7 +11,7 @@ jobs:
   build-arm:
     working_directory: /tmp/sectora
     docker:
-      - image: yasuyuky/rust-arm:1.28.0
+      - image: yasuyuky/rust-arm:1.29.0
     steps:
       - checkout
       - run: cargo build --target=arm-unknown-linux-gnueabihf
