@@ -35,11 +35,11 @@ impl Buffer {
         unsafe {
             let mem = self.buf.offset(self.offset) as *mut *mut libc::c_char;
             for (i, p) in ptrs.iter().enumerate() {
-                *(mem.offset(i as isize)) = *p;
+                *(mem.add(i)) = *p;
                 self.offset += step as isize;
                 self.buflen -= step as libc::size_t;
             }
-            *(mem.offset(ptrs.len() as isize)) = std::ptr::null_mut::<libc::c_char>();
+            *(mem.add(ptrs.len())) = std::ptr::null_mut::<libc::c_char>();
             self.offset += step as isize;
             self.buflen -= step as libc::size_t;
             Ok(mem)
