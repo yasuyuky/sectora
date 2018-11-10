@@ -8,4 +8,4 @@ lazy_static! {
     pub static ref CONF_PATH: &'static Path = Path::new(&(*CONF_PATH_STR));
 }
 
-pub const TEMP_DIRNAME: &'static str = "sectora-cache";
+pub const TEMP_DIRNAME: &str = "sectora-cache";
