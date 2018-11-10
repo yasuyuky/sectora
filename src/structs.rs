@@ -182,8 +182,8 @@ impl fmt::Display for SectorGroup {
         writeln!(f,
                  "{}\t{}\t{}\t{}",
                  self.sector,
-                 self.gid.and_then(|i| Some(i.to_string())).unwrap_or(String::new()),
-                 self.group.clone().unwrap_or(String::new()),
+                 self.gid.and_then(|i| Some(i.to_string())).unwrap_or_default(),
+                 self.group.clone().unwrap_or_default(),
                  members_str)
     }
 }
