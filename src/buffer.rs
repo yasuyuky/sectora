@@ -26,7 +26,7 @@ impl Buffer {
         }
     }
 
-    fn add_pointers(&mut self, ptrs: &Vec<*mut libc::c_char>) -> Result<*mut *mut libc::c_char, Error> {
+    fn add_pointers(&mut self, ptrs: &[*mut libc::c_char]) -> Result<*mut *mut libc::c_char, Error> {
         use std::mem::size_of;
         let step = std::cmp::max(size_of::<*mut libc::c_char>() / size_of::<libc::c_char>(), 1);
         if self.buflen < (((ptrs.len() + 1) * step) as isize + self.offset) as libc::size_t {
@@ -51,7 +51,7 @@ impl Buffer {
         self.write(cs.as_ptr(), s.len() + 1)
     }
 
-    pub fn write_vecstr(&mut self, ss: &Vec<&str>) -> Result<*mut *mut libc::c_char, Error> {
+    pub fn write_vecstr(&mut self, ss: &[&str]) -> Result<*mut *mut libc::c_char, Error> {
         let mut ptrs = Vec::<*mut libc::c_char>::new();
         for s in ss {
             ptrs.push(self.write_string(s)?);

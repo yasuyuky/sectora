@@ -100,7 +100,7 @@ pub struct Group {
 }
 
 impl Group {
-    fn pack(&mut self, buf: &mut Buffer, name: &str, passwd: &str, gid: libc::gid_t, mem: &Vec<&str>)
+    fn pack(&mut self, buf: &mut Buffer, name: &str, passwd: &str, gid: libc::gid_t, mem: &[&str])
             -> Result<(), Error> {
         self.name = buf.write_string(name)?;
         self.passwd = buf.write_string(passwd)?;
@@ -109,7 +109,7 @@ impl Group {
         Ok(())
     }
 
-    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, members: &Vec<&str>) -> Result<(), Error> {
+    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, members: &[&str]) -> Result<(), Error> {
         self.pack(buf, name, "x", id as libc::gid_t, &members)
     }
 }
