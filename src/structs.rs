@@ -179,12 +179,12 @@ impl fmt::Display for SectorGroup {
                               .map(|v| v.to_string())
                               .collect::<Vec<_>>()
                               .join(" ");
-        write!(f,
-               "{}\t{}\t{}\t{}\n",
-               self.sector,
-               self.gid.and_then(|i| Some(i.to_string())).unwrap_or(String::new()),
-               self.group.clone().unwrap_or(String::new()),
-               members_str)
+        writeln!(f,
+                 "{}\t{}\t{}\t{}",
+                 self.sector,
+                 self.gid.and_then(|i| Some(i.to_string())).unwrap_or(String::new()),
+                 self.group.clone().unwrap_or(String::new()),
+                 members_str)
     }
 }
 
