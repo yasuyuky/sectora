@@ -151,7 +151,7 @@ impl GithubClient {
         for team_conf in &self.conf.team {
             if let Some(gh_team) = gh_teams.get(&team_conf.name) {
                 teams.push(SectorGroup { sector: Sector::from(gh_team.clone()),
-                                         gid: team_conf.gid.clone(),
+                                         gid: team_conf.gid,
                                          group: team_conf.group.clone(),
                                          members: self.get_team_members(gh_team.id)? });
             }
@@ -179,7 +179,7 @@ impl GithubClient {
         for repo_conf in &self.conf.repo {
             if let Some(gh_repo) = gh_repos.get(&repo_conf.name) {
                 repos.push(SectorGroup { sector: Sector::from(gh_repo.clone()),
-                                         gid: repo_conf.gid.clone(),
+                                         gid: repo_conf.gid,
                                          group: repo_conf.group.clone(),
                                          members: self.get_repo_collaborators(&gh_repo.name)? });
             }
