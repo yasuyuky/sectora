@@ -149,7 +149,7 @@ impl GithubClient {
         let gh_teams = self.get_team_map()?;
         let mut teams = Vec::new();
         for team_conf in &self.conf.team {
-            if let &Some(gh_team) = &gh_teams.get(&team_conf.name) {
+            if let Some(gh_team) = gh_teams.get(&team_conf.name) {
                 teams.push(SectorGroup { sector: Sector::from(gh_team.clone()),
                                          gid: team_conf.gid.clone(),
                                          group: team_conf.group.clone(),
@@ -177,7 +177,7 @@ impl GithubClient {
         let gh_repos = self.get_repo_map()?;
         let mut repos = Vec::new();
         for repo_conf in &self.conf.repo {
-            if let &Some(gh_repo) = &gh_repos.get(&repo_conf.name) {
+            if let Some(gh_repo) = gh_repos.get(&repo_conf.name) {
                 repos.push(SectorGroup { sector: Sector::from(gh_repo.clone()),
                                          gid: repo_conf.gid.clone(),
                                          group: repo_conf.group.clone(),

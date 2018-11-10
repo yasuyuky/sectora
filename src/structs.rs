@@ -99,8 +99,8 @@ pub enum SectorType {
 impl fmt::Display for SectorType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &SectorType::Team => write!(f, "T"),
-            &SectorType::Repo => write!(f, "R"),
+            SectorType::Team => write!(f, "T"),
+            SectorType::Repo => write!(f, "R"),
         }
     }
 }
