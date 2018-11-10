@@ -62,17 +62,15 @@ fn main() {
             Ok(_) => process::exit(0),
             Err(_) => process::exit(11),
         },
-        Command::Key { user } => match Config::new(&CONF_PATH)
-            .and_then(|conf| Ok(GithubClient::new(&conf)))
-            .and_then(|client| client.print_user_public_key(&user))
+        Command::Key { user } => match Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
+                                                              .and_then(|client| client.print_user_public_key(&user))
         {
             Ok(_) => process::exit(0),
             Err(_) => process::exit(21),
         },
         Command::Pam => match env::var("PAM_USER") {
-            Ok(user) => match Config::new(&CONF_PATH)
-                .and_then(|conf| Ok(GithubClient::new(&conf)))
-                .and_then(|client| client.check_pam(&user))
+            Ok(user) => match Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
+                                                     .and_then(|client| client.check_pam(&user))
             {
                 Ok(true) => process::exit(0),
                 Ok(false) => process::exit(1),
@@ -80,28 +78,22 @@ fn main() {
             },
             Err(_) => process::exit(41),
         },
-        Command::CleanUp => match Config::new(&CONF_PATH)
-            .and_then(|conf| Ok(GithubClient::new(&conf)))
-            .and_then(|client| client.clear_all_caches())
+        Command::CleanUp => match Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
+                                                         .and_then(|client| client.clear_all_caches())
         {
             Ok(_) => process::exit(0),
             Err(_) => process::exit(51),
         },
-        Command::RateLimit => match Config::new(&CONF_PATH)
-            .and_then(|conf| Ok(GithubClient::new(&conf)))
-            .and_then(|client| client.print_rate_limit())
+        Command::RateLimit => match Config::new(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
+                                                           .and_then(|client| client.print_rate_limit())
         {
             Ok(_) => process::exit(0),
             Err(_) => process::exit(61),
         },
         Command::Version => {
-            println!(
-                "{}",
-                concat!(
-                    env!("CARGO_PKG_VERSION"),
-                    include_str!(concat!(env!("OUT_DIR"), "/commit-info.txt"))
-                )
-            );
+            println!("{}",
+                     concat!(env!("CARGO_PKG_VERSION"),
+                             include_str!(concat!(env!("OUT_DIR"), "/commit-info.txt"))));
         }
     };
 }

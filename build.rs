@@ -7,8 +7,7 @@ use std::process::Command;
 
 struct Ignore;
 
-impl<E> From<E> for Ignore
-    where E: Error
+impl<E> From<E> for Ignore where E: Error
 {
     fn from(_: E) -> Ignore { Ignore }
 }
@@ -29,13 +28,18 @@ fn commit_info() -> String {
 }
 
 fn commit_hash() -> Result<String, Ignore> {
-    Ok(String::from_utf8(Command::new("git").args(&["rev-parse", "--short=10", "HEAD"])
+    Ok(String::from_utf8(Command::new("git").args(&["rev-parse",
+                                                    "--short=10",
+                                                    "HEAD"])
                                             .output()?
                                             .stdout)?)
 }
 
 fn commit_date() -> Result<String, Ignore> {
-    Ok(String::from_utf8(Command::new("git").args(&["log", "-1", "--date=short", "--pretty=format:%cd"])
+    Ok(String::from_utf8(Command::new("git").args(&["log",
+                                                    "-1",
+                                                    "--date=short",
+                                                    "--pretty=format:%cd"])
                                             .output()?
                                             .stdout)?)
 }
