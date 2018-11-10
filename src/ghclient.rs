@@ -96,26 +96,25 @@ impl GithubClient {
 
     fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::Value>, Error> {
         let req = self.build_page_request(url, page)?;
-        self.run_request(req).and_then(|body| serde_json::from_slice(&body).map_err(Error::from))
+        self.run_request(req)
+            .and_then(|body| serde_json::from_slice(&body).map_err(Error::from))
     }
 
     fn get_contents(&self, url: &str) -> Result<String, Error> {
         match self.load_contents_from_cache(url) {
-            Ok((metadata, cache_contents)) => {
-                match std::time::SystemTime::now().duration_since(metadata.modified()?) {
-                    Ok(caching_duration) => {
-                        if caching_duration.as_secs() > self.conf.cache_duration {
-                            match self.get_contents_from_url(url) {
-                                Ok(contents_from_url) => Ok(contents_from_url),
-                                Err(_) => Ok(cache_contents),
-                            }
-                        } else {
-                            Ok(cache_contents)
+            Ok((metadata, cache_contents)) => match std::time::SystemTime::now().duration_since(metadata.modified()?) {
+                Ok(caching_duration) => {
+                    if caching_duration.as_secs() > self.conf.cache_duration {
+                        match self.get_contents_from_url(url) {
+                            Ok(contents_from_url) => Ok(contents_from_url),
+                            Err(_) => Ok(cache_contents),
                         }
+                    } else {
+                        Ok(cache_contents)
                     }
-                    Err(_) => Ok(cache_contents),
                 }
-            }
+                Err(_) => Ok(cache_contents),
+            },
             Err(_) => self.get_contents_from_url(url),
         }
     }
@@ -154,7 +153,7 @@ impl GithubClient {
                 teams.push(SectorGroup { sector: Sector::from(gh_team.clone()),
                                          gid: team_conf.gid.clone(),
                                          group: team_conf.group.clone(),
-                                         members: self.get_team_members(gh_team.id)?, });
+                                         members: self.get_team_members(gh_team.id)? });
             }
         }
         Ok(teams)
@@ -182,7 +181,7 @@ impl GithubClient {
                 repos.push(SectorGroup { sector: Sector::from(gh_repo.clone()),
                                          gid: repo_conf.gid.clone(),
                                          group: repo_conf.group.clone(),
-                                         members: self.get_repo_collaborators(&gh_repo.name)?, });
+                                         members: self.get_repo_collaborators(&gh_repo.name)? });
             }
         }
         Ok(repos)
@@ -206,7 +205,8 @@ impl GithubClient {
     fn get_rate_limit(&self) -> Result<RateLimit, Error> {
         let url = format!("{}/rate_limit", self.conf.endpoint);
         let req = self.build_request(&url)?;
-        self.run_request(req).and_then(|body| serde_json::from_slice(&body).map_err(Error::from))
+        self.run_request(req)
+            .and_then(|body| serde_json::from_slice(&body).map_err(Error::from))
     }
 
     #[allow(dead_code)]

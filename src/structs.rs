@@ -127,7 +127,7 @@ impl From<Team> for Sector {
     fn from(team: Team) -> Self {
         Self { id: team.id,
                name: team.name,
-               sector_type: SectorType::Team, }
+               sector_type: SectorType::Team }
     }
 }
 
@@ -135,7 +135,7 @@ impl From<Repo> for Sector {
     fn from(repo: Repo) -> Self {
         Self { id: repo.id,
                name: repo.name,
-               sector_type: SectorType::Repo, }
+               sector_type: SectorType::Repo }
     }
 }
 
@@ -150,7 +150,7 @@ impl FromStr for Sector {
         if parts.len() == 3 {
             Ok(Self { id: parts[0].parse().map_err(ParseSectorError::Id)?,
                       name: String::from(parts[1]),
-                      sector_type: parts[2].parse().map_err(ParseSectorError::Type)?, })
+                      sector_type: parts[2].parse().map_err(ParseSectorError::Type)? })
         } else {
             Err(ParseSectorError::BadFormat)
         }
@@ -210,7 +210,7 @@ impl FromStr for SectorGroup {
         Ok(Self { sector,
                   gid,
                   group,
-                  members, })
+                  members })
     }
 }
 
@@ -229,7 +229,7 @@ impl FromStr for Member {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts = s.split(":").collect::<Vec<&str>>();
         Ok(Self { id: parts[0].parse()?,
-                  login: String::from(parts[1]), })
+                  login: String::from(parts[1]) })
     }
 }
 
@@ -248,7 +248,7 @@ impl FromStr for MemberGid {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts = s.split("|").collect::<Vec<&str>>();
         Ok(Self { member: parts[0].parse()?,
-                  gid: parts[1].parse()?, })
+                  gid: parts[1].parse()? })
     }
 }
 
