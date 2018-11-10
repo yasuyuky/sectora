@@ -230,8 +230,8 @@ pub unsafe extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut G
     let sectors = get_or_again!(client.get_sectors(), errnop);
     for sector in sectors {
         let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
-        if gid as u64 == sector.get_gid() {
-            match { (*grptr).pack_args(&mut buffer, &sector.get_group(), gid as u64, &members) } {
+        if u64::from(gid) == sector.get_gid() {
+            match { (*grptr).pack_args(&mut buffer, &sector.get_group(), u64::from(gid), &members) } {
                 Ok(_) => succeed!(),
                 Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
             }
