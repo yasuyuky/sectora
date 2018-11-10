@@ -8,7 +8,7 @@ pub fn create() -> Result<File, Error> {
     let pid = unsafe { libc::getpid() };
     create_dir_all(RUN_DIR)?;
     let mut idx_file: File = File::create(format!("{}/{}.index", RUN_DIR, pid))?;
-    idx_file.write(b"0")?;
+    idx_file.write_all(b"0")?;
     Ok(File::create(format!("{}/{}.list", RUN_DIR, pid))?)
 }
 
@@ -33,5 +33,5 @@ pub fn cleanup() -> Result<(), Error> {
 
 pub fn increment(idx: usize, mut idx_file: File) {
     idx_file.seek(SeekFrom::Start(0)).unwrap();
-    idx_file.write(format!("{}", idx + 1).as_bytes()).unwrap();
+    idx_file.write_all(format!("{}", idx + 1).as_bytes()).unwrap();
 }

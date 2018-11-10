@@ -137,7 +137,7 @@ pub extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
         for member in sector.members.values() {
             let mg = MemberGid { member: member.clone(),
                                  gid: sector.get_gid(), };
-            list_file.write(mg.to_string().as_bytes()).unwrap();
+            list_file.write_all(mg.to_string().as_bytes()).unwrap();
         }
     }
     libc::c_int::from(NssStatus::Success)
@@ -192,7 +192,7 @@ pub extern "C" fn _nss_sectora_setspent() -> libc::c_int {
     let sectors = get_or_again!(client.get_sectors());
     for sector in sectors {
         for member in sector.members.values() {
-            list_file.write(member.to_string().as_bytes()).unwrap();
+            list_file.write_all(member.to_string().as_bytes()).unwrap();
         }
     }
     libc::c_int::from(NssStatus::Success)
@@ -266,7 +266,7 @@ pub extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
     let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))));
     let sectors = get_or_again!(client.get_sectors());
     for sector in sectors {
-        list_file.write(sector.to_string().as_bytes()).unwrap();
+        list_file.write_all(sector.to_string().as_bytes()).unwrap();
     }
     libc::c_int::from(NssStatus::Success)
 }

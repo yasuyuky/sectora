@@ -45,7 +45,7 @@ impl GithubClient {
         let path = Self::get_cache_path(url);
         std::fs::create_dir_all(path.parent().unwrap_or(std::path::Path::new("/")))?;
         let mut f = File::create(path.to_str().unwrap())?;
-        f.write(contents.as_bytes())?;
+        f.write_all(contents.as_bytes())?;
         Ok(())
     }
 
