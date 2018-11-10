@@ -146,7 +146,7 @@ impl fmt::Display for Sector {
 impl FromStr for Sector {
     type Err = ParseSectorError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts = s.split(":").collect::<Vec<&str>>();
+        let parts = s.split(':').collect::<Vec<&str>>();
         if parts.len() == 3 {
             Ok(Self { id: parts[0].parse().map_err(ParseSectorError::Id)?,
                       name: String::from(parts[1]),
@@ -191,7 +191,7 @@ impl fmt::Display for SectorGroup {
 impl FromStr for SectorGroup {
     type Err = ParseSectorGroupError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts = s.split("\t").collect::<Vec<&str>>();
+        let parts = s.split('\t').collect::<Vec<&str>>();
         let sector = parts[0].parse().map_err(ParseSectorGroupError::Sector)?;
         let gid: Option<u64> = match parts[1] {
             "" => None,
@@ -201,7 +201,7 @@ impl FromStr for SectorGroup {
             "" => None,
             s => Some(String::from(s)),
         };
-        let members = parts[3].split(" ")
+        let members = parts[3].split(' ')
                               .map(|s| s.parse::<Member>().map_err(ParseSectorGroupError::Member))
                               .collect::<Result<Vec<Member>, _>>()?
                               .into_iter()
@@ -227,7 +227,7 @@ impl fmt::Display for Member {
 impl FromStr for Member {
     type Err = std::num::ParseIntError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts = s.split(":").collect::<Vec<&str>>();
+        let parts = s.split(':').collect::<Vec<&str>>();
         Ok(Self { id: parts[0].parse()?,
                   login: String::from(parts[1]) })
     }
@@ -246,7 +246,7 @@ impl fmt::Display for MemberGid {
 impl FromStr for MemberGid {
     type Err = std::num::ParseIntError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts = s.split("|").collect::<Vec<&str>>();
+        let parts = s.split('|').collect::<Vec<&str>>();
         Ok(Self { member: parts[0].parse()?,
                   gid: parts[1].parse()? })
     }

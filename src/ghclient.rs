@@ -74,7 +74,7 @@ impl GithubClient {
     }
 
     fn build_page_request(&self, url: &str, page: u64) -> Result<Request<Body>, Error> {
-        let sep = if url.contains("?") { "&" } else { "?" };
+        let sep = if url.contains('?') { '&' } else { '?' };
         let url_p = format!("{}{}page={}", url, sep, page);
         self.build_request(&url_p)
     }
