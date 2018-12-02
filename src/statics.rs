@@ -2,10 +2,10 @@ use std::env;
 use std::path::Path;
 use std::string::String;
 
+const DEFAULT_CONF_PATH_STR: &str = "/etc/sectora.conf";
+pub const TEMP_DIRNAME: &str = "sectora-cache";
+
 lazy_static! {
-    static ref DEFAULT_CONF_PATH_STR: String = String::from("/etc/sectora.conf");
-    static ref CONF_PATH_STR: String = env::var("SECTORA_CONFIG").unwrap_or(DEFAULT_CONF_PATH_STR.clone());
+    static ref CONF_PATH_STR: String = env::var("SECTORA_CONFIG").unwrap_or(String::from(DEFAULT_CONF_PATH_STR));
     pub static ref CONF_PATH: &'static Path = Path::new(&(*CONF_PATH_STR));
 }
-
-pub const TEMP_DIRNAME: &str = "sectora-cache";
