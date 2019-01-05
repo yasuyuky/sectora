@@ -26,9 +26,12 @@ impl Buffer {
         }
     }
 
+    #[allow(clippy::cast_ptr_alignment)] // NOTE: waiting for align_offset https://github.com/rust-lang/rust/issues/44488
     fn add_pointers(&mut self, ptrs: &[*mut libc::c_char]) -> Result<*mut *mut libc::c_char, Error> {
         use std::mem::size_of;
         let step = std::cmp::max(size_of::<*mut libc::c_char>() / size_of::<libc::c_char>(), 1);
+        let align_offset = self.offset % step as isize;
+        self.offset += align_offset; // NOTE: remove after stabilization of align_offset
         if self.buflen < (((ptrs.len() + 1) * step) as isize + self.offset) as libc::size_t {
             return Err(Error::new(ErrorKind::AddrNotAvailable, "ERANGE"));
         }
