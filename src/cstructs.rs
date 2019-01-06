@@ -32,7 +32,7 @@ impl Passwd {
 
     pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, gid: u64, conf: &Config) -> Result<(), Error> {
         let home = conf.home.replace("{}", name);
-        let sh: String = match UserConfig::new(&Path::new(&home).join(&conf.user_conf_path)) {
+        let sh: String = match UserConfig::from_path(&Path::new(&home).join(&conf.user_conf_path)) {
             Ok(personal) => match personal.sh {
                 Some(sh) => {
                     if Path::new(&sh).exists() {
@@ -80,7 +80,7 @@ impl Spwd {
 
     pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, conf: &Config) -> Result<(), Error> {
         let home = conf.home.replace("{}", name);
-        let pass: String = match UserConfig::new(&Path::new(&home).join(&conf.user_conf_path)) {
+        let pass: String = match UserConfig::from_path(&Path::new(&home).join(&conf.user_conf_path)) {
             Ok(personal) => match personal.pass {
                 Some(pass) => pass,
                 None => String::from("*"),

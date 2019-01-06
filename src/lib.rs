@@ -94,7 +94,8 @@ pub unsafe extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, 
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
+    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))),
+                               errnop);
     let sectors = get_or_again!(client.get_sectors(), errnop);
     for sector in sectors {
         if let Some(member) = sector.members.get(&name) {
@@ -112,7 +113,8 @@ pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut P
                                                  buflen: libc::size_t, errnop: *mut libc::c_int)
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
+    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))),
+                               errnop);
     let sectors = get_or_again!(client.get_sectors(), errnop);
     for sector in sectors {
         for member in sector.members.values() {
@@ -130,7 +132,7 @@ pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut P
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
     let mut list_file = get_or_again!(runfiles::create());
-    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))));
+    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))));
     let sectors = get_or_again!(client.get_sectors());
     for sector in sectors {
         for member in sector.members.values() {
@@ -147,7 +149,8 @@ pub unsafe extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut l
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
     let (idx, idx_file, list) = get_or_again!(runfiles::open(), errnop);
-    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
+    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))),
+                               errnop);
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let mg = get_or_again!(line.parse::<MemberGid>(), errnop);
@@ -172,7 +175,8 @@ pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, 
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
+    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))),
+                               errnop);
     let sectors = get_or_again!(client.get_sectors(), errnop);
     for sector in sectors {
         if let Some(member) = sector.members.get(&name) {
@@ -188,7 +192,7 @@ pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_setspent() -> libc::c_int {
     let mut list_file = get_or_again!(runfiles::create());
-    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))));
+    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))));
     let sectors = get_or_again!(client.get_sectors());
     for sector in sectors {
         for member in sector.members.values() {
@@ -203,7 +207,8 @@ pub unsafe extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut lib
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
     let (idx, idx_file, list) = get_or_again!(runfiles::open(), errnop);
-    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
+    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))),
+                               errnop);
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let member = get_or_again!(line.parse::<Member>(), errnop);
@@ -226,7 +231,8 @@ pub unsafe extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut G
                                                  buflen: libc::size_t, errnop: *mut libc::c_int)
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
+    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))),
+                               errnop);
     let sectors = get_or_again!(client.get_sectors(), errnop);
     for sector in sectors {
         let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
@@ -247,7 +253,8 @@ pub unsafe extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, 
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))), errnop);
+    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))),
+                               errnop);
     let sectors = get_or_again!(client.get_sectors(), errnop);
     for sector in sectors {
         let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
@@ -264,7 +271,7 @@ pub unsafe extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
     let mut list_file = get_or_again!(runfiles::create());
-    let client = get_or_again!(Config::new(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))));
+    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))));
     let sectors = get_or_again!(client.get_sectors());
     for sector in sectors {
         list_file.write_all(sector.to_string().as_bytes()).unwrap();

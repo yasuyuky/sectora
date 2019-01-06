@@ -40,7 +40,7 @@ fn default_cert_path() -> String { String::from("/etc/ssl/certs/ca-certificates.
 fn default_user_conf_path() -> String { String::from(".config/sectora.toml") }
 
 impl Config {
-    pub fn new(configpath: &std::path::Path) -> Result<Self, Error> {
+    pub fn from_path(configpath: &std::path::Path) -> Result<Self, Error> {
         let mut file = File::open(configpath)?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
@@ -56,7 +56,7 @@ pub struct UserConfig {
 
 impl UserConfig {
     #[allow(dead_code)]
-    pub fn new(configpath: &std::path::Path) -> Result<Self, Error> {
+    pub fn from_path(configpath: &std::path::Path) -> Result<Self, Error> {
         let mut file = File::open(configpath)?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
