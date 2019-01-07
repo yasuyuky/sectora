@@ -17,6 +17,7 @@ pub struct Passwd {
 }
 
 impl Passwd {
+    #[allow(clippy::too_many_arguments)]
     fn pack(&mut self, buf: &mut Buffer, name: &str, passwd: &str, uid: libc::uid_t, gid: libc::gid_t, gecos: &str,
             dir: &str, shell: &str)
             -> Result<(), Error> {
@@ -63,6 +64,7 @@ pub struct Spwd {
 }
 
 impl Spwd {
+    #[allow(clippy::too_many_arguments)]
     fn pack(&mut self, buf: &mut Buffer, namp: &str, pwdp: &str, lstchg: libc::c_long, min: libc::c_long,
             max: libc::c_long, warn: libc::c_long, inact: libc::c_long, expire: libc::c_long, flag: libc::c_ulong)
             -> Result<(), Error> {
