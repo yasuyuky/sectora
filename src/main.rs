@@ -37,8 +37,10 @@ enum Command {
         confpath: std::path::PathBuf,
     },
     /// Cleans caches up
+    #[structopt(alias = "cleanup")]
     CleanUp,
     /// Get rate limit for github api
+    #[structopt(alias = "ratelimit")]
     RateLimit,
     /// Displays version details
     Version,
