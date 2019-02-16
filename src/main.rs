@@ -47,6 +47,26 @@ enum Command {
     /// Displays version details
     #[structopt(name = "version")]
     Version,
+    /// Displays completion
+    #[structopt(name = "completion")]
+    Completion {
+        #[structopt(subcommand)]
+        shell: Shell,
+    },
+}
+
+#[derive(Debug, StructOpt)]
+enum Shell {
+    #[structopt(name = "bash")]
+    Bash,
+    #[structopt(name = "fish")]
+    Fish,
+    #[structopt(name = "zsh")]
+    Zsh,
+    #[structopt(name = "powershell")]
+    PowerShell,
+    #[structopt(name = "elvish")]
+    Elvish,
 }
 
 fn main() {
@@ -96,6 +116,16 @@ fn main() {
             println!("{}",
                      concat!(env!("CARGO_PKG_VERSION"),
                              include_str!(concat!(env!("OUT_DIR"), "/commit-info.txt"))));
+        }
+        Command::Completion { shell } => {
+            let shell = match shell {
+                Shell::Bash => structopt::clap::Shell::Bash,
+                Shell::Fish => structopt::clap::Shell::Fish,
+                Shell::Zsh => structopt::clap::Shell::Zsh,
+                Shell::PowerShell => structopt::clap::Shell::PowerShell,
+                Shell::Elvish => structopt::clap::Shell::Elvish,
+            };
+            Command::clap().gen_completions_to("sectora", shell, &mut std::io::stdout());
         }
     };
 }
