@@ -22,33 +22,27 @@ use statics::CONF_PATH;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
+#[structopt(rename_all = "kebab-case")]
 enum Command {
     /// Gets user public key
-    #[structopt(name = "key")]
     Key {
         #[structopt(parse(from_str))]
         user: String,
     },
     /// Executes pam check
-    #[structopt(name = "pam")]
     Pam,
     /// Check configuration
-    #[structopt(name = "check")]
     Check {
         #[structopt(parse(from_os_str))]
         confpath: std::path::PathBuf,
     },
     /// Cleans caches up
-    #[structopt(name = "cleanup")]
     CleanUp,
     /// Get rate limit for github api
-    #[structopt(name = "ratelimit")]
     RateLimit,
     /// Displays version details
-    #[structopt(name = "version")]
     Version,
     /// Displays completion
-    #[structopt(name = "completion")]
     Completion {
         #[structopt(subcommand)]
         shell: Shell,
@@ -56,16 +50,12 @@ enum Command {
 }
 
 #[derive(Debug, StructOpt)]
+#[structopt(rename_all = "kebab-case")]
 enum Shell {
-    #[structopt(name = "bash")]
     Bash,
-    #[structopt(name = "fish")]
     Fish,
-    #[structopt(name = "zsh")]
     Zsh,
-    #[structopt(name = "powershell")]
     PowerShell,
-    #[structopt(name = "elvish")]
     Elvish,
 }
 
