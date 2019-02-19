@@ -51,6 +51,7 @@ enum Command {
     },
 }
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
 enum Shell {
