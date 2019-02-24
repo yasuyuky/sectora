@@ -1,0 +1,14 @@
+- hosts: localhost
+  become: yes
+  become_method: sudo
+  become_user: root
+  vars:
+    target_dir: ../../target/x86_64-unknown-linux-gnu/release
+    gh_endpoint: http://json-server:3000
+    gh_token: TESTTOKEN
+    gh_org: soundtribe
+    gh_teams:
+      - name: sector9
+        sudoers: true
+  roles:
+    - sectora

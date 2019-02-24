@@ -1,0 +1,46 @@
+{
+  "orgs.teams.soundtribe": [
+      {
+        "id": 9,
+        "node_id": "MDQ6VGVhbTE=",
+        "url": "https://api.github.com/teams/1",
+        "name": "sector9",
+        "slug": "sector9",
+        "description": "A great team.",
+        "privacy": "closed",
+        "permission": "admin",
+        "members_url": "https://api.github.com/teams/1/members{/member}",
+        "repositories_url": "https://api.github.com/teams/1/repos",
+        "parent": null
+      }
+  ],
+  "orgs.repos.soundtribe": [],
+  "teams.members.9": [
+    {
+      "login": "hunter",
+      "id": 2001,
+      "node_id": "MDQ6VXNlcjE=",
+      "avatar_url": "https://github.com/images/error/hunter_happy.gif",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/hunter",
+      "html_url": "https://github.com/hunter",
+      "followers_url": "https://api.github.com/users/hunter/followers",
+      "following_url": "https://api.github.com/users/hunter/following{/other_user}",
+      "gists_url": "https://api.github.com/users/hunter/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/hunter/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/hunter/subscriptions",
+      "organizations_url": "https://api.github.com/users/hunter/orgs",
+      "repos_url": "https://api.github.com/users/hunter/repos",
+      "events_url": "https://api.github.com/users/hunter/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/hunter/received_events",
+      "type": "User",
+      "site_admin": false
+    }
+  ],
+  "users.keys.hunter": [
+    {
+      "id": 1,
+      "key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYe3DHbG7Ct6x8UqOTXvGRi1Te9cmDqK/etfewv6xq8Iqa0WCXqKzFvb7fCbB2mqVG8cBoc/KYgdtGaeXOfueXnW6oxDgQiSlr7cY+Jap9fqAns4zpsIiIsZk1CNG/ogRj+DSMvsUEzk3vI0RYfF22GZqpsSi5MFXmlUhYEHRdSyRQ1V4pg8EflYcdz3Xaup37b6sUv5BzyLSpwPmAFgCP5Lz4ujQtiMvJPojg8yjd7AJbJ1uigM3KzocFmCNXIOFDqJ/JO3LBoYABv2pXgdkmGbQlQhnrRxoQz5ULfCxWrkSGlAX+irqFmoyMSTQl8LwK2/y3FDOTP/u35ZKSTRyx hunter@local"
+    }
+  ]
+}

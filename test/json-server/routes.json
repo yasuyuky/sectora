@@ -1,0 +1,6 @@
+{
+  "/orgs/:org/teams?page=:page": "/orgs.teams.:org?_page=:page",
+  "/orgs/:org/repos?page=:page": "/orgs.repos.:org?_page=:page",
+  "/teams/:id/members?page=:page": "/teams.members.:id?_page=:page",
+  "/users/:login/keys?page=:page": "/users.keys.:login?_page=:page"
+}
