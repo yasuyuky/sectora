@@ -40,7 +40,7 @@
   "users.keys.hunter": [
     {
       "id": 1,
-      "key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYe3DHbG7Ct6x8UqOTXvGRi1Te9cmDqK/etfewv6xq8Iqa0WCXqKzFvb7fCbB2mqVG8cBoc/KYgdtGaeXOfueXnW6oxDgQiSlr7cY+Jap9fqAns4zpsIiIsZk1CNG/ogRj+DSMvsUEzk3vI0RYfF22GZqpsSi5MFXmlUhYEHRdSyRQ1V4pg8EflYcdz3Xaup37b6sUv5BzyLSpwPmAFgCP5Lz4ujQtiMvJPojg8yjd7AJbJ1uigM3KzocFmCNXIOFDqJ/JO3LBoYABv2pXgdkmGbQlQhnrRxoQz5ULfCxWrkSGlAX+irqFmoyMSTQl8LwK2/y3FDOTP/u35ZKSTRyx hunter@local"
+      "key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzu+O14D9UPxq0BsE3iQuNu0z1z96JcqWAic91VPsz4FlFY+lZxih9O/tmuRxBgkKEf4WlpqlKosQYAqXaWLH+3IXH9NdS2EocSHSVBCSLsxd5TEox6cTRMd/mXXolW6PtcMpM/tQiHO3IVhHCX0N7G0MOolw3AdmIGop+mpTNhy+aBkeNLKn6hs/I9MhAr8xoTVJgiHfclGfPUIDzWtwErJD4tcvgY2RF2zFuAauRorz1tbrA5+nnVdTcb+wzV4bycyd+91kkBfhzzrybxlu/ZtVR92gVwAcjATvUtI8oW+wobRWmHPLMs2aZbtCdUbDmAOgjYCu3V/gnxZ3VbGAV hunter@local"
     }
   ]
 }
