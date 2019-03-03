@@ -8,8 +8,6 @@ services:
     command: json-server --watch db.json --host 0.0.0.0 --routes routes.json
   sshd:
     image: yasuyuky/ubuntu-ssh:latest
-    ports:
-      - "2222:22"
     volumes:
       - ./keys/root/id_rsa.pub:/root/.ssh/authorized_keys
     restart: always
