@@ -2,8 +2,6 @@ version: '3'
 services:
   json-server:
     build: ./json-server
-    ports:
-      - "3000:3000"
     volumes:
       - ./json-server/db.json:/data/db.json
       - ./json-server/routes.json:/data/routes.json
