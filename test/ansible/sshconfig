@@ -1,0 +1,3 @@
+Host sshd
+  StrictHostKeyChecking no
+  UserKnownHostsFile=/dev/null
