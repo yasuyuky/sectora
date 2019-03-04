@@ -5,16 +5,8 @@ services:
     command: json-server --watch db.json --host 0.0.0.0 --routes routes.json
   sshd:
     image: yasuyuky/ubuntu-ssh:latest
-    volumes:
-      - ./keys/root/id_rsa.pub:/root/.ssh/authorized_keys
     restart: always
   ansible:
     build: ./ansible
     working_dir: /work
-    volumes:
-      - ./ansible:/work
-      - ../ansible/roles:/work/roles
-      - ../ansible/templates:/work/templates
-      - ../ansible/sectora.sh:/work/sectora.sh
-      - ./keys:/work/keys
-      - ../target/:/work/target
+    command: sh -c 'while true; do sleep 1; done'
