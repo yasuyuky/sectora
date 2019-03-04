@@ -6,7 +6,7 @@ jobs:
       - image: rust:1.32.0-stretch
     steps:
       - checkout
-      - run: cargo build --target=x86_64-unknown-linux-gnu
+      - run: cargo build --target=x86_64-unknown-linux-gnu --release
       - persist_to_workspace:
           root: .
           paths:
@@ -20,7 +20,7 @@ jobs:
       - image: yasuyuky/rust-arm:1.32.0
     steps:
       - checkout
-      - run: cargo build --target=arm-unknown-linux-gnueabihf
+      - run: cargo build --target=arm-unknown-linux-gnueabihf --release
 
   test:
     docker:
