@@ -9,7 +9,7 @@ test:
 	make down
 
 up:
-	docker-compose up -d
+	docker-compose up -d --build
 
 setup:
 	docker-compose run --rm ansible ansible-playbook -i hosts localtest.yml
