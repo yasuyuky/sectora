@@ -2,9 +2,6 @@ version: '3'
 services:
   json-server:
     build: ./json-server
-    volumes:
-      - ./json-server/db.json:/data/db.json
-      - ./json-server/routes.json:/data/routes.json
     command: json-server --watch db.json --host 0.0.0.0 --routes routes.json
   sshd:
     image: yasuyuky/ubuntu-ssh:latest
