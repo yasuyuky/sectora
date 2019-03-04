@@ -28,6 +28,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+      - run: chmod 600 test/keys/*/id_rsa
       - setup_remote_docker
       - run: apk add py-pip make
       - run: pip install docker-compose
