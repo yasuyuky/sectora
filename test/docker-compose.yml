@@ -21,4 +21,3 @@ services:
       - ../ansible/sectora.sh:/work/sectora.sh
       - ./keys:/work/keys
       - ../target/:/work/target
-      - ./ansible/sshconfig:/root/.ssh/config
