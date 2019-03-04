@@ -7,6 +7,12 @@ jobs:
     steps:
       - checkout
       - run: cargo build --target=x86_64-unknown-linux-gnu
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ansible
+            - target
+            - test
 
   build-arm:
     working_directory: /tmp/sectora
@@ -15,3 +21,24 @@ jobs:
     steps:
       - checkout
       - run: cargo build --target=arm-unknown-linux-gnueabihf
+
+  test:
+    docker:
+      - image: docker:stable
+    steps:
+      - attach_workspace:
+          at: .
+      - setup_remote_docker
+      - run: apk add py-pip make
+      - run: pip install docker-compose
+      - run: cd test && make
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - build-arm
+      - test:
+          requires:
+            - build
