@@ -28,14 +28,13 @@ jobs:
 
   test:
     docker:
-      - image: docker:stable
+      - image: docker/compose:1.24.0
     steps:
       - attach_workspace:
           at: .
       - run: chmod 600 test/keys/*/id_rsa
       - setup_remote_docker
-      - run: apk add py3-pip make
-      - run: pip3 install docker-compose
+      - run: apk add make
       - run: cd test && make
 
 workflows:
