@@ -5,6 +5,7 @@ use std::fmt;
 use std::fs::File;
 use std::io::Read;
 use std::str::FromStr;
+use std::string::ToString;
 use toml;
 
 #[derive(Deserialize, Debug, Clone)]
@@ -176,7 +177,7 @@ impl fmt::Display for SectorGroup {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let members_str = self.members
                               .values()
-                              .map(|v| v.to_string())
+                              .map(ToString::to_string)
                               .collect::<Vec<_>>()
                               .join(" ");
         writeln!(f,
