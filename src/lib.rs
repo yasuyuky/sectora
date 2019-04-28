@@ -26,6 +26,7 @@ use nix::errno::Errno;
 use statics::CONF_PATH;
 use std::ffi::CStr;
 use std::io::{BufRead, Write};
+use std::string::String;
 use structs::{Config, Member, MemberGid, SectorGroup};
 
 #[allow(dead_code)]
@@ -287,7 +288,7 @@ pub unsafe extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut li
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let sector = get_or_again!(line.parse::<SectorGroup>(), errnop);
-        let members: Vec<&str> = sector.members.keys().map(|k| k.as_str()).collect();
+        let members: Vec<&str> = sector.members.keys().map(String::as_str).collect();
         match { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
             Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
