@@ -4,7 +4,7 @@
 
 (formerly named as **ghteam-auth**)
 
-Using this program, you can grant login privileges on your servers to github team members or outside collaborators of your repository.
+Using this program, you can grant login privileges on your servers to GitHub team members or outside collaborators of your repository.
 
 Implemented with Rust.
 
@@ -19,7 +19,7 @@ Implemented with Rust.
 cargo build --release
 ```
 
-### Cross-compile on other platforms using docker
+### Cross-compile on other platforms using Docker
 
 ```
 make
@@ -29,25 +29,25 @@ See Makefile for details
 
 ## How to install and setup
 
-1. Copy executable and shared object to each paths
-2. Place config file for this program.
+1. Copy executable and shared object to each path
+2. Put config file for this program
 3. Configure name service switch
 4. Configure sshd
 5. Configure PAM
 
 [A setting example of ansible is available](https://github.com/yasuyuky/sectora/blob/master/ansible/)
 
-### Copy executable file and shared object to each path
+### Copy the executable file and shared object to each path
 
 #### Copy executable file
 
-Place `sectora` to `/usr/sbin/`.
+Put `sectora` to `/usr/sbin/`.
 
 #### Copy shared object
 
-Place `libnss_sectora.so` to `/usr/lib/`.
+Put `libnss_sectora.so` to `/usr/lib/`.
 
-### Place config file for this program.
+### Put config file for this program.
 
 The minimal setting is like as follows.
 
@@ -94,7 +94,7 @@ In the case of old sshd, you need to create the following shell script and put i
 /usr/sbin/sectora key $1
 ```
 
-And sshd_config should look like this
+Also, sshd_config should look like this.
 
 ```
 AuthorizedKeysCommandUser root
@@ -112,7 +112,7 @@ auth optional pam_unix.so not_set_pass use_first_pass nodelay
 session required pam_mkhomedir.so skel: /etc/skel/ umask: 0022
 ```
 
-And comment out the following line.
+Also, comment out the following line.
 
 ```
 # @include common-auth
@@ -132,7 +132,6 @@ Use `mkpasswd` command to create your `PASSWORD_HASH_STRING`
 ```
 mkpasswd -S $(head -c 4 /dev/urandom|xxd -p) -m sha-512
 ```
-
 
 ## LICENSE
 
