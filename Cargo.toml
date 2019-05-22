@@ -18,6 +18,10 @@ hyper = "0.12"
 hyper-tls = "0.3"
 structopt = "0.2"
 
+# https://github.com/nix-rust/nix/issues/1057
+[patch.crates-io]
+nix = { git = "https://github.com/nix-rust/nix/", rev = "196b05b5c7b" }
+
 [[bin]]
 name = "sectora"
 path = "src/main.rs"
