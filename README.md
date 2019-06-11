@@ -51,7 +51,7 @@ Put `libnss_sectora.so` to `/usr/lib/`.
 
 The minimal setting is like as follows.
 
-```
+```toml
 token = "YOUR_PERSONAL_TOKEN_STRING"
 org = "YOUR_ORGANIZATION"
 [[team]]
