@@ -146,7 +146,7 @@ impl GithubClient {
     }
 
     fn get_teams_result(&self) -> Result<Vec<SectorGroup>, Error> {
-        let gh_teams = self.get_team_map()?;
+        let gh_teams = self.get_team_map(&self.conf.org)?;
         let mut teams = Vec::new();
         for team_conf in &self.conf.team {
             if let Some(gh_team) = gh_teams.get(&team_conf.name) {
@@ -159,8 +159,8 @@ impl GithubClient {
         Ok(teams)
     }
 
-    fn get_team_map(&self) -> Result<HashMap<String, Team>, Error> {
-        let url = format!("{}/orgs/{}/teams", self.conf.endpoint, self.conf.org);
+    fn get_team_map(&self, org: &str) -> Result<HashMap<String, Team>, Error> {
+        let url = format!("{}/orgs/{}/teams", self.conf.endpoint, org);
         let contents = self.get_contents(&url)?;
         let teams = serde_json::from_str::<Vec<Team>>(&contents)?;
         Ok(teams.iter().map(|t| (t.name.clone(), t.clone())).collect())
@@ -174,7 +174,7 @@ impl GithubClient {
     }
 
     fn get_repos_result(&self) -> Result<Vec<SectorGroup>, Error> {
-        let gh_repos = self.get_repo_map()?;
+        let gh_repos = self.get_repo_map(&self.conf.org)?;
         let mut repos = Vec::new();
         for repo_conf in &self.conf.repo {
             if let Some(gh_repo) = gh_repos.get(&repo_conf.name) {
@@ -187,8 +187,8 @@ impl GithubClient {
         Ok(repos)
     }
 
-    fn get_repo_map(&self) -> Result<HashMap<String, Repo>, Error> {
-        let url = format!("{}/orgs/{}/repos", self.conf.endpoint, self.conf.org);
+    fn get_repo_map(&self, org: &str) -> Result<HashMap<String, Repo>, Error> {
+        let url = format!("{}/orgs/{}/repos", self.conf.endpoint, org);
         let contents = self.get_contents(&url)?;
         let repos = serde_json::from_str::<Vec<Repo>>(&contents)?;
         Ok(repos.iter().map(|t| (t.name.clone(), t.clone())).collect())
