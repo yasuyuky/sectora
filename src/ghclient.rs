@@ -181,7 +181,7 @@ impl GithubClient {
                 repos.push(SectorGroup { sector: Sector::from(gh_repo.clone()),
                                          gid: repo_conf.gid,
                                          group: repo_conf.group.clone(),
-                                         members: self.get_repo_collaborators(&gh_repo.name)? });
+                                         members: self.get_repo_collaborators(&self.conf.org, &gh_repo.name)? });
             }
         }
         Ok(repos)
@@ -194,9 +194,9 @@ impl GithubClient {
         Ok(repos.iter().map(|t| (t.name.clone(), t.clone())).collect())
     }
 
-    fn get_repo_collaborators(&self, repo_name: &str) -> Result<HashMap<String, Member>, Error> {
+    fn get_repo_collaborators(&self, org: &str, repo_name: &str) -> Result<HashMap<String, Member>, Error> {
         let url = format!("{}/repos/{}/{}/collaborators?affiliation=outside",
-                          self.conf.endpoint, self.conf.org, repo_name);
+                          self.conf.endpoint, org, repo_name);
         let contents = self.get_contents(&url)?;
         let members = serde_json::from_str::<Vec<Member>>(&contents)?;
         Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
