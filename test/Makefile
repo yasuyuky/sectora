@@ -5,7 +5,7 @@ test:
 	make up
 	make setup
 	sleep 1
-	docker-compose exec ansible ssh hunter@sshd -i keys/user/id_rsa echo success
+	docker-compose exec ansible ssh hunter@sshd -i keys/user/id_rsa echo SUCCESS
 	make down
 
 up:
