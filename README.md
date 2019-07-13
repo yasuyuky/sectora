@@ -54,13 +54,18 @@ The minimal setting is like as follows.
 ```toml
 token = "YOUR_PERSONAL_TOKEN_STRING"
 org = "YOUR_ORGANIZATION"
+
 [[team]]
 name = "YOUR_TEAM1"
 gid = YOUR_GID1
+
 [[team]]
 name = "YOUR_TEAM2"
 gid = YOUR_GID1
 group = "YOUR_GROUP_NAME"
+
+[[repo]]
+name = "YOUR_REPO_NAME"
 ```
 
 See `struct Config` on `structs.rs` for details.
