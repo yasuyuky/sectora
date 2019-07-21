@@ -7,7 +7,7 @@ extern crate lazy_static;
 extern crate libc;
 extern crate nix;
 #[macro_use]
-extern crate serde_derive;
+extern crate serde;
 extern crate serde_json;
 extern crate toml;
 

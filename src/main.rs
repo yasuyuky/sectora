@@ -6,7 +6,7 @@ extern crate hyper_tls;
 extern crate lazy_static;
 extern crate libc;
 #[macro_use]
-extern crate serde_derive;
+extern crate serde;
 extern crate serde_json;
 extern crate structopt;
 extern crate toml;
