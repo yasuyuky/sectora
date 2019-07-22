@@ -47,6 +47,10 @@ Put `sectora` to `/usr/sbin/`.
 
 Put `libnss_sectora.so` to `/usr/lib/`.
 
+#### Create link of shared object
+
+`ln -s /usr/lib/libnss_sectora.so /usr/lib/libnss_sectora.so.2`
+
 ### Put config file for this program.
 
 The minimal setting is like as follows.
