@@ -5,4 +5,4 @@ match_block_trailing_comma = false
 trailing_comma = "Vertical"
 fn_single_line = true
 struct_lit_single_line = true
-fn_args_density = "Compressed"
+fn_args_layout = "Compressed"
