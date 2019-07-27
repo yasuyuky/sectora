@@ -5,19 +5,20 @@ extern crate hyper_tls;
 #[macro_use]
 extern crate lazy_static;
 extern crate libc;
+extern crate log;
 #[macro_use]
 extern crate serde;
 extern crate serde_json;
 extern crate structopt;
+extern crate syslog;
 extern crate toml;
 
 mod error;
 mod ghclient;
 mod statics;
 mod structs;
-#[macro_use]
-mod syslog;
 
+use log::{debug};
 use statics::CONF_PATH;
 use structopt::StructOpt;
 
@@ -68,8 +69,14 @@ fn main() {
     use ghclient::GithubClient;
     use std::env;
     use std::process;
+    use std::str::FromStr;
     use structs::Config;
 
+    let log_level_env = env::var("LOG_LEVEL").unwrap_or(String::from("OFF"));
+    let log_level = log::LevelFilter::from_str(&log_level_env).unwrap_or(log::LevelFilter::Off);
+    syslog::init(syslog::Facility::LOG_AUTH, log_level, Some("sectora")).expect("init log");
+
+    debug!("{:?}", command);
     match command {
         Command::Check { confpath } => match Config::from_path(&confpath) {
             Ok(_) => process::exit(0),
