@@ -1,4 +1,4 @@
-RUST_VER=1.35.0
+RUST_VER=$(shell cat rust-toolchain)
 X64_TARGET=x86_64-unknown-linux-gnu
 ARM_TARGET=arm-unknown-linux-gnueabihf
 X64_TARGET_DIR=target/$(X64_TARGET)/release
@@ -12,7 +12,7 @@ ARM_BUILD_OPT= -v ${PWD}/.cargo-arm/registry:/usr/local/cargo/registry $(COMMON_
 DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
 ENTRIY_POINTS := src/main.rs src/lib.rs
 SRCS := $(filter-out $(ENTRIY_POINTS),$(wildcard src/*.rs))
-CARGO_FILES := Cargo.toml Cargo.lock
+CARGO_FILES := Cargo.toml Cargo.lock rust-toolchain
 
 all: x64 arm
 
