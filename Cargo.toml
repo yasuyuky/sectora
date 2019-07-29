@@ -16,7 +16,7 @@ http = "0.1"
 hyper = "0.12"
 hyper-tls = "0.3"
 structopt = "0.2"
-log = "0.4.7"
+log = "0.4.8"
 syslog = "4.0"
 
 [[bin]]
