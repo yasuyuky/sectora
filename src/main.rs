@@ -18,7 +18,7 @@ mod ghclient;
 mod statics;
 mod structs;
 
-use log::{debug};
+use log::debug;
 use statics::CONF_PATH;
 use structopt::StructOpt;
 
