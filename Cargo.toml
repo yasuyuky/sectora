@@ -3,6 +3,7 @@ name = "sectora"
 version = "0.1.0"
 authors = ["Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"]
 build = "build.rs"
+edition = "2018"
 
 [dependencies]
 toml = "0.5"

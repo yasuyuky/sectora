@@ -1,4 +1,4 @@
-use error::{Error, ParseSectorError, ParseSectorGroupError, ParseSectorTypeError};
+use crate::error::{Error, ParseSectorError, ParseSectorGroupError, ParseSectorTypeError};
 use std;
 use std::collections::HashMap;
 use std::fmt;

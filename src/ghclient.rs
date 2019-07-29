@@ -1,17 +1,17 @@
-use error::Error;
+use crate::error::Error;
+use crate::statics::TEMP_DIRNAME;
+use crate::structs::{Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
 use glob::glob;
 use hyper::client::HttpConnector;
 use hyper::rt::{self, Future, Stream};
 use hyper::{header, Body, Chunk, Client, Request, Response};
 use hyper_tls::HttpsConnector;
 use serde_json;
-use statics::TEMP_DIRNAME;
 use std;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::sync::mpsc;
-use structs::{Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
 
 pub struct GithubClient {
     pub conf: Config,
