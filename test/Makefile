@@ -1,5 +1,5 @@
 
-.PHONY: test up setup down
+.PHONY: test up setup down reset
 
 test:
 	make up
@@ -32,3 +32,9 @@ setup-ansible:
 
 down:
 	docker-compose down
+
+reset:
+	cd .. && make x64
+	make down
+	make up
+	make setup
