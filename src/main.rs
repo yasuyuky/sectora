@@ -18,9 +18,14 @@ mod ghclient;
 mod statics;
 mod structs;
 
+use ghclient::GithubClient;
 use log::debug;
 use statics::CONF_PATH;
+use std::env;
+use std::process;
+use std::str::FromStr;
 use structopt::StructOpt;
+use structs::Config;
 
 #[derive(Debug, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
@@ -65,12 +70,6 @@ enum Shell {
 
 fn main() {
     let command = Command::from_args();
-
-    use ghclient::GithubClient;
-    use std::env;
-    use std::process;
-    use std::str::FromStr;
-    use structs::Config;
 
     let log_level_env = env::var("LOG_LEVEL").unwrap_or(String::from("OFF"));
     let log_level = log::LevelFilter::from_str(&log_level_env).unwrap_or(log::LevelFilter::Off);
