@@ -9,6 +9,7 @@
     gh_org: soundtribe
     gh_teams:
       - name: sector9
+        gid: 2019
         sudoers: true
   roles:
     - sectora
