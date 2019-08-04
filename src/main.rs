@@ -13,14 +13,19 @@ extern crate structopt;
 extern crate syslog;
 extern crate toml;
 
+mod applog;
 mod error;
 mod ghclient;
 mod statics;
 mod structs;
 
+use ghclient::GithubClient;
 use log::debug;
 use statics::CONF_PATH;
+use std::env;
+use std::process;
 use structopt::StructOpt;
+use structs::Config;
 
 #[derive(Debug, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
@@ -66,16 +71,7 @@ enum Shell {
 fn main() {
     let command = Command::from_args();
 
-    use ghclient::GithubClient;
-    use std::env;
-    use std::process;
-    use std::str::FromStr;
-    use structs::Config;
-
-    let log_level_env = env::var("LOG_LEVEL").unwrap_or(String::from("OFF"));
-    let log_level = log::LevelFilter::from_str(&log_level_env).unwrap_or(log::LevelFilter::Off);
-    syslog::init(syslog::Facility::LOG_AUTH, log_level, Some("sectora")).expect("init log");
-
+    applog::init(Some("sectora"));
     debug!("{:?}", command);
     match command {
         Command::Check { confpath } => match Config::from_path(&confpath) {
@@ -84,9 +80,12 @@ fn main() {
         },
         Command::Key { user } => {
             match Config::from_path(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
-                                               .and_then(|client| client.print_user_public_key(&user))
+                                               .and_then(|client| client.get_user_public_key(&user))
             {
-                Ok(_) => process::exit(0),
+                Ok(keys) => {
+                    println!("{}", keys);
+                    process::exit(0);
+                }
                 Err(_) => process::exit(21),
             }
         }
@@ -107,9 +106,12 @@ fn main() {
             Err(_) => process::exit(51),
         },
         Command::RateLimit => match Config::from_path(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
-                                                                 .and_then(|client| client.print_rate_limit())
+                                                                 .and_then(|client| client.get_rate_limit())
         {
-            Ok(_) => process::exit(0),
+            Ok(ratelimit) => {
+                println!("{:?}", ratelimit);
+                process::exit(0)
+            }
             Err(_) => process::exit(61),
         },
         Command::Version => {

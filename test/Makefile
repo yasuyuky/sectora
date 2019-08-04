@@ -1,11 +1,12 @@
 
-.PHONY: test up setup down
+.PHONY: test up setup down reset
 
 test:
 	make up
 	make setup
 	sleep 1
 	docker-compose exec ansible ssh hunter@sshd -i keys/user/id_rsa echo SUCCESS
+	docker-compose exec ansible ssh hunter@sshd -i keys/user/id_rsa sectora rate-limit
 	make down
 
 up:
@@ -32,3 +33,9 @@ setup-ansible:
 
 down:
 	docker-compose down
+
+reset:
+	cd .. && make x64
+	make down
+	make up
+	make setup
