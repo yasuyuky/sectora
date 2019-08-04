@@ -29,19 +29,19 @@
     }
   },
   "orgs.teams.soundtribe": [
-      {
-        "id": 9,
-        "node_id": "MDQ6VGVhbTE=",
-        "url": "https://api.github.com/teams/1",
-        "name": "sector9",
-        "slug": "sector9",
-        "description": "A great team.",
-        "privacy": "closed",
-        "permission": "admin",
-        "members_url": "https://api.github.com/teams/1/members{/member}",
-        "repositories_url": "https://api.github.com/teams/1/repos",
-        "parent": null
-      }
+    {
+      "id": 9,
+      "node_id": "MDQ6VGVhbTE=",
+      "url": "https://api.github.com/teams/1",
+      "name": "sector9",
+      "slug": "sector9",
+      "description": "A great team.",
+      "privacy": "closed",
+      "permission": "admin",
+      "members_url": "https://api.github.com/teams/1/members{/member}",
+      "repositories_url": "https://api.github.com/teams/1/repos",
+      "parent": null
+    }
   ],
   "orgs.repos.soundtribe": [],
   "teams.members.9": [
