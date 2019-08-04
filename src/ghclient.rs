@@ -196,18 +196,12 @@ impl GithubClient {
         Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
     }
 
-    fn get_rate_limit(&self) -> Result<RateLimit, Error> {
+    #[allow(dead_code)]
+    pub fn get_rate_limit(&self) -> Result<RateLimit, Error> {
         let url = format!("{}/rate_limit", self.conf.endpoint);
         let req = self.build_request(&url)?;
         self.run_request(req)
             .and_then(|body| serde_json::from_slice(&body).map_err(Error::from))
-    }
-
-    #[allow(dead_code)]
-    pub fn print_rate_limit(&self) -> Result<(), Error> {
-        let rate_limit = self.get_rate_limit()?;
-        println!("{:?}", rate_limit);
-        Ok(())
     }
 
     #[allow(dead_code)]

@@ -106,9 +106,12 @@ fn main() {
             Err(_) => process::exit(51),
         },
         Command::RateLimit => match Config::from_path(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
-                                                                 .and_then(|client| client.print_rate_limit())
+                                                                 .and_then(|client| client.get_rate_limit())
         {
-            Ok(_) => process::exit(0),
+            Ok(ratelimit) => {
+                println!("{:?}", ratelimit);
+                process::exit(0)
+            }
             Err(_) => process::exit(61),
         },
         Command::Version => {
