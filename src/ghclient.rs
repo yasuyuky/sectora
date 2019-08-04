@@ -120,13 +120,7 @@ impl GithubClient {
     }
 
     #[allow(dead_code)]
-    pub fn print_user_public_key(&self, user: &str) -> Result<(), Error> {
-        let keys = self.get_user_public_key(user)?;
-        println!("{}", keys);
-        Ok(())
-    }
-
-    fn get_user_public_key(&self, user: &str) -> Result<String, Error> {
+    pub fn get_user_public_key(&self, user: &str) -> Result<String, Error> {
         let url = format!("{}/users/{}/keys", self.conf.endpoint, user);
         let contents = self.get_contents(&url)?;
         let keys = serde_json::from_str::<Vec<PublicKey>>(&contents)?;

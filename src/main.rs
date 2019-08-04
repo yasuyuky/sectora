@@ -80,9 +80,12 @@ fn main() {
         },
         Command::Key { user } => {
             match Config::from_path(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
-                                               .and_then(|client| client.print_user_public_key(&user))
+                                               .and_then(|client| client.get_user_public_key(&user))
             {
-                Ok(_) => process::exit(0),
+                Ok(keys) => {
+                    println!("{}", keys);
+                    process::exit(0);
+                }
                 Err(_) => process::exit(21),
             }
         }
