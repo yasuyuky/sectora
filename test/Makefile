@@ -6,6 +6,7 @@ test:
 	make setup
 	sleep 1
 	docker-compose exec ansible ssh hunter@sshd -i keys/user/id_rsa echo SUCCESS
+	docker-compose exec ansible ssh hunter@sshd -i keys/user/id_rsa sectora rate-limit
 	make down
 
 up:
