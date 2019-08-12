@@ -29,7 +29,7 @@ setup-ansible:
 	docker cp ../ansible/templates `docker-compose ps -q ansible`:/work/templates
 	docker cp ../ansible/sectora.sh `docker-compose ps -q ansible`:/work/sectora.sh
 	docker cp ./keys `docker-compose ps -q ansible`:/work/keys
-	docker cp ../target/ `docker-compose ps -q ansible`:/work/target
+	docker cp ../target/x86_64-unknown-linux-gnu/release `docker-compose ps -q ansible`:/work/release
 
 down:
 	docker-compose down
