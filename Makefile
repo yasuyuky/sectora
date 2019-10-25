@@ -1,69 +1,59 @@
 RUST_VER=$(shell cat rust-toolchain)
-X64_TARGET=x86_64-unknown-linux-gnu
-ARM_TARGET=arm-unknown-linux-gnueabihf
-X64_TARGET_DIR=target/$(X64_TARGET)/release
-ARM_TARGET_DIR=target/$(ARM_TARGET)/release
-X64_BUILD_IMG=rust:${RUST_VER}-stretch
-ARM_BUILD_IMG=yasuyuky/rust-arm:${RUST_VER}
-COMMON_BUILD_OPT= -v ${PWD}:/source -w /source
-OPENSSL_STATIC_OPT= -e OPENSSL_STATIC=yes -e OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ -e OPENSSL_INCLUDE_DIR=/usr/include
-X64_BUILD_OPT= -v ${PWD}/.cargo-x64/registry:/usr/local/cargo/registry $(COMMON_BUILD_OPT) $(OPENSSL_STATIC_OPT)
-ARM_BUILD_OPT= -v ${PWD}/.cargo-arm/registry:/usr/local/cargo/registry $(COMMON_BUILD_OPT)
-DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
-ENTRY_POINTS := src/main.rs src/lib.rs
-SRCS := $(filter-out $(ENTRY_POINTS),$(wildcard src/*.rs))
-CARGO_FILES := Cargo.toml Cargo.lock rust-toolchain
 
-all: x64 arm
+ARCH=x86_64
+PROFILE=release
 
-x64: x64-exe x64-lib
+DESTDIR=/usr/local
+bindir=/bin/
+sbindir=/sbin/
+libdir=/lib/
 
-x64-exe: $(X64_TARGET_DIR)/sectora
-
-x64-lib: $(X64_TARGET_DIR)/libnss_sectora.so
-
-arm: arm-exe arm-lib
-
-arm-exe: $(ARM_TARGET_DIR)/sectora
-
-arm-lib: $(ARM_TARGET_DIR)/libnss_sectora.so
-
-enter-build-image:
-	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) bash
-
-$(X64_TARGET_DIR)/sectora: src/main.rs $(SRCS) $(CARGO_FILES)
-	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --bin sectora --release --target=$(X64_TARGET)
-
-$(X64_TARGET_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
-	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --lib --release --target=$(X64_TARGET)
-
-$(ARM_TARGET_DIR)/sectora: src/main.rs $(SRCS) $(CARGO_FILES)
-	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --bin sectora --release --target=$(ARM_TARGET)
-
-$(ARM_TARGET_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
-	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --lib --release --target=$(ARM_TARGET)
+LIBTOOL=libtool
+INSTALL=install
+INSTALL_PROGRAM=$(INSTALL) -m555
+INSTALL_DATA=$(INSTALL) -m444
 
 
-.PHONY: clean clean-x64 clean-arm clean-exe clean-lib clean-all
+ifeq ($(ARCH),x86_64)
+	TARGET_TRIPLE=$(ARCH)-unknown-linux-gnu
 
-clean-x64:
-	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo clean
+	PKG_CONFIG_LIBDIR=/usr/lib/x86_64-linux-gnu/pkgconfig/
 
-clean-arm:
-	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo clean
+	# add openssl static link setting
+	ENV_VALS=OPENSSL_STATIC=yes
+	ENV_VALS+=OPENSSL_LIB_DIR=$(shell PKG_CONFIG_LIBDIR=$(PKG_CONFIG_LIBDIR) pkg-config --variable=libdir libssl)
+	ENV_VALS+=OPENSSL_INCLUDE_DIR=$(shell PKG_CONFIG_LIBDIR=$(PKG_CONFIG_LIBDIR) pkg-config --variable=includedir libssl)
+endif
+ifeq ($(ARCH),arm)
+	TARGET_TRIPLE=$(ARCH)-unknown-linux-gnueabi
 
-clean-exe:
-	rm -f $(X64_TARGET_DIR)/sectora
-	rm -f $(ARM_TARGET_DIR)/sectora
+	PKG_CONFIG_LIBDIR=/usr/lib/arm-linux-gnueabi/pkgconfig/
 
-clean-lib:
-	rm -f $(X64_TARGET_DIR)/libnss_sectora.so
-	rm -f $(ARM_TARGET_DIR)/libnss_sectora.so
+	ENV_VALS=OPENSSL_LIB_DIR=$(shell PKG_CONFIG_LIBDIR=$(PKG_CONFIG_LIBDIR) pkg-config --variable=libdir libssl)
+	ENV_VALS+=OPENSSL_INCLUDE_DIR=$(shell PKG_CONFIG_LIBDIR=$(PKG_CONFIG_LIBDIR) pkg-config --variable=includedir libssl)
+endif
 
-clean:
-	make clean-exe
-	make clean-lib
+TARGET_DIR=$(PWD)/target/$(TARGET_TRIPLE)/$(PROFILE)/
 
-clean-all:
-	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo clean
-	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo clean
+
+all: $(TARGET_DIR)/sectora $(TARGET_DIR)/libnss_sectora.so
+
+$(TARGET_DIR)/sectora: FORCE
+	$(ENV_VALS) cargo build --bin sectora --$(PROFILE) --target=$(TARGET_TRIPLE)
+
+$(TARGET_DIR)/libnss_sectora.so: FORCE
+	$(ENV_VALS) cargo build --lib --$(PROFILE) --target=$(TARGET_TRIPLE)
+
+install: $(TARGET_DIR)/sectora $(TARGET_DIR)/libnss_sectora.so
+	$(INSTALL_PROGRAM) $(TARGET_DIR)/sectora $(DESTDIR)/$(sbindir)
+	$(INSTALL_PROGRAM) $(TARGET_DIR)/libnss_sectora.so $(DESTDIR)/$(libdir)
+	$(LIBTOOL) --mode=install $(INSTALL) $(TARGET_DIR)/libnss_sectora.so $(DESTDIR)/$(libdir)/libnss_sectora.so
+	cd $(DESTDIR)/$(libdir)/ && ln -sf libnss_sectora.so libnss_sectora.so.2
+
+
+
+clean: FORCE
+	cargo clean
+
+FORCE:
+.PHONY: FORCE
