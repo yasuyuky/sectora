@@ -11,8 +11,8 @@ OPENSSL_STATIC_OPT= -e OPENSSL_STATIC=yes -e OPENSSL_LIB_DIR=/usr/lib/x86_64-lin
 X64_BUILD_OPT= -v ${PWD}/.cargo-x64/registry:/usr/local/cargo/registry $(COMMON_BUILD_OPT) $(OPENSSL_STATIC_OPT)
 ARM_BUILD_OPT= -v ${PWD}/.cargo-arm/registry:/usr/local/cargo/registry $(COMMON_BUILD_OPT)
 DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
-ENTRIY_POINTS := src/main.rs src/daemon.rs src/lib.rs
-SRCS := $(filter-out $(ENTRIY_POINTS),$(wildcard src/*.rs))
+ENTRY_POINTS := src/main.rs src/lib.rs
+SRCS := $(filter-out $(ENTRY_POINTS),$(wildcard src/*.rs))
 CARGO_FILES := Cargo.toml Cargo.lock rust-toolchain
 
 all: x64 arm
