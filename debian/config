@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+db_beginblock
+db_input high sectora/init_config || true
+db_endblock
+db_go

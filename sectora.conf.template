@@ -1,0 +1,30 @@
+# this config file is toml format
+
+token = "YOUR_PERSONAL_TOKEN_STRING"
+org = "YOUR_ORGANIZATION"
+
+# if gh_endpoint is defined
+# endpoint = "{{ gh_endpoint }}"
+# if gh_home is defined
+# home = "{{ gh_home }}"
+# if gh_sh is defined
+# sh = "{{ gh_sh }}"
+# if gh_cache_duration is defined
+# cache_duration = {{ gh_cache_duration }}
+# if gh_cert_path is defined
+# cert_path = "{{ gh_cert_path }}"
+# if gh_user_conf_path is defined
+# user_conf_path = "{{ gh_user_conf_path }}"
+
+
+[[team]]
+name = "YOUR_TEAM1"
+gid = YOUR_GID1
+
+[[team]]
+name = "YOUR_TEAM2"
+gid = YOUR_GID1
+group = "YOUR_GROUP_NAME"
+
+[[repo]]
+name = "YOUR_REPO_NAME"

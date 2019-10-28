@@ -17,6 +17,7 @@ INSTALL_DATA=$(INSTALL) -m644
 
 ifeq ($(ARCH),x86_64)
 	TARGET_TRIPLE=$(ARCH)-unknown-linux-gnu
+	DEB_ARCH=amd64
 
 	PKG_CONFIG_LIBDIR=/usr/lib/x86_64-linux-gnu/pkgconfig/
 
@@ -27,6 +28,7 @@ ifeq ($(ARCH),x86_64)
 endif
 ifeq ($(ARCH),arm)
 	TARGET_TRIPLE=$(ARCH)-unknown-linux-gnueabi
+	DEB_ARCH=armel
 
 	PKG_CONFIG_LIBDIR=/usr/lib/arm-linux-gnueabi/pkgconfig/
 
@@ -48,15 +50,41 @@ $(TARGET_DIR)/sectorad: FORCE
 $(TARGET_DIR)/libnss_sectora.so: FORCE
 	$(ENV_VALS) cargo build --lib --$(PROFILE) --target=$(TARGET_TRIPLE)
 
-install: $(TARGET_DIR)/sectora $(TARGET_DIR)/libnss_sectora.so
+install: $(TARGET_DIR)/sectora $(TARGET_DIR)/sectorad $(TARGET_DIR)/libnss_sectora.so
 	$(INSTALL_PROGRAM) $(TARGET_DIR)/sectora $(DESTDIR)/$(sbindir)
 	$(INSTALL_PROGRAM) $(TARGET_DIR)/sectorad $(DESTDIR)/$(sbindir)
 	$(INSTALL_PROGRAM) $(TARGET_DIR)/libnss_sectora.so $(DESTDIR)/$(libdir)
 	$(LIBTOOL) --mode=install $(INSTALL) $(TARGET_DIR)/libnss_sectora.so $(DESTDIR)/$(libdir)/libnss_sectora.so
 	cd $(DESTDIR)/$(libdir)/ && ln -sf libnss_sectora.so libnss_sectora.so.2
+	$(INSTALL) -m644 -oroot -groot sectora.conf.template fakeroot/etc/sectora.conf.template
+
+
+deb: $(TARGET_DIR)/sectora $(TARGET_DIR)/sectorad $(TARGET_DIR)/libnss_sectora.so
+	rm -rf fakeroot/
+	$(INSTALL) -d fakeroot/etc/systemd/system/
+	$(INSTALL) -d fakeroot/usr/$(sbindir)
+	$(INSTALL) -d fakeroot/usr/$(libdir)
+	$(INSTALL) -d fakeroot/debian/
+	$(INSTALL_PROGRAM) $(TARGET_DIR)/sectora fakeroot/usr/$(sbindir)
+	$(INSTALL_PROGRAM) $(TARGET_DIR)/sectorad fakeroot/usr/$(sbindir)
+	$(INSTALL_PROGRAM) ansible/sectora.sh fakeroot/usr/$(sbindir)
+	$(INSTALL_PROGRAM) ansible/templates/sectora.service fakeroot/etc/systemd/system/
+	$(LIBTOOL) --mode=install $(INSTALL) $(TARGET_DIR)/libnss_sectora.so $(PWD)/fakeroot/usr/$(libdir)/
+	cd $(PWD)/fakeroot/usr/$(libdir)/ && ln -sf libnss_sectora.so libnss_sectora.so.2
+	$(INSTALL) -m644 -oroot -groot sectora.conf.template fakeroot/etc/sectora.conf.template
+	$(INSTALL) -m755 debian/postinst fakeroot/debian/
+	$(INSTALL) -m755 debian/postrm fakeroot/debian/
+	$(INSTALL) -m755 debian/config fakeroot/debian/
+	$(INSTALL) -m644 debian/control fakeroot/debian/
+	$(INSTALL) -m644 debian/copyright fakeroot/debian/
+	$(INSTALL) -m644 debian/templates fakeroot/debian/
+
+	sed -i -e "s/^Architecture.*/Architecture : $(DEB_ARCH)/" fakeroot/debian/control
+	fakeroot dpkg-deb --build fakeroot/ .
 
 clean: FORCE
 	cargo clean
+	rm -rf fakeroot/
 
 FORCE:
 .PHONY: FORCE

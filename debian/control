@@ -1,0 +1,9 @@
+Package : sectora
+Maintainer : Toshifumi NISHINAGA < tnishinaga.dev @ gmail .com>
+Version : 0.0.0
+Homepage : https://github.com/yasuyuky/sectora
+Architecture : any
+Depends : debconf, systemd, openssh-server, libssl1.1
+Description : Sector Authentication program.
+    Using this program, you can grant login privileges on your servers to GitHub team members or outside collaborators of your repository.
+    Implemented with Rust.

@@ -3,3 +3,7 @@ target
 *.retry
 hosts-*
 *.local.yml
+daemonize
+*.deb
+fakeroot
+.DS_Store

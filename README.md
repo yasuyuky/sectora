@@ -22,10 +22,14 @@ cargo build --release
 ### Cross-compile on other platforms using Docker
 
 ```
-make
+# to build sectora
+docker-compose run --rm build 
+
+# to build deb package
+docker-compose run --rm package
 ```
 
-See Makefile for details
+See Makefile and docker-compose.yml for details
 
 ## How to install and setup
 
