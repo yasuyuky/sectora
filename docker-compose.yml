@@ -15,4 +15,21 @@ services:
         cd /root/work/
         make ARCH=x86_64
         make ARCH=arm
+        bash
+      '
+
+  package:
+    image: rust:1.35.0-stretch
+    volumes:
+      - ${PWD}:/root/work
+      - ${PWD}/cargo-config:/root/.cargo/config
+    command: |
+      bash -c '
+        dpkg --add-architecture armel
+        apt-get update
+        apt-get -y install libssl-dev libssl-dev:armel pkg-config make fakeroot libtool-bin gcc-arm-linux-gnueabi
+        rustup target add arm-unknown-linux-gnueabi
+        cd /root/work/
+        make ARCH=x86_64 deb
+        make ARCH=arm deb
       '

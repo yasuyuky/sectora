@@ -16,6 +16,7 @@ INSTALL_DATA=$(INSTALL) -m444
 
 ifeq ($(ARCH),x86_64)
 	TARGET_TRIPLE=$(ARCH)-unknown-linux-gnu
+	DEB_ARCH=amd64
 
 	PKG_CONFIG_LIBDIR=/usr/lib/x86_64-linux-gnu/pkgconfig/
 
@@ -26,6 +27,7 @@ ifeq ($(ARCH),x86_64)
 endif
 ifeq ($(ARCH),arm)
 	TARGET_TRIPLE=$(ARCH)-unknown-linux-gnueabi
+	DEB_ARCH=armel
 
 	PKG_CONFIG_LIBDIR=/usr/lib/arm-linux-gnueabi/pkgconfig/
 
@@ -51,9 +53,29 @@ install: $(TARGET_DIR)/sectora $(TARGET_DIR)/libnss_sectora.so
 	cd $(DESTDIR)/$(libdir)/ && ln -sf libnss_sectora.so libnss_sectora.so.2
 
 
+deb: $(TARGET_DIR)/sectora $(TARGET_DIR)/libnss_sectora.so
+	rm -rf fakeroot/
+	$(INSTALL) -d fakeroot/etc
+	$(INSTALL) -d fakeroot/usr/$(sbindir)
+	$(INSTALL) -d fakeroot/usr/$(libdir)
+	$(INSTALL) -d fakeroot/debian/
+	$(INSTALL_PROGRAM) $(TARGET_DIR)/sectora fakeroot/usr/$(sbindir)
+	$(LIBTOOL) --mode=install $(INSTALL) $(TARGET_DIR)/libnss_sectora.so $(PWD)/fakeroot/usr/$(libdir)/
+	cd $(PWD)/fakeroot/usr/$(libdir)/ && ln -sf libnss_sectora.so libnss_sectora.so.2
+	$(INSTALL) -m660 -oroot -groot sectora.conf.template fakeroot/etc/sectora.conf.template
+	$(INSTALL) -m755 debian/postinst fakeroot/debian/
+	$(INSTALL) -m755 debian/postrm fakeroot/debian/
+	$(INSTALL) -m755 debian/config fakeroot/debian/
+	$(INSTALL) -m644 debian/control fakeroot/debian/
+	$(INSTALL) -m644 debian/copyright fakeroot/debian/
+	$(INSTALL) -m644 debian/templates fakeroot/debian/
+
+	sed -i -e "s/^Architecture.*/Architecture : $(DEB_ARCH)/" fakeroot/debian/control
+	fakeroot dpkg-deb --build fakeroot/ .
 
 clean: FORCE
 	cargo clean
+	rm -rf fakeroot/
 
 FORCE:
 .PHONY: FORCE
