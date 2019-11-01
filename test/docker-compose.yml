@@ -6,6 +6,9 @@ services:
   sshd:
     image: yasuyuky/ubuntu-ssh:latest
     restart: always
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
   ansible:
     build: ./ansible
     working_dir: /work
