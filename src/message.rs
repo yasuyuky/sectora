@@ -13,6 +13,7 @@ pub enum ClientMessage {
     PwUid { uid: u64 },
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub enum DaemonMessage {
     Error { message: String },
