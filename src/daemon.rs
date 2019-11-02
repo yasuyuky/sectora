@@ -103,21 +103,34 @@ impl Daemon {
                 Ok(sectors) => DaemonMessage::SectorGroups { sectors },
                 Err(_) => DaemonMessage::Error { message: String::from("get sectors failed") },
             },
-            ClientMessage::PwUid { uid } => match self.client.get_sectors() {
-                Ok(sectors) => {
-                    for sector in sectors {
-                        for member in sector.members.values() {
-                            if uid == &member.id {
-                                return DaemonMessage::Pw { login: member.login.clone(),
-                                                           uid: *uid,
-                                                           gid: sector.get_gid() };
-                            }
-                        }
-                    }
-                    DaemonMessage::Error { message: String::from("uid not matched") }
-                }
+            ClientMessage::Pw(pw) => match self.client.get_sectors() {
+                Ok(sectors) => self.handle_pw(pw, &sectors),
                 Err(_) => DaemonMessage::Error { message: String::from("get sectors failed") },
             },
         }
+    }
+
+    fn handle_pw(&self, pw: &Pw, sectors: &Vec<structs::SectorGroup>) -> DaemonMessage {
+        for sector in sectors {
+            for member in sector.members.values() {
+                match pw {
+                    Pw::Uid(uid) => {
+                        if uid == &member.id {
+                            return DaemonMessage::Pw { login: member.login.clone(),
+                                                       uid: *uid,
+                                                       gid: sector.get_gid() };
+                        }
+                    }
+                    Pw::Nam(name) => {
+                        if name == &member.login {
+                            return DaemonMessage::Pw { login: member.login.clone(),
+                                                       uid: member.id,
+                                                       gid: sector.get_gid() };
+                        }
+                    }
+                }
+            }
+        }
+        DaemonMessage::Error { message: String::from("not found") }
     }
 }

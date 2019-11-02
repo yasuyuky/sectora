@@ -186,7 +186,7 @@ pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut P
     let mut buffer = Buffer::new(buf, buflen);
     let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
     let conn = get_or_again!(connect_daemon(&conf), errnop);
-    let msg = get_or_again!(send_recv(&conn, ClientMessage::PwUid { uid: uid as u64 }), errnop);
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::Pw(Pw::Uid(uid as u64))), errnop);
     if let DaemonMessage::Pw { login, uid, gid } = msg {
         match { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &conf) } {
             Ok(_) => succeed!(),

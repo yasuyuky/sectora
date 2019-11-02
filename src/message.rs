@@ -4,13 +4,19 @@ use std::fmt;
 use std::str::FromStr;
 
 #[derive(Debug)]
+pub enum Pw {
+    Uid(u64),
+    Nam(String),
+}
+
+#[derive(Debug)]
 pub enum ClientMessage {
     Key { user: String },
     Pam { user: String },
     CleanUp,
     RateLimit,
     SectorGroups,
-    PwUid { uid: u64 },
+    Pw(Pw),
 }
 
 #[allow(unused)]
@@ -25,6 +31,15 @@ pub enum DaemonMessage {
     Pw { login: String, uid: u64, gid: u64 },
 }
 
+impl fmt::Display for Pw {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Pw::Uid(uid) => write!(f, "uid={}", uid),
+            Pw::Nam(name) => write!(f, "name={}", name),
+        }
+    }
+}
+
 impl fmt::Display for ClientMessage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -33,7 +48,7 @@ impl fmt::Display for ClientMessage {
             ClientMessage::CleanUp => write!(f, "c:cleanup"),
             ClientMessage::RateLimit => write!(f, "c:ratelimit"),
             ClientMessage::SectorGroups => write!(f, "c:sectors"),
-            ClientMessage::PwUid { uid } => write!(f, "c:pwuid:{}", uid),
+            ClientMessage::Pw(pw) => write!(f, "c:pw:{}", pw),
         }
     }
 }
@@ -55,6 +70,19 @@ impl fmt::Display for DaemonMessage {
     }
 }
 
+impl FromStr for Pw {
+    type Err = ParseMessageError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.starts_with("uid=") {
+            Ok(Pw::Uid(s.get(4..).unwrap_or_default().parse::<u64>().unwrap()))
+        } else if s.starts_with("name=") {
+            Ok(Pw::Nam(String::from(s.get(5..).unwrap_or_default())))
+        } else {
+            Err(ParseMessageError::ParseClientMessageError)
+        }
+    }
+}
+
 impl FromStr for ClientMessage {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -68,8 +96,8 @@ impl FromStr for ClientMessage {
             Ok(ClientMessage::RateLimit)
         } else if s == "c:sectors" {
             Ok(ClientMessage::SectorGroups)
-        } else if s.starts_with("c:pwuid:") {
-            Ok(ClientMessage::PwUid { uid: s.get(8..).unwrap_or_default().parse::<u64>().unwrap() })
+        } else if s.starts_with("c:pw:") {
+            Ok(ClientMessage::Pw(s.get(5..).unwrap_or_default().parse::<Pw>()?))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
