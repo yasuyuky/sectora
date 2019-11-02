@@ -15,15 +15,17 @@ extern crate toml;
 
 mod applog;
 mod error;
-mod ghclient;
+mod message;
 mod statics;
 mod structs;
 
-use ghclient::GithubClient;
 use log::debug;
+use message::*;
 use statics::CONF_PATH;
 use std::env;
+use std::os::unix::net::UnixDatagram;
 use std::process;
+use std::time::Duration;
 use structopt::StructOpt;
 use structs::Config;
 
@@ -68,51 +70,57 @@ enum Shell {
     Elvish,
 }
 
+fn send_recv(socket: &UnixDatagram, msg: ClientMessage) -> Result<DaemonMessage, error::Error> {
+    socket.send(msg.to_string().as_bytes())?;
+    let mut buf = [0u8; 4096];
+    let recv_cnt = socket.recv(&mut buf)?;
+    let s = String::from_utf8(buf[..recv_cnt].to_vec()).unwrap();
+    debug!("!!recv: {}", s);
+    Ok(s.parse::<DaemonMessage>()?)
+}
+
 fn main() {
     let command = Command::from_args();
 
     applog::init(Some("sectora"));
     debug!("{:?}", command);
+    let conf = Config::from_path(&CONF_PATH).unwrap_or_else(|_| process::exit(11));
+    let client_socket_path = format!("{}/{}", &conf.socket_dir, std::process::id());
+    let socket = UnixDatagram::bind(client_socket_path).unwrap_or_else(|_| process::exit(101));
+    socket.set_read_timeout(Some(Duration::from_secs(5)))
+          .unwrap_or_else(|_| process::exit(111));
+    socket.connect(conf.socket_path).unwrap_or_else(|_| process::exit(121));
+    debug!("connected to socket: {:?}", socket);
+
     match command {
         Command::Check { confpath } => match Config::from_path(&confpath) {
             Ok(_) => process::exit(0),
             Err(_) => process::exit(11),
         },
-        Command::Key { user } => {
-            match Config::from_path(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
-                                               .and_then(|client| client.get_user_public_key(&user))
-            {
-                Ok(keys) => {
-                    println!("{}", keys);
-                    process::exit(0);
-                }
-                Err(_) => process::exit(21),
+        Command::Key { user } => match send_recv(&socket, ClientMessage::Key { user }) {
+            Ok(DaemonMessage::Key { keys }) => {
+                println!("{}", keys);
+                process::exit(0)
             }
-        }
+            _ => process::exit(21),
+        },
         Command::Pam => match env::var("PAM_USER") {
-            Ok(user) => match Config::from_path(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
-                                                           .and_then(|client| client.check_pam(&user))
-            {
-                Ok(true) => process::exit(0),
-                Ok(false) => process::exit(1),
-                Err(_) => process::exit(31),
+            Ok(user) => match send_recv(&socket, ClientMessage::Pam { user }) {
+                Ok(DaemonMessage::Pam { result }) => process::exit(if result { 0 } else { 1 }),
+                _ => process::exit(31),
             },
             Err(_) => process::exit(41),
         },
-        Command::CleanUp => match Config::from_path(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
-                                                               .and_then(|client| client.clear_all_caches())
-        {
+        Command::CleanUp => match send_recv(&socket, ClientMessage::CleanUp) {
             Ok(_) => process::exit(0),
             Err(_) => process::exit(51),
         },
-        Command::RateLimit => match Config::from_path(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
-                                                                 .and_then(|client| client.get_rate_limit())
-        {
-            Ok(ratelimit) => {
-                println!("{:?}", ratelimit);
+        Command::RateLimit => match send_recv(&socket, ClientMessage::RateLimit) {
+            Ok(DaemonMessage::RateLimit { limit }) => {
+                println!("{:?}", limit);
                 process::exit(0)
             }
-            Err(_) => process::exit(61),
+            _ => process::exit(61),
         },
         Command::Version => {
             println!("{}",
