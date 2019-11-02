@@ -1,7 +1,3 @@
-extern crate glob;
-extern crate http;
-extern crate hyper;
-extern crate hyper_tls;
 #[macro_use]
 extern crate lazy_static;
 extern crate libc;
@@ -11,22 +7,25 @@ extern crate serde;
 extern crate serde_json;
 extern crate toml;
 
+mod applog;
 mod buffer;
 mod cstructs;
 mod error;
-mod ghclient;
+mod message;
 mod runfiles;
 mod statics;
 mod structs;
 
 use buffer::Buffer;
 use cstructs::{Group, Passwd, Spwd};
-use ghclient::GithubClient;
+use message::*;
 use nix::errno::Errno;
 use statics::CONF_PATH;
 use std::ffi::CStr;
 use std::io::{BufRead, Write};
+use std::os::unix::net::UnixDatagram;
 use std::string::String;
+use std::time::Duration;
 use structs::{Config, Member, MemberGid, SectorGroup};
 
 #[allow(dead_code)]
@@ -55,10 +54,12 @@ fn string_from(cstrptr: *const libc::c_char) -> String {
 
 macro_rules! succeed {
     () => {{
+        log::debug!("Success!");
         return libc::c_int::from(NssStatus::Success);
     }};
     ($finalize:expr) => {{
         $finalize;
+        log::debug!("Success!");
         return libc::c_int::from(NssStatus::Success);
     }};
 }
@@ -66,6 +67,7 @@ macro_rules! succeed {
 macro_rules! fail {
     ($err_no_p:ident, $err_no:expr, $return_val:expr) => {{
         *$err_no_p = $err_no as libc::c_int;
+        log::debug!("Faill!");
         return libc::c_int::from($return_val);
     }};
 }
@@ -73,14 +75,21 @@ macro_rules! fail {
 macro_rules! get_or_again {
     ($getter:expr) => {{
         match $getter {
-            Ok(ret) => ret,
-            Err(_) => return libc::c_int::from(NssStatus::TryAgain),
+            Ok(ret) => {
+                log::debug!("Ok: {:?}", ret);
+                ret
+            }
+            Err(e) => {
+                log::debug!("failed (will retry): {:?}", e);
+                return libc::c_int::from(NssStatus::TryAgain);
+            }
         }
     }};
     ($getter:expr, $err_no_p:ident) => {{
         match $getter {
             Ok(ret) => ret,
-            Err(_) => {
+            Err(e) => {
+                log::debug!("failed (will retry): {:?}", e);
                 *$err_no_p = Errno::EAGAIN as libc::c_int;
                 return libc::c_int::from(NssStatus::TryAgain);
             }
@@ -88,39 +97,77 @@ macro_rules! get_or_again {
     }};
 }
 
+fn connect_daemon(conf: &Config) -> Result<(UnixDatagram, String), error::Error> {
+    let client_socket_path = format!("{}/{}", &conf.socket_dir, std::process::id());
+    let socket = match UnixDatagram::bind(&client_socket_path) {
+        Ok(socket) => socket,
+        Err(e) => {
+            log::debug!("ERROR: failed to bind socket, {}", e);
+            return Err(error::Error::from(e));
+        }
+    };
+    log::debug!("{:?}", socket);
+    match socket.set_read_timeout(Some(Duration::from_secs(5))) {
+        Ok(_) => (),
+        Err(e) => {
+            log::debug!("ERROR: failed to set timeout, {}", e);
+            return Err(error::Error::from(e));
+        }
+    };
+    match socket.connect(&conf.socket_path) {
+        Ok(_) => (),
+        Err(e) => {
+            log::debug!("ERROR: failed to connect socket, {}", e);
+            return Err(error::Error::from(e));
+        }
+    };
+    Ok((socket, client_socket_path))
+}
+
+fn send_recv(conn: &(UnixDatagram, String), msg: ClientMessage) -> Result<DaemonMessage, error::Error> {
+    match conn.0.send(msg.to_string().as_bytes()) {
+        Ok(_) => (),
+        Err(e) => {
+            log::debug!("ERROR: failed to send msg, {}", e);
+            return Err(error::Error::from(e));
+        }
+    };
+    let mut buf = [0u8; 4096];
+    let recv_cnt = match conn.0.recv(&mut buf) {
+        Ok(cnt) => cnt,
+        Err(e) => {
+            log::debug!("ERROR: failed to recv msg, {}", e);
+            return Err(error::Error::from(e));
+        }
+    };
+    let s = String::from_utf8(buf[..recv_cnt].to_vec()).unwrap();
+    log::debug!("recieved: {}", s);
+    std::fs::remove_file(&conn.1).unwrap_or_default();
+    match s.parse::<DaemonMessage>() {
+        Ok(msg) => Ok(msg),
+        Err(e) => {
+            log::debug!("ERROR: failed to parse msg, {:?}", e);
+            Err(error::Error::from(e))
+        }
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, pwptr: *mut Passwd,
                                                  buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
+    applog::init(Some("libsectora"));
+    log::debug!("_nss_sectora_getpwnam_r");
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))),
-                               errnop);
-    let sectors = get_or_again!(client.get_sectors(), errnop);
-    for sector in sectors {
-        if let Some(member) = sector.members.get(&name) {
-            match { (*pwptr).pack_args(&mut buffer, &member.login, member.id, sector.get_gid(), &client.conf) } {
-                Ok(_) => succeed!(),
-                Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
-            }
-        }
-    }
-    fail!(errnop, Errno::ENOENT, NssStatus::NotFound)
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, buf: *mut libc::c_char,
-                                                 buflen: libc::size_t, errnop: *mut libc::c_int)
-                                                 -> libc::c_int {
-    let mut buffer = Buffer::new(buf, buflen);
-    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))),
-                               errnop);
-    let sectors = get_or_again!(client.get_sectors(), errnop);
-    for sector in sectors {
-        for member in sector.members.values() {
-            if uid == member.id as libc::uid_t {
-                match { (*pwptr).pack_args(&mut buffer, &member.login, member.id, sector.get_gid(), &client.conf) } {
+    let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
+    let conn = get_or_again!(connect_daemon(&conf), errnop);
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups), errnop);
+    if let DaemonMessage::SectorGroups { sectors } = msg {
+        for sector in sectors {
+            if let Some(member) = sector.members.get(&name) {
+                match { (*pwptr).pack_args(&mut buffer, &member.login, member.id, sector.get_gid(), &conf) } {
                     Ok(_) => succeed!(),
                     Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
                 }
@@ -131,15 +178,39 @@ pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut P
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, buf: *mut libc::c_char,
+                                                 buflen: libc::size_t, errnop: *mut libc::c_int)
+                                                 -> libc::c_int {
+    applog::init(Some("libsectora"));
+    log::debug!("_nss_sectora_getpwuid_r");
+    let mut buffer = Buffer::new(buf, buflen);
+    let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
+    let conn = get_or_again!(connect_daemon(&conf), errnop);
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::PwUid { uid: uid as u64 }), errnop);
+    if let DaemonMessage::Pw { login, uid, gid } = msg {
+        match { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &conf) } {
+            Ok(_) => succeed!(),
+            Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
+        }
+    }
+    fail!(errnop, Errno::ENOENT, NssStatus::NotFound)
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
+    applog::init(Some("libsectora"));
+    log::debug!("_nss_sectora_setpwent");
     let mut list_file = get_or_again!(runfiles::create());
-    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))));
-    let sectors = get_or_again!(client.get_sectors());
-    for sector in sectors {
-        for member in sector.members.values() {
-            let mg = MemberGid { member: member.clone(),
-                                 gid: sector.get_gid() };
-            list_file.write_all(mg.to_string().as_bytes()).unwrap();
+    let conf = get_or_again!(Config::from_path(&CONF_PATH));
+    let conn = get_or_again!(connect_daemon(&conf));
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups));
+    if let DaemonMessage::SectorGroups { sectors } = msg {
+        for sector in sectors {
+            for member in sector.members.values() {
+                let mg = MemberGid { member: member.clone(),
+                                     gid: sector.get_gid() };
+                list_file.write_all(mg.to_string().as_bytes()).unwrap();
+            }
         }
     }
     libc::c_int::from(NssStatus::Success)
@@ -149,13 +220,14 @@ pub unsafe extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
 pub unsafe extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
+    applog::init(Some("libsectora"));
+    log::debug!("_nss_sectora_getpwent_r");
     let (idx, idx_file, list) = get_or_again!(runfiles::open(), errnop);
-    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))),
-                               errnop);
+    let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let mg = get_or_again!(line.parse::<MemberGid>(), errnop);
-        match { (*pwptr).pack_args(&mut buffer, &mg.member.login, mg.member.id, mg.gid, &client.conf) } {
+        match { (*pwptr).pack_args(&mut buffer, &mg.member.login, mg.member.id, mg.gid, &conf) } {
             Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -174,16 +246,20 @@ pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, 
                                                  buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
+    applog::init(Some("libsectora"));
+    log::debug!("_nss_sectora_getspnam_r");
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))),
-                               errnop);
-    let sectors = get_or_again!(client.get_sectors(), errnop);
-    for sector in sectors {
-        if let Some(member) = sector.members.get(&name) {
-            match { (*spptr).pack_args(&mut buffer, &member.login, &client.conf) } {
-                Ok(_) => succeed!(),
-                Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
+    let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
+    let conn = get_or_again!(connect_daemon(&conf), errnop);
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups), errnop);
+    if let DaemonMessage::SectorGroups { sectors } = msg {
+        for sector in sectors {
+            if let Some(member) = sector.members.get(&name) {
+                match { (*spptr).pack_args(&mut buffer, &member.login, &conf) } {
+                    Ok(_) => succeed!(),
+                    Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
+                }
             }
         }
     }
@@ -192,12 +268,17 @@ pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, 
 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_setspent() -> libc::c_int {
+    applog::init(Some("libsectora"));
+    log::debug!("_nss_sectora_setspent");
     let mut list_file = get_or_again!(runfiles::create());
-    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))));
-    let sectors = get_or_again!(client.get_sectors());
-    for sector in sectors {
-        for member in sector.members.values() {
-            list_file.write_all(member.to_string().as_bytes()).unwrap();
+    let conf = get_or_again!(Config::from_path(&CONF_PATH));
+    let conn = get_or_again!(connect_daemon(&conf));
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups));
+    if let DaemonMessage::SectorGroups { sectors } = msg {
+        for sector in sectors {
+            for member in sector.members.values() {
+                list_file.write_all(member.to_string().as_bytes()).unwrap();
+            }
         }
     }
     libc::c_int::from(NssStatus::Success)
@@ -207,13 +288,14 @@ pub unsafe extern "C" fn _nss_sectora_setspent() -> libc::c_int {
 pub unsafe extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
+    applog::init(Some("libsectora"));
+    log::debug!("_nss_sectora_getspent_r");
     let (idx, idx_file, list) = get_or_again!(runfiles::open(), errnop);
-    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))),
-                               errnop);
+    let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let member = get_or_again!(line.parse::<Member>(), errnop);
-        match { (*spptr).pack_args(&mut buffer, &member.login, &client.conf) } {
+        match { (*spptr).pack_args(&mut buffer, &member.login, &conf) } {
             Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -231,16 +313,20 @@ pub unsafe extern "C" fn _nss_sectora_endspent() -> libc::c_int {
 pub unsafe extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut Group, buf: *mut libc::c_char,
                                                  buflen: libc::size_t, errnop: *mut libc::c_int)
                                                  -> libc::c_int {
+    applog::init(Some("libsectora"));
+    log::debug!("_nss_sectora_getgrgid_r");
     let mut buffer = Buffer::new(buf, buflen);
-    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))),
-                               errnop);
-    let sectors = get_or_again!(client.get_sectors(), errnop);
-    for sector in sectors {
-        let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
-        if u64::from(gid) == sector.get_gid() {
-            match { (*grptr).pack_args(&mut buffer, &sector.get_group(), u64::from(gid), &members) } {
-                Ok(_) => succeed!(),
-                Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
+    let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
+    let conn = get_or_again!(connect_daemon(&conf), errnop);
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups), errnop);
+    if let DaemonMessage::SectorGroups { sectors } = msg {
+        for sector in sectors {
+            let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
+            if u64::from(gid) == sector.get_gid() {
+                match { (*grptr).pack_args(&mut buffer, &sector.get_group(), u64::from(gid), &members) } {
+                    Ok(_) => succeed!(),
+                    Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
+                }
             }
         }
     }
@@ -252,17 +338,21 @@ pub unsafe extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, 
                                                  buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
+    applog::init(Some("libsectora"));
+    log::debug!("_nss_sectora_getgrnam_r");
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))),
-                               errnop);
-    let sectors = get_or_again!(client.get_sectors(), errnop);
-    for sector in sectors {
-        let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
-        if name == sector.get_group() {
-            match { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
-                Ok(_) => succeed!(),
-                Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
+    let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
+    let conn = get_or_again!(connect_daemon(&conf), errnop);
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups), errnop);
+    if let DaemonMessage::SectorGroups { sectors } = msg {
+        for sector in sectors {
+            let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
+            if name == sector.get_group() {
+                match { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
+                    Ok(_) => succeed!(),
+                    Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
+                }
             }
         }
     }
@@ -271,11 +361,16 @@ pub unsafe extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, 
 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
+    applog::init(Some("libsectora"));
+    log::debug!("_nss_sectora_setgrent");
     let mut list_file = get_or_again!(runfiles::create());
-    let client = get_or_again!(Config::from_path(&CONF_PATH).and_then(|c| Ok(GithubClient::new(&c))));
-    let sectors = get_or_again!(client.get_sectors());
-    for sector in sectors {
-        list_file.write_all(sector.to_string().as_bytes()).unwrap();
+    let conf = get_or_again!(Config::from_path(&CONF_PATH));
+    let conn = get_or_again!(connect_daemon(&conf));
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups));
+    if let DaemonMessage::SectorGroups { sectors } = msg {
+        for sector in sectors {
+            list_file.write_all(sector.to_string().as_bytes()).unwrap();
+        }
     }
     libc::c_int::from(NssStatus::Success)
 }
@@ -284,6 +379,8 @@ pub unsafe extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
 pub unsafe extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
+    applog::init(Some("libsectora"));
+    log::debug!("_nss_sectora_getgrent_r");
     let (idx, idx_file, list) = get_or_again!(runfiles::open(), errnop);
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
