@@ -163,15 +163,11 @@ pub unsafe extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, 
     let name = string_from(cnameptr);
     let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
     let conn = get_or_again!(connect_daemon(&conf), errnop);
-    let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups), errnop);
-    if let DaemonMessage::SectorGroups { sectors } = msg {
-        for sector in sectors {
-            if let Some(member) = sector.members.get(&name) {
-                match { (*pwptr).pack_args(&mut buffer, &member.login, member.id, sector.get_gid(), &conf) } {
-                    Ok(_) => succeed!(),
-                    Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
-                }
-            }
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::Pw(Pw::Nam(name))), errnop);
+    if let DaemonMessage::Pw { login, uid, gid } = msg {
+        match { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &conf) } {
+            Ok(_) => succeed!(),
+            Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
     }
     fail!(errnop, Errno::ENOENT, NssStatus::NotFound)
