@@ -84,8 +84,8 @@ impl FromStr for DaemonMessage {
             Ok(DaemonMessage::Pam { result: FromStr::from_str(s.get(6..).unwrap_or("false")).unwrap_or(false) })
         } else if s == "d:cleanup" {
             Ok(DaemonMessage::CleanUp)
-        } else if s == "d:ratelimit:" {
-            Ok(DaemonMessage::RateLimit { limit: FromStr::from_str(s.get(12..).unwrap_or("0")).unwrap_or(0) })
+        } else if s.starts_with("d:ratelimit:") {
+            Ok(DaemonMessage::RateLimit { limit: s.get(12..).unwrap_or("0").parse::<usize>().unwrap_or(0) })
         } else if s.starts_with("d:sectors:") {
             let sectors = s.get(10..)
                            .unwrap_or_default()
