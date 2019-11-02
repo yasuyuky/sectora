@@ -11,6 +11,24 @@
     dest: /usr/sbin/sectora.sh
     mode: 0700
 
+- name: copy sectorad binary executable
+  copy:
+    src: "{{ target_dir }}/sectorad"
+    dest: /usr/sbin/sectorad
+    mode: 0755
+
+- name: create sectorad config
+  template:
+    src: sectora.service
+    dest: /etc/systemd/system/sectora.service
+  notify:
+    - start sectorad
+
+- name: Enable service sectora
+  systemd:
+    name: sectora
+    enabled: yes
+
 - name: copy libnss_sectora shared object
   copy:
     src: "{{ target_dir }}/libnss_sectora.so"

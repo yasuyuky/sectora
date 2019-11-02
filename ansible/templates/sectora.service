@@ -1,0 +1,12 @@
+[Unit]
+Description=Sectora Daemon
+After=network.target
+
+[Service]
+ExecStart=/usr/sbin/sectorad
+Restart=always
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
