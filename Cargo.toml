@@ -24,6 +24,10 @@ syslog = "4.0"
 name = "sectora"
 path = "src/main.rs"
 
+[[bin]]
+name = "sectorad"
+path = "src/daemon.rs"
+
 [lib]
 name = "nss_sectora"
 path = "src/lib.rs"

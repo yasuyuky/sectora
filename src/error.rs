@@ -13,6 +13,7 @@ pub enum Error {
     Http(http::Error),
     Hyper(hyper::Error),
     HyperTls(hyper_tls::Error),
+    ParseMessageError(ParseMessageError),
 }
 
 impl From<serde_json::Error> for Error {
@@ -34,18 +35,31 @@ impl From<hyper_tls::Error> for Error {
     fn from(err: hyper_tls::Error) -> Error { Error::HyperTls(err) }
 }
 
+#[derive(Debug)]
 pub enum ParseSectorTypeError {
     UnknownType,
 }
 
+#[derive(Debug)]
 pub enum ParseSectorError {
     Id(std::num::ParseIntError),
     Type(ParseSectorTypeError),
     BadFormat,
 }
 
+#[derive(Debug)]
 pub enum ParseSectorGroupError {
     Sector(ParseSectorError),
     Gid(std::num::ParseIntError),
     Member(std::num::ParseIntError),
+}
+
+#[derive(Debug)]
+pub enum ParseMessageError {
+    ParseClientMessageError,
+    ParseDaemonMessageError,
+}
+
+impl From<ParseMessageError> for Error {
+    fn from(err: ParseMessageError) -> Error { Error::ParseMessageError(err) }
 }
