@@ -10,21 +10,25 @@ OPENSSL_STATIC_OPT= -e OPENSSL_STATIC=yes -e OPENSSL_LIB_DIR=/usr/lib/x86_64-lin
 X64_BUILD_OPT= -v ${PWD}/.cargo-x64/registry:/usr/local/cargo/registry $(COMMON_BUILD_OPT) $(OPENSSL_STATIC_OPT)
 ARM_BUILD_OPT= -v ${PWD}/.cargo-arm/registry:/usr/local/cargo/registry $(COMMON_BUILD_OPT)
 DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
-ENTRIY_POINTS := src/main.rs src/lib.rs
+ENTRIY_POINTS := src/main.rs src/daemon.rs src/lib.rs
 SRCS := $(filter-out $(ENTRIY_POINTS),$(wildcard src/*.rs))
 CARGO_FILES := Cargo.toml Cargo.lock rust-toolchain
 
 all: x64 arm
 
-x64: x64-exe x64-lib
+x64: x64-exe x64-daemon x64-lib
 
 x64-exe: $(X64_TARGET_DIR)/sectora
 
+x64-daemon: $(X64_TARGET_DIR)/sectorad
+
 x64-lib: $(X64_TARGET_DIR)/libnss_sectora.so
 
-arm: arm-exe arm-lib
+arm: arm-exe arm-daemon arm-lib
 
 arm-exe: $(ARM_TARGET_DIR)/sectora
+
+arm-daemon: $(X64_TARGET_DIR)/sectorad
 
 arm-lib: $(ARM_TARGET_DIR)/libnss_sectora.so
 
@@ -34,11 +38,17 @@ enter-build-image:
 $(X64_TARGET_DIR)/sectora: src/main.rs $(SRCS) $(CARGO_FILES)
 	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --bin sectora --release --target=$(X64_TARGET)
 
+$(X64_TARGET_DIR)/sectorad: src/daemon.rs $(SRCS) $(CARGO_FILES)
+	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --bin sectorad --release --target=$(X64_TARGET)
+
 $(X64_TARGET_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
 	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --lib --release --target=$(X64_TARGET)
 
 $(ARM_TARGET_DIR)/sectora: src/main.rs $(SRCS) $(CARGO_FILES)
 	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --bin sectora --release --target=$(ARM_TARGET)
+
+$(ARM_TARGET_DIR)/sectorad: src/daemon.rs $(SRCS) $(CARGO_FILES)
+	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --bin sectorad --release --target=$(ARM_TARGET)
 
 $(ARM_TARGET_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
 	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --lib --release --target=$(ARM_TARGET)
@@ -56,12 +66,17 @@ clean-exe:
 	rm -f $(X64_TARGET_DIR)/sectora
 	rm -f $(ARM_TARGET_DIR)/sectora
 
+clean-daemon:
+	rm -f $(X64_TARGET_DIR)/sectorad
+	rm -f $(ARM_TARGET_DIR)/sectorad
+
 clean-lib:
 	rm -f $(X64_TARGET_DIR)/libnss_sectora.so
 	rm -f $(ARM_TARGET_DIR)/libnss_sectora.so
 
 clean:
 	make clean-exe
+	make clean-daemon
 	make clean-lib
 
 clean-all:
