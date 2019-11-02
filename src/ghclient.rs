@@ -1,5 +1,4 @@
 use crate::error::Error;
-use crate::statics::TEMP_DIRNAME;
 use crate::structs::{Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
 use glob::glob;
 use hyper::client::HttpConnector;
@@ -25,15 +24,15 @@ impl GithubClient {
         GithubClient { conf: config.clone() }
     }
 
-    fn get_cache_path(url: &str) -> std::path::PathBuf {
-        let mut path = std::env::temp_dir();
-        path.push(TEMP_DIRNAME);
+    fn get_cache_path(&self, url: &str) -> std::path::PathBuf {
+        let mut path = std::path::PathBuf::new();
+        path.push(&self.conf.cache_dir);
         path.push(url);
         path
     }
 
     fn load_contents_from_cache(&self, url: &str) -> Result<(std::fs::Metadata, String), Error> {
-        let path = Self::get_cache_path(url);
+        let path = self.get_cache_path(url);
         let metadata = std::fs::metadata(path.to_str().unwrap())?;
         let mut f = File::open(path.to_str().unwrap())?;
         let mut contents = String::new();
@@ -42,7 +41,7 @@ impl GithubClient {
     }
 
     fn store_contents_to_cache(&self, url: &str, contents: &str) -> Result<(), Error> {
-        let path = Self::get_cache_path(url);
+        let path = self.get_cache_path(url);
         std::fs::create_dir_all(path.parent().unwrap_or(std::path::Path::new("/")))?;
         let mut f = File::create(path.to_str().unwrap())?;
         f.write_all(contents.as_bytes())?;
@@ -206,8 +205,7 @@ impl GithubClient {
 
     #[allow(dead_code)]
     pub fn clear_all_caches(&self) -> Result<(), Error> {
-        let mut path = std::env::temp_dir();
-        path.push(TEMP_DIRNAME);
+        let mut path = self.get_cache_path("");
         path.push("**/*");
         for entry in glob(&path.to_str().unwrap()).unwrap() {
             match entry {
