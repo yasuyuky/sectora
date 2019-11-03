@@ -116,7 +116,7 @@ UsePAM yes
 Add the following lines to `/etc/pam.d/sshd`.
 
 ```
-auth requisite pam_exec.so quiet expose_authtok /usr/sbin/sectora pam
+account requisite pam_exec.so quiet /usr/sbin/sectora pam
 auth optional pam_unix.so not_set_pass use_first_pass nodelay
 session required pam_mkhomedir.so skel: /etc/skel/ umask: 0022
 ```
