@@ -10,6 +10,12 @@ pub enum Pw {
 }
 
 #[derive(Debug)]
+pub enum Gr {
+    Gid(u64),
+    Nam(String),
+}
+
+#[derive(Debug)]
 pub enum ClientMessage {
     Key { user: String },
     Pam { user: String },
@@ -17,6 +23,7 @@ pub enum ClientMessage {
     RateLimit,
     SectorGroups,
     Pw(Pw),
+    Gr(Gr),
 }
 
 #[allow(unused)]
@@ -29,6 +36,7 @@ pub enum DaemonMessage {
     RateLimit { limit: usize },
     SectorGroups { sectors: Vec<structs::SectorGroup> },
     Pw { login: String, uid: u64, gid: u64 },
+    Gr { sector: structs::SectorGroup },
 }
 
 impl fmt::Display for Pw {
@@ -36,6 +44,15 @@ impl fmt::Display for Pw {
         match self {
             Pw::Uid(uid) => write!(f, "uid={}", uid),
             Pw::Nam(name) => write!(f, "name={}", name),
+        }
+    }
+}
+
+impl fmt::Display for Gr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Gr::Gid(gid) => write!(f, "gid={}", gid),
+            Gr::Nam(name) => write!(f, "name={}", name),
         }
     }
 }
@@ -49,6 +66,7 @@ impl fmt::Display for ClientMessage {
             ClientMessage::RateLimit => write!(f, "c:ratelimit"),
             ClientMessage::SectorGroups => write!(f, "c:sectors"),
             ClientMessage::Pw(pw) => write!(f, "c:pw:{}", pw),
+            ClientMessage::Gr(gr) => write!(f, "c:gr:{}", gr),
         }
     }
 }
@@ -66,6 +84,7 @@ impl fmt::Display for DaemonMessage {
                 write!(f, "d:sectors:{}", ss.join("\n"))
             }
             DaemonMessage::Pw { login, uid, gid } => write!(f, "d:pw:{}:{}:{}", login, uid, gid),
+            DaemonMessage::Gr { sector } => write!(f, "d:gr:{}", sector),
         }
     }
 }
@@ -77,6 +96,19 @@ impl FromStr for Pw {
             Ok(Pw::Uid(s.get(4..).unwrap_or_default().parse::<u64>().unwrap()))
         } else if s.starts_with("name=") {
             Ok(Pw::Nam(String::from(s.get(5..).unwrap_or_default())))
+        } else {
+            Err(ParseMessageError::ParseClientMessageError)
+        }
+    }
+}
+
+impl FromStr for Gr {
+    type Err = ParseMessageError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.starts_with("gid=") {
+            Ok(Gr::Gid(s.get(4..).unwrap_or_default().parse::<u64>().unwrap()))
+        } else if s.starts_with("name=") {
+            Ok(Gr::Nam(String::from(s.get(5..).unwrap_or_default())))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
@@ -98,6 +130,8 @@ impl FromStr for ClientMessage {
             Ok(ClientMessage::SectorGroups)
         } else if s.starts_with("c:pw:") {
             Ok(ClientMessage::Pw(s.get(5..).unwrap_or_default().parse::<Pw>()?))
+        } else if s.starts_with("c:gr:") {
+            Ok(ClientMessage::Gr(s.get(5..).unwrap_or_default().parse::<Gr>()?))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
@@ -134,6 +168,11 @@ impl FromStr for DaemonMessage {
             let login: String = fields[0].clone();
             match (fields[1].parse::<u64>(), fields[2].parse::<u64>()) {
                 (Ok(uid), Ok(gid)) => Ok(DaemonMessage::Pw { login, uid, gid }),
+                _ => Err(ParseMessageError::ParseDaemonMessageError),
+            }
+        } else if s.starts_with("d:gr:") {
+            match s.get(5..).unwrap_or_default().parse::<structs::SectorGroup>() {
+                Ok(sector) => Ok(DaemonMessage::Gr { sector }),
                 _ => Err(ParseMessageError::ParseDaemonMessageError),
             }
         } else {

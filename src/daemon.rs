@@ -107,6 +107,10 @@ impl Daemon {
                 Ok(sectors) => self.handle_pw(pw, &sectors),
                 Err(_) => DaemonMessage::Error { message: String::from("get sectors failed") },
             },
+            ClientMessage::Gr(gr) => match self.client.get_sectors() {
+                Ok(sectors) => self.handle_gr(gr, &sectors),
+                Err(_) => DaemonMessage::Error { message: String::from("get sectors failed") },
+            },
         }
     }
 
@@ -127,6 +131,24 @@ impl Daemon {
                                                        uid: member.id,
                                                        gid: sector.get_gid() };
                         }
+                    }
+                }
+            }
+        }
+        DaemonMessage::Error { message: String::from("not found") }
+    }
+
+    fn handle_gr(&self, gr: &Gr, sectors: &Vec<structs::SectorGroup>) -> DaemonMessage {
+        for sector in sectors {
+            match gr {
+                Gr::Gid(gid) => {
+                    if gid == &sector.get_gid() {
+                        return DaemonMessage::Gr { sector: sector.clone() };
+                    }
+                }
+                Gr::Nam(name) => {
+                    if name == &sector.get_group() {
+                        return DaemonMessage::Gr { sector: sector.clone() };
                     }
                 }
             }
