@@ -314,16 +314,12 @@ pub unsafe extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut G
     let mut buffer = Buffer::new(buf, buflen);
     let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
     let conn = get_or_again!(connect_daemon(&conf), errnop);
-    let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups), errnop);
-    if let DaemonMessage::SectorGroups { sectors } = msg {
-        for sector in sectors {
-            let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
-            if u64::from(gid) == sector.get_gid() {
-                match { (*grptr).pack_args(&mut buffer, &sector.get_group(), u64::from(gid), &members) } {
-                    Ok(_) => succeed!(),
-                    Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
-                }
-            }
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::Gr(Gr::Gid(gid as u64))), errnop);
+    if let DaemonMessage::Gr { sector } = msg {
+        let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
+        match { (*grptr).pack_args(&mut buffer, &sector.get_group(), u64::from(gid), &members) } {
+            Ok(_) => succeed!(),
+            Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
     }
     fail!(errnop, Errno::ENOENT, NssStatus::NotFound)
@@ -340,16 +336,12 @@ pub unsafe extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, 
     let name = string_from(cnameptr);
     let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
     let conn = get_or_again!(connect_daemon(&conf), errnop);
-    let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups), errnop);
-    if let DaemonMessage::SectorGroups { sectors } = msg {
-        for sector in sectors {
-            let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
-            if name == sector.get_group() {
-                match { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
-                    Ok(_) => succeed!(),
-                    Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
-                }
-            }
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::Gr(Gr::Nam(name))), errnop);
+    if let DaemonMessage::Gr { sector } = msg {
+        let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
+        match { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
+            Ok(_) => succeed!(),
+            Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
     }
     fail!(errnop, Errno::ENOENT, NssStatus::NotFound)
