@@ -196,7 +196,7 @@ pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut P
 pub unsafe extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
     applog::init(Some("libsectora"));
     log::debug!("_nss_sectora_setpwent");
-    let mut list_file = get_or_again!(runfiles::create());
+    let mut list_file = get_or_again!(runfiles::create(std::process::id()));
     let conf = get_or_again!(Config::from_path(&CONF_PATH));
     let conn = get_or_again!(connect_daemon(&conf));
     let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups));
@@ -218,7 +218,7 @@ pub unsafe extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut l
                                                  -> libc::c_int {
     applog::init(Some("libsectora"));
     log::debug!("_nss_sectora_getpwent_r");
-    let (idx, idx_file, list) = get_or_again!(runfiles::open(), errnop);
+    let (idx, idx_file, list) = get_or_again!(runfiles::open(std::process::id()), errnop);
     let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
@@ -233,7 +233,7 @@ pub unsafe extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut l
 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_endpwent() -> libc::c_int {
-    runfiles::cleanup().unwrap_or(());
+    runfiles::cleanup(std::process::id()).unwrap_or(());
     libc::c_int::from(NssStatus::Success)
 }
 
@@ -262,7 +262,7 @@ pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, 
 pub unsafe extern "C" fn _nss_sectora_setspent() -> libc::c_int {
     applog::init(Some("libsectora"));
     log::debug!("_nss_sectora_setspent");
-    let mut list_file = get_or_again!(runfiles::create());
+    let mut list_file = get_or_again!(runfiles::create(std::process::id()));
     let conf = get_or_again!(Config::from_path(&CONF_PATH));
     let conn = get_or_again!(connect_daemon(&conf));
     let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups));
@@ -282,7 +282,7 @@ pub unsafe extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut lib
                                                  -> libc::c_int {
     applog::init(Some("libsectora"));
     log::debug!("_nss_sectora_getspent_r");
-    let (idx, idx_file, list) = get_or_again!(runfiles::open(), errnop);
+    let (idx, idx_file, list) = get_or_again!(runfiles::open(std::process::id()), errnop);
     let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
@@ -297,7 +297,7 @@ pub unsafe extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut lib
 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_endspent() -> libc::c_int {
-    runfiles::cleanup().unwrap_or(());
+    runfiles::cleanup(std::process::id()).unwrap_or(());
     libc::c_int::from(NssStatus::Success)
 }
 
@@ -347,7 +347,7 @@ pub unsafe extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, 
 pub unsafe extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
     applog::init(Some("libsectora"));
     log::debug!("_nss_sectora_setgrent");
-    let mut list_file = get_or_again!(runfiles::create());
+    let mut list_file = get_or_again!(runfiles::create(std::process::id()));
     let conf = get_or_again!(Config::from_path(&CONF_PATH));
     let conn = get_or_again!(connect_daemon(&conf));
     let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups));
@@ -365,7 +365,7 @@ pub unsafe extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut li
                                                  -> libc::c_int {
     applog::init(Some("libsectora"));
     log::debug!("_nss_sectora_getgrent_r");
-    let (idx, idx_file, list) = get_or_again!(runfiles::open(), errnop);
+    let (idx, idx_file, list) = get_or_again!(runfiles::open(std::process::id()), errnop);
     if let Some(Ok(line)) = list.lines().nth(idx) {
         let mut buffer = Buffer::new(buf, buflen);
         let sector = get_or_again!(line.parse::<SectorGroup>(), errnop);
@@ -380,6 +380,6 @@ pub unsafe extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut li
 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_endgrent() -> libc::c_int {
-    runfiles::cleanup().unwrap_or(());
+    runfiles::cleanup(std::process::id()).unwrap_or(());
     libc::c_int::from(NssStatus::Success)
 }

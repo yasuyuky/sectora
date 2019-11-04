@@ -1,19 +1,16 @@
-use libc;
 use std::fs::{create_dir_all, remove_file, File, OpenOptions};
 use std::io::{BufReader, Error, Read, Seek, SeekFrom, Write};
 
 const RUN_DIR: &str = "/var/run/sectora";
 
-pub fn create() -> Result<File, Error> {
-    let pid = unsafe { libc::getpid() };
+pub fn create(pid: u32) -> Result<File, Error> {
     create_dir_all(RUN_DIR)?;
     let mut idx_file: File = File::create(format!("{}/{}.index", RUN_DIR, pid))?;
     idx_file.write_all(b"0")?;
     Ok(File::create(format!("{}/{}.list", RUN_DIR, pid))?)
 }
 
-pub fn open() -> Result<(usize, File, BufReader<File>), Error> {
-    let pid = unsafe { libc::getpid() };
+pub fn open(pid: u32) -> Result<(usize, File, BufReader<File>), Error> {
     let mut idx_file: File = OpenOptions::new().read(true)
                                                .write(true)
                                                .open(format!("{}/{}.index", RUN_DIR, pid))?;
@@ -24,8 +21,7 @@ pub fn open() -> Result<(usize, File, BufReader<File>), Error> {
     Ok((idx, idx_file, list))
 }
 
-pub fn cleanup() -> Result<(), Error> {
-    let pid = unsafe { libc::getpid() };
+pub fn cleanup(pid: u32) -> Result<(), Error> {
     remove_file(format!("{}/{}.index", RUN_DIR, pid))?;
     remove_file(format!("{}/{}.list", RUN_DIR, pid))?;
     Ok(())
