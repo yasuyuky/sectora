@@ -143,10 +143,10 @@ impl Daemon {
     }
 
     fn handle_sp(&self, sp: &Sp, sectors: &Vec<structs::SectorGroup>) -> DaemonMessage {
+        let Sp::Nam(name) = sp;
         for sector in sectors {
-            let Sp::Nam(name) = sp;
-            if name == &sector.get_group() {
-                return DaemonMessage::Gr { sector: sector.clone() };
+            if let Some(member) = sector.members.get(name) {
+                return DaemonMessage::Sp { login: member.login.clone() };
             }
         }
         DaemonMessage::Error { message: String::from("not found") }
