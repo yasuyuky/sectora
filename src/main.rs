@@ -14,14 +14,14 @@ extern crate syslog;
 extern crate toml;
 
 mod applog;
+mod connection;
 mod error;
-mod ghclient;
+mod message;
 mod statics;
 mod structs;
 
-use ghclient::GithubClient;
 use log::debug;
-use statics::CONF_PATH;
+use message::*;
 use std::env;
 use std::process;
 use structopt::StructOpt;
@@ -70,49 +70,38 @@ enum Shell {
 
 fn main() {
     let command = Command::from_args();
+    let conn = connection::Connection::new(&format!("{:?}", command)).unwrap_or_else(|_| process::exit(11));
+    debug!("connected to socket: {:?}", conn);
 
-    applog::init(Some("sectora"));
-    debug!("{:?}", command);
     match command {
         Command::Check { confpath } => match Config::from_path(&confpath) {
             Ok(_) => process::exit(0),
             Err(_) => process::exit(11),
         },
-        Command::Key { user } => {
-            match Config::from_path(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
-                                               .and_then(|client| client.get_user_public_key(&user))
-            {
-                Ok(keys) => {
-                    println!("{}", keys);
-                    process::exit(0);
-                }
-                Err(_) => process::exit(21),
+        Command::Key { user } => match conn.communicate(ClientMessage::Key { user }) {
+            Ok(DaemonMessage::Key { keys }) => {
+                println!("{}", keys);
+                process::exit(0)
             }
-        }
+            _ => process::exit(21),
+        },
         Command::Pam => match env::var("PAM_USER") {
-            Ok(user) => match Config::from_path(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
-                                                           .and_then(|client| client.check_pam(&user))
-            {
-                Ok(true) => process::exit(0),
-                Ok(false) => process::exit(1),
-                Err(_) => process::exit(31),
+            Ok(user) => match conn.communicate(ClientMessage::Pam { user }) {
+                Ok(DaemonMessage::Pam { result }) => process::exit(if result { 0 } else { 1 }),
+                _ => process::exit(31),
             },
             Err(_) => process::exit(41),
         },
-        Command::CleanUp => match Config::from_path(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
-                                                               .and_then(|client| client.clear_all_caches())
-        {
+        Command::CleanUp => match conn.communicate(ClientMessage::CleanUp) {
             Ok(_) => process::exit(0),
             Err(_) => process::exit(51),
         },
-        Command::RateLimit => match Config::from_path(&CONF_PATH).and_then(|conf| Ok(GithubClient::new(&conf)))
-                                                                 .and_then(|client| client.get_rate_limit())
-        {
-            Ok(ratelimit) => {
-                println!("{:?}", ratelimit);
+        Command::RateLimit => match conn.communicate(ClientMessage::RateLimit) {
+            Ok(DaemonMessage::RateLimit { limit }) => {
+                println!("{:?}", limit);
                 process::exit(0)
             }
-            Err(_) => process::exit(61),
+            _ => process::exit(61),
         },
         Command::Version => {
             println!("{}",

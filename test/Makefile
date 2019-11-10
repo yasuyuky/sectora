@@ -15,7 +15,6 @@ up:
 setup:
 	make -j 2 setup-sshd setup-ansible
 	docker-compose exec ansible ansible-playbook -i hosts localtest.yml
-	docker-compose restart sshd
 
 setup-sshd:
 	docker cp ./keys/root/id_rsa.pub `docker-compose ps -q sshd`:/root/.ssh/authorized_keys
@@ -39,3 +38,6 @@ reset:
 	make down
 	make up
 	make setup
+
+restart:
+	docker-compose restart sshd

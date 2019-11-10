@@ -28,6 +28,12 @@ pub struct Config {
     pub cert_path: String,
     #[serde(default = "default_user_conf_path")]
     pub user_conf_path: String,
+    #[serde(default = "default_cache_dir")]
+    pub cache_dir: String,
+    #[serde(default = "default_socket_path")]
+    pub socket_path: String,
+    #[serde(default = "default_socket_dir")]
+    pub socket_dir: String,
     pub proxy_url: Option<String>,
 }
 
@@ -39,6 +45,21 @@ fn default_sh() -> String { String::from("/bin/bash") }
 fn default_cache_duration() -> u64 { 3600 }
 fn default_cert_path() -> String { String::from("/etc/ssl/certs/ca-certificates.crt") }
 fn default_user_conf_path() -> String { String::from(".config/sectora.toml") }
+fn default_cache_dir() -> String {
+    let mut path = std::env::temp_dir();
+    path.push("sectora/cache");
+    String::from(path.as_os_str().to_str().unwrap_or_default())
+}
+fn default_socket_path() -> String {
+    let mut path = std::env::temp_dir();
+    path.push("sectorad");
+    String::from(path.as_os_str().to_str().unwrap_or_default())
+}
+fn default_socket_dir() -> String {
+    let mut path = std::env::temp_dir();
+    path.push("sectora");
+    String::from(path.as_os_str().to_str().unwrap_or_default())
+}
 
 impl Config {
     pub fn from_path(configpath: &std::path::Path) -> Result<Self, Error> {

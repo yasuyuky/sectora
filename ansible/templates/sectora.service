@@ -1,0 +1,14 @@
+[Unit]
+Description=Sectora Daemon
+After=network.target
+
+[Service]
+ExecStart=/usr/sbin/sectorad
+# Environment=LOG_LEVEL=DEBUG
+# Environment=RUST_BACKTRACE=1
+Restart=always
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -3,7 +3,6 @@ use std::path::Path;
 use std::string::String;
 
 const DEFAULT_CONF_PATH_STR: &str = "/etc/sectora.conf";
-pub const TEMP_DIRNAME: &str = "sectora-cache";
 
 lazy_static! {
     static ref CONF_PATH_STR: String = env::var("SECTORA_CONFIG").unwrap_or(String::from(DEFAULT_CONF_PATH_STR));
