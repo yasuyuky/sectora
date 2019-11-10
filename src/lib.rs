@@ -9,6 +9,7 @@ extern crate toml;
 
 mod applog;
 mod buffer;
+mod connection;
 mod cstructs;
 mod error;
 mod message;
@@ -16,16 +17,14 @@ mod statics;
 mod structs;
 
 use buffer::Buffer;
+use connection::Connection;
 use cstructs::{Group, Passwd, Spwd};
 use message::ClientMessage as CMsg;
 use message::*;
 use nix::errno::Errno;
-use statics::CONF_PATH;
 use std::ffi::CStr;
-use std::os::unix::net::UnixDatagram;
 use std::process;
 use std::string::String;
-use std::time::Duration;
 use structs::Config;
 
 #[allow(dead_code)]
@@ -90,51 +89,6 @@ macro_rules! try_unwrap {
             }
         }
     }};
-}
-
-#[derive(Debug)]
-struct Connection {
-    conf: Config,
-    conn: UnixDatagram,
-}
-
-impl Connection {
-    fn new(logid: &str) -> Result<Self, error::Error> {
-        applog::init(Some("libsectora"));
-        log::debug!("{}", logid);
-        let conf = Config::from_path(&CONF_PATH)?;
-        let conn = Self::connect_daemon(&conf)?;
-        Ok(Self { conf, conn })
-    }
-
-    fn socket_path(conf: &Config) -> String { format!("{}/{}", &conf.socket_dir, process::id()) }
-
-    fn connect_daemon(conf: &Config) -> Result<UnixDatagram, error::Error> {
-        let socket = UnixDatagram::bind(&Self::socket_path(conf))?;
-        log::debug!("{:?}", socket);
-        socket.set_read_timeout(Some(Duration::from_secs(5)))?;
-        socket.connect(&conf.socket_path)?;
-        Ok(socket)
-    }
-
-    fn communicate(&self, msg: CMsg) -> Result<DaemonMessage, error::Error> {
-        self.conn.send(msg.to_string().as_bytes())?;
-        let mut buf = [0u8; 4096];
-        let recv_cnt = match self.conn.recv(&mut buf) {
-            Ok(cnt) => cnt,
-            Err(e) => {
-                log::debug!("ERROR: failed to recv msg, {}", e);
-                return Err(error::Error::from(e));
-            }
-        };
-        let s = String::from_utf8(buf[..recv_cnt].to_vec()).unwrap();
-        log::debug!("recieved: {}", s);
-        Ok(s.parse::<DaemonMessage>()?)
-    }
-}
-
-impl Drop for Connection {
-    fn drop(&mut self) { std::fs::remove_file(&Self::socket_path(&self.conf)).unwrap_or_default(); }
 }
 
 #[no_mangle]
