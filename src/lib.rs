@@ -12,7 +12,6 @@ mod buffer;
 mod cstructs;
 mod error;
 mod message;
-mod runfiles;
 mod statics;
 mod structs;
 
