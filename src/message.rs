@@ -42,10 +42,10 @@ pub enum ClientMessage {
 #[allow(unused)]
 #[derive(Debug)]
 pub enum DaemonMessage {
+    Success,
     Error { message: String },
     Key { keys: String },
     Pam { result: bool },
-    CleanUp,
     RateLimit { limit: usize },
     SectorGroups { sectors: Vec<structs::SectorGroup> },
     Pw { login: String, uid: u64, gid: u64 },
@@ -108,9 +108,9 @@ impl fmt::Display for DaemonMessage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             DaemonMessage::Error { message } => write!(f, "d:error:{}", message),
+            DaemonMessage::Success => write!(f, "d:success"),
             DaemonMessage::Key { keys } => write!(f, "d:key:{}", keys),
             DaemonMessage::Pam { result } => write!(f, "d:pam:{}", result),
-            DaemonMessage::CleanUp => write!(f, "d:cleanup"),
             DaemonMessage::RateLimit { limit } => write!(f, "d:ratelimit:{}", limit),
             DaemonMessage::SectorGroups { sectors } => {
                 let ss: Vec<String> = sectors.iter().map(|s| s.to_string()).collect();
@@ -207,8 +207,8 @@ impl FromStr for DaemonMessage {
             Ok(DaemonMessage::Key { keys: String::from(s.get(6..).unwrap_or_default()) })
         } else if s.starts_with("d:pam:") {
             Ok(DaemonMessage::Pam { result: FromStr::from_str(s.get(6..).unwrap_or("false")).unwrap_or(false) })
-        } else if s == "d:cleanup" {
-            Ok(DaemonMessage::CleanUp)
+        } else if s == "d:success" {
+            Ok(DaemonMessage::Success)
         } else if s.starts_with("d:ratelimit:") {
             Ok(DaemonMessage::RateLimit { limit: s.get(12..).unwrap_or("0").parse::<usize>().unwrap_or(0) })
         } else if s.starts_with("d:sectors:") {

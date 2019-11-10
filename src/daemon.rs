@@ -93,7 +93,7 @@ impl Daemon {
                 Err(_) => DaemonMessage::Error { message: String::from("check pam failed") },
             },
             ClientMessage::CleanUp => match self.client.clear_all_caches() {
-                Ok(_) => DaemonMessage::CleanUp,
+                Ok(_) => DaemonMessage::Success,
                 Err(_) => DaemonMessage::Error { message: String::from("clean up failed") },
             },
             ClientMessage::RateLimit => match self.client.get_rate_limit() {
