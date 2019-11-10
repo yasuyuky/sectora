@@ -143,9 +143,8 @@ pub unsafe extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, 
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let name = string_from(cnameptr);
     let conn = try_unwrap!(Connection::new("_nss_sectora_getpwnam_r"), errnop);
-    let msg = try_unwrap!(conn.communicate(CMsg::Pw(Pw::Nam(name))), errnop);
+    let msg = try_unwrap!(conn.communicate(CMsg::Pw(Pw::Nam(string_from(cnameptr)))), errnop);
     if let DaemonMessage::Pw { login, uid, gid } = msg {
         match { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &conn.conf) } {
             Ok(_) => succeed!(),
@@ -213,9 +212,8 @@ pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, 
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let name = string_from(cnameptr);
     let conn = try_unwrap!(Connection::new("_nss_sectora_getspnam_r"), errnop);
-    let msg = try_unwrap!(conn.communicate(CMsg::Sp(Sp::Nam(name))), errnop);
+    let msg = try_unwrap!(conn.communicate(CMsg::Sp(Sp::Nam(string_from(cnameptr)))), errnop);
     if let DaemonMessage::Sp { login } = msg {
         match { (*spptr).pack_args(&mut buffer, &login, &conn.conf) } {
             Ok(_) => succeed!(),
@@ -284,9 +282,8 @@ pub unsafe extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, 
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let name = string_from(cnameptr);
     let conn = try_unwrap!(Connection::new("_nss_sectora_getgrnam_r"), errnop);
-    let msg = try_unwrap!(conn.communicate(CMsg::Gr(Gr::Nam(name))), errnop);
+    let msg = try_unwrap!(conn.communicate(CMsg::Gr(Gr::Nam(string_from(cnameptr)))), errnop);
     if let DaemonMessage::Gr { sector } = msg {
         let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
         match { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
