@@ -14,6 +14,7 @@ extern crate syslog;
 extern crate toml;
 
 mod applog;
+mod connection;
 mod error;
 mod message;
 mod statics;
@@ -21,11 +22,8 @@ mod structs;
 
 use log::debug;
 use message::*;
-use statics::CONF_PATH;
 use std::env;
-use std::os::unix::net::UnixDatagram;
 use std::process;
-use std::time::Duration;
 use structopt::StructOpt;
 use structs::Config;
 
@@ -70,34 +68,17 @@ enum Shell {
     Elvish,
 }
 
-fn send_recv(socket: &UnixDatagram, msg: ClientMessage) -> Result<DaemonMessage, error::Error> {
-    socket.send(msg.to_string().as_bytes())?;
-    let mut buf = [0u8; 4096];
-    let recv_cnt = socket.recv(&mut buf)?;
-    let s = String::from_utf8(buf[..recv_cnt].to_vec()).unwrap();
-    debug!("!!recv: {}", s);
-    Ok(s.parse::<DaemonMessage>()?)
-}
-
 fn main() {
     let command = Command::from_args();
-
-    applog::init(Some("sectora"));
-    debug!("{:?}", command);
-    let conf = Config::from_path(&CONF_PATH).unwrap_or_else(|_| process::exit(11));
-    let client_socket_path = format!("{}/{}", &conf.socket_dir, std::process::id());
-    let socket = UnixDatagram::bind(client_socket_path).unwrap_or_else(|_| process::exit(101));
-    socket.set_read_timeout(Some(Duration::from_secs(5)))
-          .unwrap_or_else(|_| process::exit(111));
-    socket.connect(conf.socket_path).unwrap_or_else(|_| process::exit(121));
-    debug!("connected to socket: {:?}", socket);
+    let conn = connection::Connection::new(&format!("{:?}", command)).unwrap_or_else(|_| process::exit(11));
+    debug!("connected to socket: {:?}", conn);
 
     match command {
         Command::Check { confpath } => match Config::from_path(&confpath) {
             Ok(_) => process::exit(0),
             Err(_) => process::exit(11),
         },
-        Command::Key { user } => match send_recv(&socket, ClientMessage::Key { user }) {
+        Command::Key { user } => match conn.communicate(ClientMessage::Key { user }) {
             Ok(DaemonMessage::Key { keys }) => {
                 println!("{}", keys);
                 process::exit(0)
@@ -105,17 +86,17 @@ fn main() {
             _ => process::exit(21),
         },
         Command::Pam => match env::var("PAM_USER") {
-            Ok(user) => match send_recv(&socket, ClientMessage::Pam { user }) {
+            Ok(user) => match conn.communicate(ClientMessage::Pam { user }) {
                 Ok(DaemonMessage::Pam { result }) => process::exit(if result { 0 } else { 1 }),
                 _ => process::exit(31),
             },
             Err(_) => process::exit(41),
         },
-        Command::CleanUp => match send_recv(&socket, ClientMessage::CleanUp) {
+        Command::CleanUp => match conn.communicate(ClientMessage::CleanUp) {
             Ok(_) => process::exit(0),
             Err(_) => process::exit(51),
         },
-        Command::RateLimit => match send_recv(&socket, ClientMessage::RateLimit) {
+        Command::RateLimit => match conn.communicate(ClientMessage::RateLimit) {
             Ok(DaemonMessage::RateLimit { limit }) => {
                 println!("{:?}", limit);
                 process::exit(0)
