@@ -260,16 +260,11 @@ pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, 
 pub unsafe extern "C" fn _nss_sectora_setspent() -> libc::c_int {
     applog::init(Some("libsectora"));
     log::debug!("_nss_sectora_setspent");
-    let mut list_file = get_or_again!(runfiles::create(std::process::id()));
     let conf = get_or_again!(Config::from_path(&CONF_PATH));
     let conn = get_or_again!(connect_daemon(&conf));
-    let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups));
-    if let DaemonMessage::SectorGroups { sectors } = msg {
-        for sector in sectors {
-            for member in sector.members.values() {
-                list_file.write_all(member.to_string().as_bytes()).unwrap();
-            }
-        }
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::Sp(Sp::Ent(Ent::Set(std::process::id())))));
+    if let DaemonMessage::Success = msg {
+        return libc::c_int::from(NssStatus::Success);
     }
     libc::c_int::from(NssStatus::Success)
 }
@@ -280,13 +275,13 @@ pub unsafe extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut lib
                                                  -> libc::c_int {
     applog::init(Some("libsectora"));
     log::debug!("_nss_sectora_getspent_r");
-    let (idx, idx_file, list) = get_or_again!(runfiles::open(std::process::id()), errnop);
+    let mut buffer = Buffer::new(buf, buflen);
     let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
-    if let Some(Ok(line)) = list.lines().nth(idx) {
-        let mut buffer = Buffer::new(buf, buflen);
-        let member = get_or_again!(line.parse::<Member>(), errnop);
-        match { (*spptr).pack_args(&mut buffer, &member.login, &conf) } {
-            Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
+    let conn = get_or_again!(connect_daemon(&conf));
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::Sp(Sp::Ent(Ent::Get(std::process::id())))));
+    if let DaemonMessage::Sp { login } = msg {
+        match { (*spptr).pack_args(&mut buffer, &login, &conf) } {
+            Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
     }
@@ -295,8 +290,13 @@ pub unsafe extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut lib
 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_endspent() -> libc::c_int {
-    runfiles::cleanup(std::process::id()).unwrap_or(());
-    libc::c_int::from(NssStatus::Success)
+    let conf = get_or_again!(Config::from_path(&CONF_PATH));
+    let conn = get_or_again!(connect_daemon(&conf));
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::Sp(Sp::Ent(Ent::End(std::process::id())))));
+    if let DaemonMessage::Success = msg {
+        return libc::c_int::from(NssStatus::Success);
+    }
+    libc::c_int::from(NssStatus::TryAgain)
 }
 
 #[no_mangle]

@@ -13,6 +13,7 @@ pub enum Pw {
 #[derive(Debug)]
 pub enum Sp {
     Nam(String),
+    Ent(Ent),
 }
 
 #[derive(Debug)]
@@ -78,6 +79,7 @@ impl fmt::Display for Sp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Sp::Nam(name) => write!(f, "name={}", name),
+            Sp::Ent(ent) => write!(f, "ent={}", ent),
         }
     }
 }
@@ -160,6 +162,8 @@ impl FromStr for Sp {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.starts_with("name=") {
             Ok(Sp::Nam(String::from(s.get(5..).unwrap_or_default())))
+        } else if s.starts_with("ent=") {
+            Ok(Sp::Ent(s.get(4..).unwrap_or_default().parse::<Ent>().unwrap()))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }

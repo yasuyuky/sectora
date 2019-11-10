@@ -166,11 +166,36 @@ impl Daemon {
         DaemonMessage::Error { message: String::from("not found") }
     }
 
-    fn handle_sp(&self, sp: &Sp) -> DaemonMessage {
-        let Sp::Nam(name) = sp;
-        for sector in self.client.get_sectors().unwrap_or_default() {
-            if let Some(member) = sector.members.get(name) {
-                return DaemonMessage::Sp { login: member.login.clone() };
+    fn handle_sp(&mut self, sp: &Sp) -> DaemonMessage {
+        match sp {
+            Sp::Nam(name) => {
+                for sector in self.client.get_sectors().unwrap_or_default() {
+                    if let Some(member) = sector.members.get(name) {
+                        return DaemonMessage::Sp { login: member.login.clone() };
+                    }
+                }
+            }
+            Sp::Ent(Ent::Set(pid)) => {
+                let mut ents = VecDeque::new();
+                for sector in self.client.get_sectors().unwrap_or_default() {
+                    for member in sector.members.values() {
+                        let sp = DaemonMessage::Sp { login: member.login.clone() };
+                        ents.push_back(sp);
+                    }
+                }
+                self.msg_cache.insert(*pid, ents).unwrap_or_default();
+                return DaemonMessage::Success;
+            }
+            Sp::Ent(Ent::Get(pid)) => match self.msg_cache.entry(*pid) {
+                Entry::Occupied(mut o) => match o.get_mut().pop_front() {
+                    Some(msg) => return msg,
+                    None => return DaemonMessage::Error { message: String::from("not found") },
+                },
+                Entry::Vacant(_) => {}
+            },
+            Sp::Ent(Ent::End(pid)) => {
+                self.msg_cache.remove(pid).unwrap_or_default();
+                return DaemonMessage::Success;
             }
         }
         DaemonMessage::Error { message: String::from("not found") }
