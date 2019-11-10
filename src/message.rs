@@ -7,6 +7,7 @@ use std::str::FromStr;
 pub enum Pw {
     Uid(u64),
     Nam(String),
+    Ent(Ent),
 }
 
 #[derive(Debug)]
@@ -68,6 +69,7 @@ impl fmt::Display for Pw {
         match self {
             Pw::Uid(uid) => write!(f, "uid={}", uid),
             Pw::Nam(name) => write!(f, "name={}", name),
+            Pw::Ent(ent) => write!(f, "ent={}", ent),
         }
     }
 }
@@ -145,6 +147,8 @@ impl FromStr for Pw {
             Ok(Pw::Uid(s.get(4..).unwrap_or_default().parse::<u64>().unwrap()))
         } else if s.starts_with("name=") {
             Ok(Pw::Nam(String::from(s.get(5..).unwrap_or_default())))
+        } else if s.starts_with("ent=") {
+            Ok(Pw::Ent(s.get(4..).unwrap_or_default().parse::<Ent>().unwrap()))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }

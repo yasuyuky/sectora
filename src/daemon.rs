@@ -24,6 +24,8 @@ use error::Error;
 use ghclient::GithubClient;
 use message::*;
 use statics::CONF_PATH;
+use std::collections::hash_map::Entry;
+use std::collections::{HashMap, VecDeque};
 use std::fs;
 use std::os::unix;
 use structopt::StructOpt;
@@ -39,7 +41,7 @@ struct Opt {
 fn main() {
     let opt = Opt::from_args();
     applog::init(Some("sectorad"));
-    let d = Daemon::new(opt.socket_path);
+    let mut d = Daemon::new(opt.socket_path);
     d.run().unwrap();
     log::debug!("Run stopped");
 }
@@ -47,6 +49,7 @@ fn main() {
 struct Daemon {
     client: GithubClient,
     socket_path: String,
+    msg_cache: HashMap<u32, VecDeque<DaemonMessage>>,
 }
 
 impl Drop for Daemon {
@@ -64,10 +67,11 @@ impl Daemon {
         let client = GithubClient::new(&config);
         log::debug!("Initialised");
         Daemon { client,
-                 socket_path: socket_path.unwrap_or(config.socket_path) }
+                 socket_path: socket_path.unwrap_or(config.socket_path),
+                 msg_cache: HashMap::new() }
     }
 
-    fn run(&self) -> Result<(), Error> {
+    fn run(&mut self) -> Result<(), Error> {
         let socket = unix::net::UnixDatagram::bind(&self.socket_path)?;
         fs::set_permissions(&self.socket_path, unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
         log::debug!("Start running @ {}", &self.socket_path);
@@ -82,7 +86,7 @@ impl Daemon {
         }
     }
 
-    fn handle(&self, msg: &ClientMessage) -> DaemonMessage {
+    fn handle(&mut self, msg: &ClientMessage) -> DaemonMessage {
         match msg {
             ClientMessage::Key { user } => match self.client.get_user_public_key(&user) {
                 Ok(keys) => DaemonMessage::Key { keys },
@@ -110,7 +114,7 @@ impl Daemon {
         }
     }
 
-    fn handle_pw(&self, pw: &Pw) -> DaemonMessage {
+    fn handle_pw(&mut self, pw: &Pw) -> DaemonMessage {
         match pw {
             Pw::Uid(uid) => {
                 for sector in self.client.get_sectors().unwrap_or_default() {
@@ -133,6 +137,30 @@ impl Daemon {
                         }
                     }
                 }
+            }
+            Pw::Ent(Ent::Set(pid)) => {
+                let mut ents = VecDeque::new();
+                for sector in self.client.get_sectors().unwrap_or_default() {
+                    for member in sector.members.values() {
+                        let pw = DaemonMessage::Pw { login: member.login.clone(),
+                                                     uid: member.id,
+                                                     gid: sector.get_gid() };
+                        ents.push_back(pw);
+                    }
+                }
+                self.msg_cache.insert(*pid, ents).unwrap_or_default();
+                return DaemonMessage::Success;
+            }
+            Pw::Ent(Ent::Get(pid)) => match self.msg_cache.entry(*pid) {
+                Entry::Occupied(mut o) => match o.get_mut().pop_front() {
+                    Some(msg) => return msg,
+                    None => return DaemonMessage::Error { message: String::from("not found") },
+                },
+                Entry::Vacant(_) => {}
+            },
+            Pw::Ent(Ent::End(pid)) => {
+                self.msg_cache.remove(pid).unwrap_or_default();
+                return DaemonMessage::Success;
             }
         }
         DaemonMessage::Error { message: String::from("not found") }

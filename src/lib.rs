@@ -26,7 +26,7 @@ use std::io::{BufRead, Write};
 use std::os::unix::net::UnixDatagram;
 use std::string::String;
 use std::time::Duration;
-use structs::{Config, Member, MemberGid, SectorGroup};
+use structs::{Config, Member, SectorGroup};
 
 #[allow(dead_code)]
 enum NssStatus {
@@ -196,20 +196,13 @@ pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut P
 pub unsafe extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
     applog::init(Some("libsectora"));
     log::debug!("_nss_sectora_setpwent");
-    let mut list_file = get_or_again!(runfiles::create(std::process::id()));
     let conf = get_or_again!(Config::from_path(&CONF_PATH));
     let conn = get_or_again!(connect_daemon(&conf));
-    let msg = get_or_again!(send_recv(&conn, ClientMessage::SectorGroups));
-    if let DaemonMessage::SectorGroups { sectors } = msg {
-        for sector in sectors {
-            for member in sector.members.values() {
-                let mg = MemberGid { member: member.clone(),
-                                     gid: sector.get_gid() };
-                list_file.write_all(mg.to_string().as_bytes()).unwrap();
-            }
-        }
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::Pw(Pw::Ent(Ent::Set(std::process::id())))));
+    if let DaemonMessage::Success = msg {
+        return libc::c_int::from(NssStatus::Success);
     }
-    libc::c_int::from(NssStatus::Success)
+    libc::c_int::from(NssStatus::TryAgain)
 }
 
 #[no_mangle]
@@ -218,13 +211,13 @@ pub unsafe extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut l
                                                  -> libc::c_int {
     applog::init(Some("libsectora"));
     log::debug!("_nss_sectora_getpwent_r");
-    let (idx, idx_file, list) = get_or_again!(runfiles::open(std::process::id()), errnop);
+    let mut buffer = Buffer::new(buf, buflen);
     let conf = get_or_again!(Config::from_path(&CONF_PATH), errnop);
-    if let Some(Ok(line)) = list.lines().nth(idx) {
-        let mut buffer = Buffer::new(buf, buflen);
-        let mg = get_or_again!(line.parse::<MemberGid>(), errnop);
-        match { (*pwptr).pack_args(&mut buffer, &mg.member.login, mg.member.id, mg.gid, &conf) } {
-            Ok(_) => succeed!(runfiles::increment(idx, idx_file)),
+    let conn = get_or_again!(connect_daemon(&conf));
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::Pw(Pw::Ent(Ent::Get(std::process::id())))));
+    if let DaemonMessage::Pw { login, uid, gid } = msg {
+        match { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &conf) } {
+            Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
     }
@@ -233,8 +226,13 @@ pub unsafe extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut l
 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_endpwent() -> libc::c_int {
-    runfiles::cleanup(std::process::id()).unwrap_or(());
-    libc::c_int::from(NssStatus::Success)
+    let conf = get_or_again!(Config::from_path(&CONF_PATH));
+    let conn = get_or_again!(connect_daemon(&conf));
+    let msg = get_or_again!(send_recv(&conn, ClientMessage::Pw(Pw::Ent(Ent::End(std::process::id())))));
+    if let DaemonMessage::Success = msg {
+        return libc::c_int::from(NssStatus::Success);
+    }
+    libc::c_int::from(NssStatus::TryAgain)
 }
 
 #[no_mangle]
