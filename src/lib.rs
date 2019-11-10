@@ -17,11 +17,13 @@ mod structs;
 
 use buffer::Buffer;
 use cstructs::{Group, Passwd, Spwd};
+use message::ClientMessage as CMsg;
 use message::*;
 use nix::errno::Errno;
 use statics::CONF_PATH;
 use std::ffi::CStr;
 use std::os::unix::net::UnixDatagram;
+use std::process;
 use std::string::String;
 use std::time::Duration;
 use structs::Config;
@@ -65,7 +67,7 @@ macro_rules! fail {
     }};
 }
 
-macro_rules! get_or_again {
+macro_rules! try_unwrap {
     ($getter:expr) => {{
         match $getter {
             Ok(ret) => {
@@ -106,7 +108,7 @@ impl Connection {
     }
 
     fn connect_daemon(conf: &Config) -> Result<UnixDatagram, error::Error> {
-        let client_socket_path = format!("{}/{}", &conf.socket_dir, std::process::id());
+        let client_socket_path = format!("{}/{}", &conf.socket_dir, process::id());
         let socket = UnixDatagram::bind(&client_socket_path)?;
         log::debug!("{:?}", socket);
         socket.set_read_timeout(Some(Duration::from_secs(5)))?;
@@ -114,7 +116,7 @@ impl Connection {
         Ok(socket)
     }
 
-    fn communicate(&self, msg: ClientMessage) -> Result<DaemonMessage, error::Error> {
+    fn communicate(&self, msg: CMsg) -> Result<DaemonMessage, error::Error> {
         self.conn.send(msg.to_string().as_bytes())?;
         let mut buf = [0u8; 4096];
         let recv_cnt = match self.conn.recv(&mut buf) {
@@ -132,7 +134,7 @@ impl Connection {
 
 impl Drop for Connection {
     fn drop(&mut self) {
-        let client_socket_path = format!("{}/{}", &self.conf.socket_dir, std::process::id());
+        let client_socket_path = format!("{}/{}", &self.conf.socket_dir, process::id());
         std::fs::remove_file(&client_socket_path).unwrap_or_default();
     }
 }
@@ -144,8 +146,8 @@ pub unsafe extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, 
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let conn = get_or_again!(Connection::new("_nss_sectora_getpwnam_r"), errnop);
-    let msg = get_or_again!(conn.communicate(ClientMessage::Pw(Pw::Nam(name))), errnop);
+    let conn = try_unwrap!(Connection::new("_nss_sectora_getpwnam_r"), errnop);
+    let msg = try_unwrap!(conn.communicate(CMsg::Pw(Pw::Nam(name))), errnop);
     if let DaemonMessage::Pw { login, uid, gid } = msg {
         match { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &conn.conf) } {
             Ok(_) => succeed!(),
@@ -160,8 +162,8 @@ pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut P
                                                  buflen: libc::size_t, errnop: *mut libc::c_int)
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let conn = get_or_again!(Connection::new("_nss_sectora_getpwuid_r"), errnop);
-    let msg = get_or_again!(conn.communicate(ClientMessage::Pw(Pw::Uid(uid as u64))), errnop);
+    let conn = try_unwrap!(Connection::new("_nss_sectora_getpwuid_r"), errnop);
+    let msg = try_unwrap!(conn.communicate(CMsg::Pw(Pw::Uid(uid as u64))), errnop);
     if let DaemonMessage::Pw { login, uid, gid } = msg {
         match { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &conn.conf) } {
             Ok(_) => succeed!(),
@@ -173,8 +175,8 @@ pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut P
 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
-    let conn = get_or_again!(Connection::new("_nss_sectora_setpwent"));
-    let msg = get_or_again!(conn.communicate(ClientMessage::Pw(Pw::Ent(Ent::Set(std::process::id())))));
+    let conn = try_unwrap!(Connection::new("_nss_sectora_setpwent"));
+    let msg = try_unwrap!(conn.communicate(CMsg::Pw(Pw::Ent(Ent::Set(process::id())))));
     if let DaemonMessage::Success = msg {
         return libc::c_int::from(NssStatus::Success);
     }
@@ -186,9 +188,8 @@ pub unsafe extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut l
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let conn = get_or_again!(Connection::new("_nss_sectora_getpwent_r"), errnop);
-    let msg = get_or_again!(conn.communicate(ClientMessage::Pw(Pw::Ent(Ent::Get(std::process::id())))),
-                            errnop);
+    let conn = try_unwrap!(Connection::new("_nss_sectora_getpwent_r"), errnop);
+    let msg = try_unwrap!(conn.communicate(CMsg::Pw(Pw::Ent(Ent::Get(process::id())))), errnop);
     if let DaemonMessage::Pw { login, uid, gid } = msg {
         match { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &conn.conf) } {
             Ok(_) => succeed!(),
@@ -200,8 +201,8 @@ pub unsafe extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut l
 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_endpwent() -> libc::c_int {
-    let conn = get_or_again!(Connection::new("_nss_sectora_endpwent"));
-    let msg = get_or_again!(conn.communicate(ClientMessage::Pw(Pw::Ent(Ent::End(std::process::id())))));
+    let conn = try_unwrap!(Connection::new("_nss_sectora_endpwent"));
+    let msg = try_unwrap!(conn.communicate(CMsg::Pw(Pw::Ent(Ent::End(process::id())))));
     if let DaemonMessage::Success = msg {
         return libc::c_int::from(NssStatus::Success);
     }
@@ -215,8 +216,8 @@ pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, 
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let conn = get_or_again!(Connection::new("_nss_sectora_getspnam_r"), errnop);
-    let msg = get_or_again!(conn.communicate(ClientMessage::Sp(Sp::Nam(name))), errnop);
+    let conn = try_unwrap!(Connection::new("_nss_sectora_getspnam_r"), errnop);
+    let msg = try_unwrap!(conn.communicate(CMsg::Sp(Sp::Nam(name))), errnop);
     if let DaemonMessage::Sp { login } = msg {
         match { (*spptr).pack_args(&mut buffer, &login, &conn.conf) } {
             Ok(_) => succeed!(),
@@ -228,8 +229,8 @@ pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, 
 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_setspent() -> libc::c_int {
-    let conn = get_or_again!(Connection::new("_nss_sectora_setspent"));
-    let msg = get_or_again!(conn.communicate(ClientMessage::Sp(Sp::Ent(Ent::Set(std::process::id())))));
+    let conn = try_unwrap!(Connection::new("_nss_sectora_setspent"));
+    let msg = try_unwrap!(conn.communicate(CMsg::Sp(Sp::Ent(Ent::Set(process::id())))));
     if let DaemonMessage::Success = msg {
         return libc::c_int::from(NssStatus::Success);
     }
@@ -241,9 +242,8 @@ pub unsafe extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut lib
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let conn = get_or_again!(Connection::new("_nss_sectora_getspent_r"), errnop);
-    let msg = get_or_again!(conn.communicate(ClientMessage::Sp(Sp::Ent(Ent::Get(std::process::id())))),
-                            errnop);
+    let conn = try_unwrap!(Connection::new("_nss_sectora_getspent_r"), errnop);
+    let msg = try_unwrap!(conn.communicate(CMsg::Sp(Sp::Ent(Ent::Get(process::id())))), errnop);
     if let DaemonMessage::Sp { login } = msg {
         match { (*spptr).pack_args(&mut buffer, &login, &conn.conf) } {
             Ok(_) => succeed!(),
@@ -255,8 +255,8 @@ pub unsafe extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut lib
 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_endspent() -> libc::c_int {
-    let conn = get_or_again!(Connection::new("_nss_sectora_endspent"));
-    let msg = get_or_again!(conn.communicate(ClientMessage::Sp(Sp::Ent(Ent::End(std::process::id())))));
+    let conn = try_unwrap!(Connection::new("_nss_sectora_endspent"));
+    let msg = try_unwrap!(conn.communicate(CMsg::Sp(Sp::Ent(Ent::End(process::id())))));
     if let DaemonMessage::Success = msg {
         return libc::c_int::from(NssStatus::Success);
     }
@@ -268,8 +268,8 @@ pub unsafe extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut G
                                                  buflen: libc::size_t, errnop: *mut libc::c_int)
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let conn = get_or_again!(Connection::new("_nss_sectora_getgrgid_r"), errnop);
-    let msg = get_or_again!(conn.communicate(ClientMessage::Gr(Gr::Gid(gid as u64))), errnop);
+    let conn = try_unwrap!(Connection::new("_nss_sectora_getgrgid_r"), errnop);
+    let msg = try_unwrap!(conn.communicate(CMsg::Gr(Gr::Gid(gid as u64))), errnop);
     if let DaemonMessage::Gr { sector } = msg {
         let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
         match { (*grptr).pack_args(&mut buffer, &sector.get_group(), u64::from(gid), &members) } {
@@ -287,8 +287,8 @@ pub unsafe extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, 
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
     let name = string_from(cnameptr);
-    let conn = get_or_again!(Connection::new("_nss_sectora_getgrnam_r"), errnop);
-    let msg = get_or_again!(conn.communicate(ClientMessage::Gr(Gr::Nam(name))), errnop);
+    let conn = try_unwrap!(Connection::new("_nss_sectora_getgrnam_r"), errnop);
+    let msg = try_unwrap!(conn.communicate(CMsg::Gr(Gr::Nam(name))), errnop);
     if let DaemonMessage::Gr { sector } = msg {
         let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
         match { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
@@ -301,8 +301,8 @@ pub unsafe extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, 
 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
-    let conn = get_or_again!(Connection::new("_nss_sectora_setgrent"));
-    let msg = get_or_again!(conn.communicate(ClientMessage::Gr(Gr::Ent(Ent::Set(std::process::id())))));
+    let conn = try_unwrap!(Connection::new("_nss_sectora_setgrent"));
+    let msg = try_unwrap!(conn.communicate(CMsg::Gr(Gr::Ent(Ent::Set(process::id())))));
     if let DaemonMessage::Success = msg {
         return libc::c_int::from(NssStatus::Success);
     }
@@ -314,9 +314,8 @@ pub unsafe extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut li
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
     let mut buffer = Buffer::new(buf, buflen);
-    let conn = get_or_again!(Connection::new("_nss_sectora_getgrent_r"), errnop);
-    let msg = get_or_again!(conn.communicate(ClientMessage::Gr(Gr::Ent(Ent::Get(std::process::id())))),
-                            errnop);
+    let conn = try_unwrap!(Connection::new("_nss_sectora_getgrent_r"), errnop);
+    let msg = try_unwrap!(conn.communicate(CMsg::Gr(Gr::Ent(Ent::Get(process::id())))), errnop);
     if let DaemonMessage::Gr { sector } = msg {
         let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
         match { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
@@ -329,8 +328,8 @@ pub unsafe extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut li
 
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_endgrent() -> libc::c_int {
-    let conn = get_or_again!(Connection::new("_nss_sectora_endgrent"));
-    let msg = get_or_again!(conn.communicate(ClientMessage::Gr(Gr::Ent(Ent::End(std::process::id())))));
+    let conn = try_unwrap!(Connection::new("_nss_sectora_endgrent"));
+    let msg = try_unwrap!(conn.communicate(CMsg::Gr(Gr::Ent(Ent::End(process::id())))));
     if let DaemonMessage::Success = msg {
         return libc::c_int::from(NssStatus::Success);
     }
