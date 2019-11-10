@@ -114,6 +114,21 @@ impl Daemon {
         }
     }
 
+    fn get_msg(&mut self, pid: &u32) -> DaemonMessage {
+        match self.msg_cache.entry(*pid) {
+            Entry::Occupied(mut o) => match o.get_mut().pop_front() {
+                Some(msg) => msg,
+                None => DaemonMessage::Error { message: String::from("not found") },
+            },
+            Entry::Vacant(_) => DaemonMessage::Error { message: String::from("not found") },
+        }
+    }
+
+    fn clear_cache(&mut self, pid: &u32) -> DaemonMessage {
+        self.msg_cache.remove(pid).unwrap_or_default();
+        DaemonMessage::Success
+    }
+
     fn handle_pw(&mut self, pw: &Pw) -> DaemonMessage {
         match pw {
             Pw::Uid(uid) => {
@@ -151,17 +166,8 @@ impl Daemon {
                 self.msg_cache.insert(*pid, ents).unwrap_or_default();
                 return DaemonMessage::Success;
             }
-            Pw::Ent(Ent::Get(pid)) => match self.msg_cache.entry(*pid) {
-                Entry::Occupied(mut o) => match o.get_mut().pop_front() {
-                    Some(msg) => return msg,
-                    None => return DaemonMessage::Error { message: String::from("not found") },
-                },
-                Entry::Vacant(_) => {}
-            },
-            Pw::Ent(Ent::End(pid)) => {
-                self.msg_cache.remove(pid).unwrap_or_default();
-                return DaemonMessage::Success;
-            }
+            Pw::Ent(Ent::Get(pid)) => return self.get_msg(pid),
+            Pw::Ent(Ent::End(pid)) => return self.clear_cache(pid),
         }
         DaemonMessage::Error { message: String::from("not found") }
     }
@@ -186,17 +192,8 @@ impl Daemon {
                 self.msg_cache.insert(*pid, ents).unwrap_or_default();
                 return DaemonMessage::Success;
             }
-            Sp::Ent(Ent::Get(pid)) => match self.msg_cache.entry(*pid) {
-                Entry::Occupied(mut o) => match o.get_mut().pop_front() {
-                    Some(msg) => return msg,
-                    None => return DaemonMessage::Error { message: String::from("not found") },
-                },
-                Entry::Vacant(_) => {}
-            },
-            Sp::Ent(Ent::End(pid)) => {
-                self.msg_cache.remove(pid).unwrap_or_default();
-                return DaemonMessage::Success;
-            }
+            Sp::Ent(Ent::Get(pid)) => return self.get_msg(pid),
+            Sp::Ent(Ent::End(pid)) => return self.clear_cache(pid),
         }
         DaemonMessage::Error { message: String::from("not found") }
     }
@@ -225,17 +222,8 @@ impl Daemon {
                 self.msg_cache.insert(*pid, ents).unwrap_or_default();
                 return DaemonMessage::Success;
             }
-            Gr::Ent(Ent::Get(pid)) => match self.msg_cache.entry(*pid) {
-                Entry::Occupied(mut o) => match o.get_mut().pop_front() {
-                    Some(msg) => return msg,
-                    None => return DaemonMessage::Error { message: String::from("not found") },
-                },
-                Entry::Vacant(_) => {}
-            },
-            Gr::Ent(Ent::End(pid)) => {
-                self.msg_cache.remove(pid).unwrap_or_default();
-                return DaemonMessage::Success;
-            }
+            Gr::Ent(Ent::Get(pid)) => return self.get_msg(pid),
+            Gr::Ent(Ent::End(pid)) => return self.clear_cache(pid),
         }
         DaemonMessage::Error { message: String::from("not found") }
     }
