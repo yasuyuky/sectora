@@ -107,9 +107,10 @@ impl Connection {
         Ok(Self { conf, conn })
     }
 
+    fn socket_path(conf: &Config) -> String { format!("{}/{}", &conf.socket_dir, process::id()) }
+
     fn connect_daemon(conf: &Config) -> Result<UnixDatagram, error::Error> {
-        let client_socket_path = format!("{}/{}", &conf.socket_dir, process::id());
-        let socket = UnixDatagram::bind(&client_socket_path)?;
+        let socket = UnixDatagram::bind(&Self::socket_path(conf))?;
         log::debug!("{:?}", socket);
         socket.set_read_timeout(Some(Duration::from_secs(5)))?;
         socket.connect(&conf.socket_path)?;
@@ -133,10 +134,7 @@ impl Connection {
 }
 
 impl Drop for Connection {
-    fn drop(&mut self) {
-        let client_socket_path = format!("{}/{}", &self.conf.socket_dir, process::id());
-        std::fs::remove_file(&client_socket_path).unwrap_or_default();
-    }
+    fn drop(&mut self) { std::fs::remove_file(&Self::socket_path(&self.conf)).unwrap_or_default(); }
 }
 
 #[no_mangle]
