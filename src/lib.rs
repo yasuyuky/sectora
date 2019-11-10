@@ -55,11 +55,6 @@ macro_rules! succeed {
         log::debug!("Success!");
         return libc::c_int::from(NssStatus::Success);
     }};
-    ($finalize:expr) => {{
-        $finalize;
-        log::debug!("Success!");
-        return libc::c_int::from(NssStatus::Success);
-    }};
 }
 
 macro_rules! fail {
