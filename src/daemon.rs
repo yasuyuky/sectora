@@ -104,33 +104,28 @@ impl Daemon {
                 Ok(sectors) => DaemonMessage::SectorGroups { sectors },
                 Err(_) => DaemonMessage::Error { message: String::from("get sectors failed") },
             },
-            ClientMessage::Pw(pw) => match self.client.get_sectors() {
-                Ok(sectors) => self.handle_pw(pw, &sectors),
-                Err(_) => DaemonMessage::Error { message: String::from("get sectors failed") },
-            },
-            ClientMessage::Sp(sp) => match self.client.get_sectors() {
-                Ok(sectors) => self.handle_sp(sp, &sectors),
-                Err(_) => DaemonMessage::Error { message: String::from("get sectors failed") },
-            },
-            ClientMessage::Gr(gr) => match self.client.get_sectors() {
-                Ok(sectors) => self.handle_gr(gr, &sectors),
-                Err(_) => DaemonMessage::Error { message: String::from("get sectors failed") },
-            },
+            ClientMessage::Pw(pw) => self.handle_pw(pw),
+            ClientMessage::Sp(sp) => self.handle_sp(sp),
+            ClientMessage::Gr(gr) => self.handle_gr(gr),
         }
     }
 
-    fn handle_pw(&self, pw: &Pw, sectors: &Vec<structs::SectorGroup>) -> DaemonMessage {
-        for sector in sectors {
-            for member in sector.members.values() {
-                match pw {
-                    Pw::Uid(uid) => {
+    fn handle_pw(&self, pw: &Pw) -> DaemonMessage {
+        match pw {
+            Pw::Uid(uid) => {
+                for sector in self.client.get_sectors().unwrap_or_default() {
+                    for member in sector.members.values() {
                         if uid == &member.id {
                             return DaemonMessage::Pw { login: member.login.clone(),
                                                        uid: *uid,
                                                        gid: sector.get_gid() };
                         }
                     }
-                    Pw::Nam(name) => {
+                }
+            }
+            Pw::Nam(name) => {
+                for sector in self.client.get_sectors().unwrap_or_default() {
+                    for member in sector.members.values() {
                         if name == &member.login {
                             return DaemonMessage::Pw { login: member.login.clone(),
                                                        uid: member.id,
@@ -143,9 +138,9 @@ impl Daemon {
         DaemonMessage::Error { message: String::from("not found") }
     }
 
-    fn handle_sp(&self, sp: &Sp, sectors: &Vec<structs::SectorGroup>) -> DaemonMessage {
+    fn handle_sp(&self, sp: &Sp) -> DaemonMessage {
         let Sp::Nam(name) = sp;
-        for sector in sectors {
+        for sector in self.client.get_sectors().unwrap_or_default() {
             if let Some(member) = sector.members.get(name) {
                 return DaemonMessage::Sp { login: member.login.clone() };
             }
@@ -153,15 +148,17 @@ impl Daemon {
         DaemonMessage::Error { message: String::from("not found") }
     }
 
-    fn handle_gr(&self, gr: &Gr, sectors: &Vec<structs::SectorGroup>) -> DaemonMessage {
-        for sector in sectors {
-            match gr {
-                Gr::Gid(gid) => {
+    fn handle_gr(&self, gr: &Gr) -> DaemonMessage {
+        match gr {
+            Gr::Gid(gid) => {
+                for sector in self.client.get_sectors().unwrap_or_default() {
                     if gid == &sector.get_gid() {
                         return DaemonMessage::Gr { sector: sector.clone() };
                     }
                 }
-                Gr::Nam(name) => {
+            }
+            Gr::Nam(name) => {
+                for sector in self.client.get_sectors().unwrap_or_default() {
                     if name == &sector.get_group() {
                         return DaemonMessage::Gr { sector: sector.clone() };
                     }
