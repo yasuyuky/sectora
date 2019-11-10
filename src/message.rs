@@ -21,6 +21,13 @@ pub enum Gr {
 }
 
 #[derive(Debug)]
+pub enum Ent {
+    Set(u32),
+    Get(u32),
+    End(u32),
+}
+
+#[derive(Debug)]
 pub enum ClientMessage {
     Key { user: String },
     Pam { user: String },
@@ -44,6 +51,16 @@ pub enum DaemonMessage {
     Pw { login: String, uid: u64, gid: u64 },
     Sp { login: String },
     Gr { sector: structs::SectorGroup },
+}
+
+impl fmt::Display for Ent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Ent::Set(pid) => write!(f, "set|{}", pid),
+            Ent::Get(pid) => write!(f, "get|{}", pid),
+            Ent::End(pid) => write!(f, "end|{}", pid),
+        }
+    }
 }
 
 impl fmt::Display for Pw {
@@ -102,6 +119,21 @@ impl fmt::Display for DaemonMessage {
             DaemonMessage::Pw { login, uid, gid } => write!(f, "d:pw:{}:{}:{}", login, uid, gid),
             DaemonMessage::Sp { login } => write!(f, "d:sp:{}", login),
             DaemonMessage::Gr { sector } => write!(f, "d:gr:{}", sector),
+        }
+    }
+}
+
+impl FromStr for Ent {
+    type Err = ParseMessageError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.starts_with("set|") {
+            Ok(Ent::Set(s.get(4..).unwrap_or_default().parse::<u32>().unwrap()))
+        } else if s.starts_with("get|") {
+            Ok(Ent::Get(s.get(4..).unwrap_or_default().parse::<u32>().unwrap()))
+        } else if s.starts_with("end|") {
+            Ok(Ent::End(s.get(4..).unwrap_or_default().parse::<u32>().unwrap()))
+        } else {
+            Err(ParseMessageError::ParseClientMessageError)
         }
     }
 }
