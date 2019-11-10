@@ -24,7 +24,8 @@ use error::Error;
 use ghclient::GithubClient;
 use message::*;
 use statics::CONF_PATH;
-use std::os::unix::net::UnixDatagram;
+use std::fs;
+use std::os::unix;
 use structopt::StructOpt;
 use structs::Config;
 
@@ -51,15 +52,15 @@ struct Daemon {
 impl Drop for Daemon {
     fn drop(&mut self) {
         log::debug!("Drop daemon");
-        std::fs::remove_file(&self.socket_path).expect("remove socket");
+        fs::remove_file(&self.socket_path).expect("remove socket");
     }
 }
 
 impl Daemon {
     fn new(socket_path: Option<String>) -> Self {
         let config = Config::from_path(&(*CONF_PATH)).unwrap();
-        std::fs::create_dir_all(&config.socket_dir).expect("create socket dir");
-        std::fs::set_permissions(&config.socket_dir, std::os::unix::fs::PermissionsExt::from_mode(0o777)).unwrap_or_default();
+        fs::create_dir_all(&config.socket_dir).expect("create socket dir");
+        fs::set_permissions(&config.socket_dir, unix::fs::PermissionsExt::from_mode(0o777)).unwrap_or_default();
         let client = GithubClient::new(&config);
         log::debug!("Initialised");
         Daemon { client,
@@ -67,8 +68,8 @@ impl Daemon {
     }
 
     fn run(&self) -> Result<(), Error> {
-        let socket = UnixDatagram::bind(&self.socket_path)?;
-        std::fs::set_permissions(&self.socket_path, std::os::unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
+        let socket = unix::net::UnixDatagram::bind(&self.socket_path)?;
+        fs::set_permissions(&self.socket_path, unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
         log::debug!("Start running @ {}", &self.socket_path);
         loop {
             let mut buf = [0u8; 4096];
