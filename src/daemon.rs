@@ -201,7 +201,7 @@ impl Daemon {
         DaemonMessage::Error { message: String::from("not found") }
     }
 
-    fn handle_gr(&self, gr: &Gr) -> DaemonMessage {
+    fn handle_gr(&mut self, gr: &Gr) -> DaemonMessage {
         match gr {
             Gr::Gid(gid) => {
                 for sector in self.client.get_sectors().unwrap_or_default() {
@@ -216,6 +216,25 @@ impl Daemon {
                         return DaemonMessage::Gr { sector: sector.clone() };
                     }
                 }
+            }
+            Gr::Ent(Ent::Set(pid)) => {
+                let mut ents = VecDeque::new();
+                for sector in self.client.get_sectors().unwrap_or_default() {
+                    ents.push_back(DaemonMessage::Gr { sector: sector.clone() });
+                }
+                self.msg_cache.insert(*pid, ents).unwrap_or_default();
+                return DaemonMessage::Success;
+            }
+            Gr::Ent(Ent::Get(pid)) => match self.msg_cache.entry(*pid) {
+                Entry::Occupied(mut o) => match o.get_mut().pop_front() {
+                    Some(msg) => return msg,
+                    None => return DaemonMessage::Error { message: String::from("not found") },
+                },
+                Entry::Vacant(_) => {}
+            },
+            Gr::Ent(Ent::End(pid)) => {
+                self.msg_cache.remove(pid).unwrap_or_default();
+                return DaemonMessage::Success;
             }
         }
         DaemonMessage::Error { message: String::from("not found") }

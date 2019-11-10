@@ -20,6 +20,7 @@ pub enum Sp {
 pub enum Gr {
     Gid(u64),
     Nam(String),
+    Ent(Ent),
 }
 
 #[derive(Debug)]
@@ -89,6 +90,7 @@ impl fmt::Display for Gr {
         match self {
             Gr::Gid(gid) => write!(f, "gid={}", gid),
             Gr::Nam(name) => write!(f, "name={}", name),
+            Gr::Ent(ent) => write!(f, "ent={}", ent),
         }
     }
 }
@@ -177,6 +179,8 @@ impl FromStr for Gr {
             Ok(Gr::Gid(s.get(4..).unwrap_or_default().parse::<u64>().unwrap()))
         } else if s.starts_with("name=") {
             Ok(Gr::Nam(String::from(s.get(5..).unwrap_or_default())))
+        } else if s.starts_with("ent=") {
+            Ok(Gr::Ent(s.get(4..).unwrap_or_default().parse::<Ent>().unwrap()))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
