@@ -123,7 +123,7 @@ impl GithubClient {
         let url = format!("{}/users/{}/keys", self.conf.endpoint, user);
         let contents = self.get_contents(&url)?;
         let keys = serde_json::from_str::<Vec<PublicKey>>(&contents)?;
-        Ok(keys.iter().map(|k| k.key.clone()).collect::<Vec<String>>().join("\n"))
+        Ok(keys.iter().map(|k| k.key.clone()).collect::<Vec<_>>().join("\n"))
     }
 
     #[allow(dead_code)]
