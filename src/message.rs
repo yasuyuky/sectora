@@ -233,7 +233,7 @@ impl FromStr for DaemonMessage {
         } else if s.starts_with("d:pw:") {
             let fields: Vec<String> = s.get(5..)
                                        .unwrap_or_default()
-                                       .split(":")
+                                       .split(':')
                                        .map(|s| s.to_string())
                                        .collect();
             if fields.len() < 3 {
