@@ -25,7 +25,6 @@ use nix::errno::Errno;
 use std::ffi::CStr;
 use std::process;
 use std::string::String;
-use structs::Config;
 
 #[allow(dead_code)]
 enum NssStatus {
@@ -99,8 +98,13 @@ pub unsafe extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, 
     let mut buffer = Buffer::new(buf, buflen);
     let conn = try_unwrap!(Connection::new("_nss_sectora_getpwnam_r"), errnop);
     let msg = try_unwrap!(conn.communicate(CMsg::Pw(Pw::Nam(string_from(cnameptr)))), errnop);
-    if let DaemonMessage::Pw { login, uid, gid } = msg {
-        match { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &conn.conf) } {
+    if let DaemonMessage::Pw { login,
+                               uid,
+                               gid,
+                               home,
+                               sh, } = msg
+    {
+        match { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &home, &sh) } {
             Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -115,8 +119,13 @@ pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut P
     let mut buffer = Buffer::new(buf, buflen);
     let conn = try_unwrap!(Connection::new("_nss_sectora_getpwuid_r"), errnop);
     let msg = try_unwrap!(conn.communicate(CMsg::Pw(Pw::Uid(uid as u64))), errnop);
-    if let DaemonMessage::Pw { login, uid, gid } = msg {
-        match { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &conn.conf) } {
+    if let DaemonMessage::Pw { login,
+                               uid,
+                               gid,
+                               home,
+                               sh, } = msg
+    {
+        match { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &home, &sh) } {
             Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -141,8 +150,13 @@ pub unsafe extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut l
     let mut buffer = Buffer::new(buf, buflen);
     let conn = try_unwrap!(Connection::new("_nss_sectora_getpwent_r"), errnop);
     let msg = try_unwrap!(conn.communicate(CMsg::Pw(Pw::Ent(Ent::Get(process::id())))), errnop);
-    if let DaemonMessage::Pw { login, uid, gid } = msg {
-        match { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &conn.conf) } {
+    if let DaemonMessage::Pw { login,
+                               uid,
+                               gid,
+                               home,
+                               sh, } = msg
+    {
+        match { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &home, &sh) } {
             Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -168,8 +182,8 @@ pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, 
     let mut buffer = Buffer::new(buf, buflen);
     let conn = try_unwrap!(Connection::new("_nss_sectora_getspnam_r"), errnop);
     let msg = try_unwrap!(conn.communicate(CMsg::Sp(Sp::Nam(string_from(cnameptr)))), errnop);
-    if let DaemonMessage::Sp { login } = msg {
-        match { (*spptr).pack_args(&mut buffer, &login, &conn.conf) } {
+    if let DaemonMessage::Sp { login, pass } = msg {
+        match { (*spptr).pack_args(&mut buffer, &login, &pass) } {
             Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -194,8 +208,8 @@ pub unsafe extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut lib
     let mut buffer = Buffer::new(buf, buflen);
     let conn = try_unwrap!(Connection::new("_nss_sectora_getspent_r"), errnop);
     let msg = try_unwrap!(conn.communicate(CMsg::Sp(Sp::Ent(Ent::Get(process::id())))), errnop);
-    if let DaemonMessage::Sp { login } = msg {
-        match { (*spptr).pack_args(&mut buffer, &login, &conn.conf) } {
+    if let DaemonMessage::Sp { login, pass } = msg {
+        match { (*spptr).pack_args(&mut buffer, &login, &pass) } {
             Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }

@@ -1,9 +1,6 @@
 use crate::buffer::Buffer;
-use crate::structs::UserConfig;
-use crate::Config;
 use libc;
 use std::io::Error;
-use std::path::Path;
 
 #[repr(C)]
 pub struct Passwd {
@@ -31,22 +28,9 @@ impl Passwd {
         Ok(())
     }
 
-    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, gid: u64, conf: &Config) -> Result<(), Error> {
-        let home = conf.home.replace("{}", name);
-        let sh: String = match UserConfig::from_path(&Path::new(&home).join(&conf.user_conf_path)) {
-            Ok(personal) => match personal.sh {
-                Some(sh) => {
-                    if Path::new(&sh).exists() {
-                        sh
-                    } else {
-                        conf.sh.clone()
-                    }
-                }
-                None => conf.sh.clone(),
-            },
-            Err(_) => conf.sh.clone(),
-        };
-        self.pack(buf, name, "x", id as libc::uid_t, gid as libc::gid_t, "", &home, &sh)
+    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, gid: u64, home: &str, sh: &str)
+                     -> Result<(), Error> {
+        self.pack(buf, name, "x", id as libc::uid_t, gid as libc::gid_t, "", home, sh)
     }
 }
 
@@ -80,16 +64,8 @@ impl Spwd {
         Ok(())
     }
 
-    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, conf: &Config) -> Result<(), Error> {
-        let home = conf.home.replace("{}", name);
-        let pass: String = match UserConfig::from_path(&Path::new(&home).join(&conf.user_conf_path)) {
-            Ok(personal) => match personal.pass {
-                Some(pass) => pass,
-                None => String::from("*"),
-            },
-            Err(_) => String::from("*"),
-        };
-        self.pack(buf, name, &pass, -1, -1, -1, -1, -1, -1, 0)
+    pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, pass: &str) -> Result<(), Error> {
+        self.pack(buf, name, pass, -1, -1, -1, -1, -1, -1, 0)
     }
 }
 

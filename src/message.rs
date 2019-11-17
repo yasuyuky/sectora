@@ -46,14 +46,35 @@ pub enum ClientMessage {
 #[derive(Debug)]
 pub enum DaemonMessage {
     Success,
-    Error { message: String },
-    Key { keys: String },
-    Pam { result: bool },
-    RateLimit { limit: usize },
-    SectorGroups { sectors: Vec<structs::SectorGroup> },
-    Pw { login: String, uid: u64, gid: u64 },
-    Sp { login: String },
-    Gr { sector: structs::SectorGroup },
+    Error {
+        message: String,
+    },
+    Key {
+        keys: String,
+    },
+    Pam {
+        result: bool,
+    },
+    RateLimit {
+        limit: usize,
+    },
+    SectorGroups {
+        sectors: Vec<structs::SectorGroup>,
+    },
+    Pw {
+        login: String,
+        uid: u64,
+        gid: u64,
+        home: String,
+        sh: String,
+    },
+    Sp {
+        login: String,
+        pass: String,
+    },
+    Gr {
+        sector: structs::SectorGroup,
+    },
 }
 
 impl fmt::Display for Ent {
@@ -122,8 +143,12 @@ impl fmt::Display for DaemonMessage {
                 let ss: Vec<String> = sectors.iter().map(|s| s.to_string()).collect();
                 write!(f, "d:sectors:{}", ss.join("\n"))
             }
-            DaemonMessage::Pw { login, uid, gid } => write!(f, "d:pw:{}:{}:{}", login, uid, gid),
-            DaemonMessage::Sp { login } => write!(f, "d:sp:{}", login),
+            DaemonMessage::Pw { login,
+                                uid,
+                                gid,
+                                home,
+                                sh, } => write!(f, "d:pw:{}:{}:{}:{}:{}", login, uid, gid, home, sh),
+            DaemonMessage::Sp { login, pass } => write!(f, "d:sp:{}:{}", login, pass),
             DaemonMessage::Gr { sector } => write!(f, "d:gr:{}", sector),
         }
     }
@@ -236,19 +261,31 @@ impl FromStr for DaemonMessage {
                                        .split(':')
                                        .map(|s| s.to_string())
                                        .collect();
-            if fields.len() < 3 {
+            if fields.len() < 5 {
                 return Err(ParseMessageError::ParseDaemonMessageError);
             }
             let login: String = fields[0].clone();
+            let home: String = fields[3].clone();
+            let sh: String = fields[4].clone();
             match (fields[1].parse::<u64>(), fields[2].parse::<u64>()) {
-                (Ok(uid), Ok(gid)) => Ok(DaemonMessage::Pw { login, uid, gid }),
+                (Ok(uid), Ok(gid)) => Ok(DaemonMessage::Pw { login,
+                                                             uid,
+                                                             gid,
+                                                             home,
+                                                             sh }),
                 _ => Err(ParseMessageError::ParseDaemonMessageError),
             }
         } else if s.starts_with("d:sp:") {
-            match s.get(5..).unwrap_or_default().parse::<String>() {
-                Ok(login) => Ok(DaemonMessage::Sp { login }),
-                _ => Err(ParseMessageError::ParseDaemonMessageError),
+            let fields: Vec<String> = s.get(5..)
+                                       .unwrap_or_default()
+                                       .split(':')
+                                       .map(|s| s.to_string())
+                                       .collect();
+            if fields.len() < 2 {
+                return Err(ParseMessageError::ParseDaemonMessageError);
             }
+            Ok(DaemonMessage::Sp { login: fields[0].clone(),
+                                   pass: fields[1].clone() })
         } else if s.starts_with("d:gr:") {
             match s.get(5..).unwrap_or_default().parse::<structs::SectorGroup>() {
                 Ok(sector) => Ok(DaemonMessage::Gr { sector }),

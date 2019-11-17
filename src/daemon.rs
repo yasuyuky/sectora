@@ -28,8 +28,9 @@ use std::collections::hash_map::Entry;
 use std::collections::{HashMap, VecDeque};
 use std::fs;
 use std::os::unix;
+use std::path::Path;
 use structopt::StructOpt;
-use structs::Config;
+use structs::{Config, UserConfig};
 
 #[derive(Debug, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
@@ -129,15 +130,49 @@ impl Daemon {
         DaemonMessage::Success
     }
 
+    fn get_home_sh(&self, login: &str) -> (String, String) {
+        let conf = &self.client.conf;
+        let home = conf.home.replace("{}", login);
+        let sh: String = match UserConfig::from_path(&Path::new(&home).join(&conf.user_conf_path)) {
+            Ok(personal) => match personal.sh {
+                Some(sh) => {
+                    if Path::new(&sh).exists() {
+                        sh
+                    } else {
+                        conf.sh.clone()
+                    }
+                }
+                None => conf.sh.clone(),
+            },
+            Err(_) => conf.sh.clone(),
+        };
+        (home, sh)
+    }
+
+    fn get_pass(&self, login: &str) -> String {
+        let home = self.client.conf.home.replace("{}", login);
+        let pass: String = match UserConfig::from_path(&Path::new(&home).join(&self.client.conf.user_conf_path)) {
+            Ok(personal) => match personal.pass {
+                Some(pass) => pass,
+                None => String::from("*"),
+            },
+            Err(_) => String::from("*"),
+        };
+        pass
+    }
+
     fn handle_pw(&mut self, pw: &Pw) -> DaemonMessage {
         match pw {
             Pw::Uid(uid) => {
                 for sector in self.client.get_sectors().unwrap_or_default() {
                     for member in sector.members.values() {
                         if uid == &member.id {
+                            let (home, sh) = self.get_home_sh(&member.login);
                             return DaemonMessage::Pw { login: member.login.clone(),
                                                        uid: *uid,
-                                                       gid: sector.get_gid() };
+                                                       gid: sector.get_gid(),
+                                                       home,
+                                                       sh };
                         }
                     }
                 }
@@ -146,9 +181,12 @@ impl Daemon {
                 for sector in self.client.get_sectors().unwrap_or_default() {
                     for member in sector.members.values() {
                         if name == &member.login {
+                            let (home, sh) = self.get_home_sh(&member.login);
                             return DaemonMessage::Pw { login: member.login.clone(),
                                                        uid: member.id,
-                                                       gid: sector.get_gid() };
+                                                       gid: sector.get_gid(),
+                                                       home,
+                                                       sh };
                         }
                     }
                 }
@@ -157,9 +195,12 @@ impl Daemon {
                 let mut ents = VecDeque::new();
                 for sector in self.client.get_sectors().unwrap_or_default() {
                     for member in sector.members.values() {
+                        let (home, sh) = self.get_home_sh(&member.login);
                         let pw = DaemonMessage::Pw { login: member.login.clone(),
                                                      uid: member.id,
-                                                     gid: sector.get_gid() };
+                                                     gid: sector.get_gid(),
+                                                     home,
+                                                     sh };
                         ents.push_back(pw);
                     }
                 }
@@ -177,7 +218,9 @@ impl Daemon {
             Sp::Nam(name) => {
                 for sector in self.client.get_sectors().unwrap_or_default() {
                     if let Some(member) = sector.members.get(name) {
-                        return DaemonMessage::Sp { login: member.login.clone() };
+                        let pass = self.get_pass(name);
+                        return DaemonMessage::Sp { login: member.login.clone(),
+                                                   pass };
                     }
                 }
             }
@@ -185,7 +228,9 @@ impl Daemon {
                 let mut ents = VecDeque::new();
                 for sector in self.client.get_sectors().unwrap_or_default() {
                     for member in sector.members.values() {
-                        let sp = DaemonMessage::Sp { login: member.login.clone() };
+                        let pass = self.get_pass(&member.login);
+                        let sp = DaemonMessage::Sp { login: member.login.clone(),
+                                                     pass };
                         ents.push_back(sp);
                     }
                 }
