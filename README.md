@@ -41,7 +41,7 @@ See Makefile for details
 
 #### Copy executable file
 
-Put `sectora` to `/usr/sbin/`.
+Put `sectora` & `sectorad` to `/usr/sbin/`.
 
 #### Copy shared object
 
