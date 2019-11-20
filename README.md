@@ -31,9 +31,10 @@ See Makefile for details
 
 1. Copy executable and shared object to each path
 2. Put config file for this program
-3. Configure name service switch
-4. Configure sshd
-5. Configure PAM
+3. Register sectora daemon to systemd and enable it
+4. Configure name service switch
+5. Configure sshd
+6. Configure PAM
 
 [A setting example of ansible is available](https://github.com/yasuyuky/sectora/blob/master/ansible/)
 
@@ -73,6 +74,27 @@ name = "YOUR_REPO_NAME"
 ```
 
 See `struct Config` on `structs.rs` for details.
+
+### Register sectora daemon to systemd
+
+Put `/etc/systemd/system/sectora.service`
+
+```
+[Unit]
+Description=Sectora Daemon
+After=network.target
+
+[Service]
+ExecStart=/usr/sbin/sectorad
+Restart=always
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+```
+
+then execute `systemctl enable sectora && systemctl start sectora`
 
 ### Configure name service switch
 
