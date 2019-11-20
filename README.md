@@ -34,7 +34,7 @@ See Makefile for details
 3. Register sectora daemon to systemd and enable it
 4. Configure name service switch
 5. Configure sshd
-6. Configure PAM
+6. Configure PAM (Optional)
 
 [A setting example of ansible is available](https://github.com/yasuyuky/sectora/blob/master/ansible/)
 
@@ -133,7 +133,7 @@ AuthorizedKeysCommand /usr/sbin/sectora.sh
 UsePAM yes
 ```
 
-### Configure PAM
+### Configure PAM (Optional)
 
 Add the following lines to `/etc/pam.d/sshd`.
 
