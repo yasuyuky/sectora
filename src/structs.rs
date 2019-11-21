@@ -77,9 +77,9 @@ pub struct SocketConfig {
 }
 
 impl SocketConfig {
-    pub fn from_path(_: &std::path::Path) -> Result<Self, Error> {
-        Ok(SocketConfig { socket_path: default_socket_path(),
-                          socket_dir: default_socket_dir() })
+    pub fn new() -> Self {
+        SocketConfig { socket_path: default_socket_path(),
+                       socket_dir: default_socket_dir() }
     }
 }
 
