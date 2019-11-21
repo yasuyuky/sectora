@@ -1,14 +1,13 @@
 use crate::applog;
 use crate::error;
 use crate::message::*;
-use crate::statics::CONF_PATH;
-use crate::structs::Config;
+use crate::structs::SocketConfig as Config;
 use std::os::unix::net::UnixDatagram;
 use std::time::Duration;
 
 #[derive(Debug)]
 pub struct Connection {
-    pub conf: Config,
+    conf: Config,
     conn: UnixDatagram,
 }
 
@@ -16,7 +15,7 @@ impl Connection {
     pub fn new(logid: &str) -> Result<Self, error::Error> {
         applog::init(Some("sectora"));
         log::debug!("{}", logid);
-        let conf = Config::from_path(&CONF_PATH)?;
+        let conf = Config::new();
         let conn = Self::connect_daemon(&conf)?;
         Ok(Self { conf, conn })
     }

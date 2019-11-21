@@ -30,10 +30,6 @@ pub struct Config {
     pub user_conf_path: String,
     #[serde(default = "default_cache_dir")]
     pub cache_dir: String,
-    #[serde(default = "default_socket_path")]
-    pub socket_path: String,
-    #[serde(default = "default_socket_dir")]
-    pub socket_dir: String,
     pub proxy_url: Option<String>,
 }
 
@@ -50,12 +46,14 @@ fn default_cache_dir() -> String {
     path.push("sectora/cache");
     String::from(path.as_os_str().to_str().unwrap_or_default())
 }
-fn default_socket_path() -> String {
+
+fn get_socket_path() -> String {
     let mut path = std::env::temp_dir();
     path.push("sectorad");
     String::from(path.as_os_str().to_str().unwrap_or_default())
 }
-fn default_socket_dir() -> String {
+
+fn get_socket_dir() -> String {
     let mut path = std::env::temp_dir();
     path.push("sectora");
     String::from(path.as_os_str().to_str().unwrap_or_default())
@@ -67,6 +65,19 @@ impl Config {
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
         Ok(toml::from_str::<Config>(&contents)?)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct SocketConfig {
+    pub socket_path: String,
+    pub socket_dir: String,
+}
+
+impl SocketConfig {
+    pub fn new() -> Self {
+        SocketConfig { socket_path: get_socket_path(),
+                       socket_dir: get_socket_dir() }
     }
 }
 
