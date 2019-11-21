@@ -7,7 +7,7 @@ use std::time::Duration;
 
 #[derive(Debug)]
 pub struct Connection {
-    pub conf: Config,
+    conf: Config,
     conn: UnixDatagram,
 }
 
