@@ -46,12 +46,14 @@ fn default_cache_dir() -> String {
     path.push("sectora/cache");
     String::from(path.as_os_str().to_str().unwrap_or_default())
 }
-fn default_socket_path() -> String {
+
+fn get_socket_path() -> String {
     let mut path = std::env::temp_dir();
     path.push("sectorad");
     String::from(path.as_os_str().to_str().unwrap_or_default())
 }
-fn default_socket_dir() -> String {
+
+fn get_socket_dir() -> String {
     let mut path = std::env::temp_dir();
     path.push("sectora");
     String::from(path.as_os_str().to_str().unwrap_or_default())
@@ -74,8 +76,8 @@ pub struct SocketConfig {
 
 impl SocketConfig {
     pub fn new() -> Self {
-        SocketConfig { socket_path: default_socket_path(),
-                       socket_dir: default_socket_dir() }
+        SocketConfig { socket_path: get_socket_path(),
+                       socket_dir: get_socket_dir() }
     }
 }
 
