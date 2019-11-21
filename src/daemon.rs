@@ -29,15 +29,9 @@ use std::collections::{HashMap, VecDeque};
 use std::fs;
 use std::os::unix;
 use std::path::Path;
-use structopt::StructOpt;
 use structs::{Config, SocketConfig, UserConfig};
 
-#[derive(Debug, StructOpt)]
-#[structopt(rename_all = "kebab-case")]
-struct Opt {}
-
 fn main() {
-    let _ = Opt::from_args();
     applog::init(Some("sectorad"));
     let mut d = Daemon::new();
     d.run().unwrap();
