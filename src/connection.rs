@@ -2,7 +2,7 @@ use crate::applog;
 use crate::error;
 use crate::message::*;
 use crate::statics::CONF_PATH;
-use crate::structs::Config;
+use crate::structs::SocketConfig as Config;
 use std::os::unix::net::UnixDatagram;
 use std::time::Duration;
 

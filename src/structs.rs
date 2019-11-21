@@ -70,6 +70,19 @@ impl Config {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct SocketConfig {
+    pub socket_path: String,
+    pub socket_dir: String,
+}
+
+impl SocketConfig {
+    pub fn from_path(_: &std::path::Path) -> Result<Self, Error> {
+        Ok(SocketConfig { socket_path: default_socket_path(),
+                          socket_dir: default_socket_dir() })
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UserConfig {
     pub sh: Option<String>,
