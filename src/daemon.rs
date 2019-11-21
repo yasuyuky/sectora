@@ -30,52 +30,51 @@ use std::fs;
 use std::os::unix;
 use std::path::Path;
 use structopt::StructOpt;
-use structs::{Config, UserConfig};
+use structs::{Config, SocketConfig, UserConfig};
 
 #[derive(Debug, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
-struct Opt {
-    #[structopt(short = "s", long = "socket")]
-    socket_path: Option<String>,
-}
+struct Opt {}
 
 fn main() {
-    let opt = Opt::from_args();
+    let _ = Opt::from_args();
     applog::init(Some("sectorad"));
-    let mut d = Daemon::new(opt.socket_path);
+    let mut d = Daemon::new();
     d.run().unwrap();
     log::debug!("Run stopped");
 }
 
 struct Daemon {
     client: GithubClient,
-    socket_path: String,
+    socket_conf: SocketConfig,
     msg_cache: HashMap<u32, VecDeque<DaemonMessage>>,
 }
 
 impl Drop for Daemon {
     fn drop(&mut self) {
         log::debug!("Drop daemon");
-        fs::remove_file(&self.socket_path).expect("remove socket");
+        fs::remove_file(&self.socket_conf.socket_path).expect("remove socket");
     }
 }
 
 impl Daemon {
-    fn new(socket_path: Option<String>) -> Self {
+    fn new() -> Self {
         let config = Config::from_path(&(*CONF_PATH)).unwrap();
-        fs::create_dir_all(&config.socket_dir).expect("create socket dir");
-        fs::set_permissions(&config.socket_dir, unix::fs::PermissionsExt::from_mode(0o777)).unwrap_or_default();
+        let socket_conf = SocketConfig::new();
+        fs::create_dir_all(&socket_conf.socket_dir).expect("create socket dir");
+        fs::set_permissions(&socket_conf.socket_dir, unix::fs::PermissionsExt::from_mode(0o777)).unwrap_or_default();
         let client = GithubClient::new(&config);
         log::debug!("Initialised");
         Daemon { client,
-                 socket_path: socket_path.unwrap_or(config.socket_path),
+                 socket_conf,
                  msg_cache: HashMap::new() }
     }
 
     fn run(&mut self) -> Result<(), Error> {
-        let socket = unix::net::UnixDatagram::bind(&self.socket_path)?;
-        fs::set_permissions(&self.socket_path, unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
-        log::debug!("Start running @ {}", &self.socket_path);
+        let socket = unix::net::UnixDatagram::bind(&self.socket_conf.socket_path)?;
+        fs::set_permissions(&self.socket_conf.socket_path,
+                            unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
+        log::debug!("Start running @ {}", &self.socket_conf.socket_path);
         loop {
             let mut buf = [0u8; 4096];
             let (recv_cnt, src) = socket.recv_from(&mut buf)?;

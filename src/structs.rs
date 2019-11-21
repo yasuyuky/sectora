@@ -30,10 +30,6 @@ pub struct Config {
     pub user_conf_path: String,
     #[serde(default = "default_cache_dir")]
     pub cache_dir: String,
-    #[serde(default = "default_socket_path")]
-    pub socket_path: String,
-    #[serde(default = "default_socket_dir")]
-    pub socket_dir: String,
     pub proxy_url: Option<String>,
 }
 
