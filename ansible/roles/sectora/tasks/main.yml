@@ -44,6 +44,7 @@
   template:
     src: sectora.conf
     dest: /etc/sectora.conf
+    mode: 0600
 
 - name: configure sudoers
   lineinfile:
