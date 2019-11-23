@@ -60,6 +60,7 @@ fn get_socket_dir() -> String {
 }
 
 impl Config {
+    #[allow(dead_code)]
     pub fn from_path(configpath: &std::path::Path) -> Result<Self, Error> {
         let mut file = File::open(configpath)?;
         let mut contents = String::new();
