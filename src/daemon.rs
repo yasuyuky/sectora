@@ -33,7 +33,7 @@ use structs::{Config, SocketConfig, UserConfig};
 fn main() {
     applog::init(Some("sectorad"));
     let mut d = Daemon::new();
-    d.run().unwrap();
+    d.run().expect("run");
     log::debug!("Run stopped");
 }
 
@@ -52,7 +52,7 @@ impl Drop for Daemon {
 
 impl Daemon {
     fn new() -> Self {
-        let config = Config::from_path(&(*CONF_PATH)).unwrap();
+        let config = Config::from_path(&(*CONF_PATH)).expect("valid config");
         let socket_conf = SocketConfig::new();
         fs::create_dir_all(&socket_conf.socket_dir).expect("create socket dir");
         fs::set_permissions(&socket_conf.socket_dir, unix::fs::PermissionsExt::from_mode(0o777)).unwrap_or_default();
@@ -73,7 +73,7 @@ impl Daemon {
             let (recv_cnt, src) = socket.recv_from(&mut buf)?;
             let msgstr = String::from_utf8(buf[..recv_cnt].to_vec()).expect("decode msg str");
             log::debug!("recv: {}, src:{:?}", msgstr, src);
-            let response = self.handle(&msgstr.parse::<ClientMessage>().unwrap());
+            let response = self.handle(&msgstr.parse::<ClientMessage>().expect("parse ClientMessage"));
             log::debug!("-> response: {}", response);
             socket.send_to(&response.to_string().as_bytes(), src.as_pathname().expect("src"))?;
         }
