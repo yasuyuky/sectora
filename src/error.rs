@@ -1,5 +1,4 @@
 use hyper;
-use hyper_tls;
 use serde_json;
 use std;
 use toml;
@@ -11,7 +10,6 @@ pub enum Error {
     Toml(toml::de::Error),
     Http(hyper::http::Error),
     Hyper(hyper::Error),
-    HyperTls(hyper_tls::Error),
     ParseMessageError(ParseMessageError),
 }
 
@@ -29,9 +27,6 @@ impl From<hyper::Error> for Error {
 }
 impl From<hyper::http::Error> for Error {
     fn from(err: hyper::http::Error) -> Error { Error::Http(err) }
-}
-impl From<hyper_tls::Error> for Error {
-    fn from(err: hyper_tls::Error) -> Error { Error::HyperTls(err) }
 }
 
 #[derive(Debug)]
