@@ -1,3 +1,4 @@
+extern crate futures;
 extern crate glob;
 extern crate hyper;
 extern crate hyper_tls;
@@ -10,6 +11,7 @@ extern crate serde;
 extern crate serde_json;
 extern crate structopt;
 extern crate syslog;
+extern crate tokio;
 extern crate toml;
 
 mod applog;
@@ -30,7 +32,8 @@ use std::os::unix;
 use std::path::Path;
 use structs::{Config, SocketConfig, UserConfig};
 
-fn main() {
+#[tokio::main]
+async fn main() {
     applog::init(Some("sectorad"));
     let mut d = Daemon::new();
     d.run().expect("run");

@@ -1,16 +1,15 @@
 use crate::error::Error;
 use crate::structs::{Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
+use futures;
 use glob::glob;
-use hyper::client::HttpConnector;
-use hyper::rt::{self, Future, Stream};
-use hyper::{header, Body, Chunk, Client, Request, Response};
+use hyper::body::HttpBody;
+use hyper::{header, Body, Client, Request};
 use hyper_tls::HttpsConnector;
 use serde_json;
 use std;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
-use std::sync::mpsc;
 
 pub struct GithubClient {
     pub conf: Config,
@@ -78,25 +77,20 @@ impl GithubClient {
         self.build_request(&url_p)
     }
 
-    fn build_https_client() -> Result<Client<HttpsConnector<HttpConnector>>, Error> {
-        Ok(Client::builder().build(HttpsConnector::new(4)?))
-    }
-
-    fn run_request(&self, req: Request<Body>) -> Result<Chunk, Error> {
-        let concat_body = |res: Response<Body>| res.into_body().concat2();
-        let (tx, rx) = mpsc::sync_channel(1);
-        let ex = tx.clone();
-        let send_res = move |r| tx.send(Ok(r)).expect("send response");
-        let send_err = move |e| ex.send(Err(Error::from(e))).expect("send err");
-        let hc = Self::build_https_client()?;
-        rt::run(rt::lazy(move || hc.request(req).and_then(concat_body).map(send_res).map_err(send_err)));
-        rx.recv().expect("recv response")
+    async fn run_request(&self, req: Request<Body>) -> Result<Vec<u8>, Error> {
+        let client = Client::builder().build(HttpsConnector::new());
+        let mut resp = client.request(req).await?;
+        let mut buff: Vec<u8> = Vec::new();
+        while let Some(chunk) = resp.body_mut().data().await {
+            buff.write_all(&chunk?)?;
+        }
+        Ok(buff)
     }
 
     fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::Value>, Error> {
         let req = self.build_page_request(url, page)?;
-        self.run_request(req)
-            .and_then(|body| serde_json::from_slice(&body).map_err(Error::from))
+        let resp = futures::executor::block_on(self.run_request(req))?;
+        Ok(serde_json::from_slice(&resp)?)
     }
 
     fn get_contents(&self, url: &str) -> Result<String, Error> {
@@ -199,8 +193,8 @@ impl GithubClient {
     pub fn get_rate_limit(&self) -> Result<RateLimit, Error> {
         let url = format!("{}/rate_limit", self.conf.endpoint);
         let req = self.build_request(&url)?;
-        self.run_request(req)
-            .and_then(|body| serde_json::from_slice(&body).map_err(Error::from))
+        let resp = futures::executor::block_on(self.run_request(req))?;
+        Ok(serde_json::from_slice(&resp)?)
     }
 
     #[allow(dead_code)]
