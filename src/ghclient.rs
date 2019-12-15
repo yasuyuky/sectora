@@ -112,7 +112,6 @@ impl GithubClient {
         }
     }
 
-    #[allow(dead_code)]
     pub fn get_user_public_key(&self, user: &str) -> Result<String, Error> {
         let url = format!("{}/users/{}/keys", self.conf.endpoint, user);
         let contents = self.get_contents(&url)?;
@@ -120,7 +119,6 @@ impl GithubClient {
         Ok(keys.iter().map(|k| k.key.clone()).collect::<Vec<_>>().join("\n"))
     }
 
-    #[allow(dead_code)]
     pub fn check_pam(&self, user: &str) -> Result<bool, Error> {
         let sectors = self.get_sectors()?;
         Ok(sectors.iter().any(|team| team.members.contains_key(user)))
@@ -189,7 +187,6 @@ impl GithubClient {
         Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
     }
 
-    #[allow(dead_code)]
     pub fn get_rate_limit(&self) -> Result<RateLimit, Error> {
         let url = format!("{}/rate_limit", self.conf.endpoint);
         let req = self.build_request(&url)?;
@@ -197,7 +194,6 @@ impl GithubClient {
         Ok(serde_json::from_slice(&resp)?)
     }
 
-    #[allow(dead_code)]
     pub fn clear_all_caches(&self) -> Result<(), Error> {
         let mut path = self.get_cache_path("");
         path.push("**/*");
