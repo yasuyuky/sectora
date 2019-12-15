@@ -42,7 +42,7 @@ pub enum ClientMessage {
     Gr(Gr),
 }
 
-#[allow(unused)]
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum DaemonMessage {
     Success,
