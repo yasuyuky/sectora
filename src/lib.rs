@@ -4,7 +4,6 @@ extern crate libc;
 extern crate nix;
 #[macro_use]
 extern crate serde;
-extern crate serde_json;
 
 mod applog;
 mod buffer;

@@ -1,9 +1,6 @@
 extern crate glob;
-extern crate hyper;
-extern crate hyper_tls;
 #[macro_use]
 extern crate lazy_static;
-extern crate libc;
 extern crate log;
 #[macro_use]
 extern crate serde;
