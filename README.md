@@ -62,11 +62,11 @@ org = "YOUR_ORGANIZATION"
 
 [[team]]
 name = "YOUR_TEAM1"
-gid = YOUR_GID1
+gid = 2019  # gid for YOUR_TEAM1
 
 [[team]]
 name = "YOUR_TEAM2"
-gid = YOUR_GID1
+gid = 2020  # gid for YOUR_TEAM2
 group = "YOUR_GROUP_NAME"
 
 [[repo]]
