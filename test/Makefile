@@ -35,7 +35,7 @@ down:
 	docker-compose down
 
 reset:
-	cd .. && make x64
+	cd .. && make x64 LOG_LEVEL=DEBUG
 	make down
 	make up
 	make setup
