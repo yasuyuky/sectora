@@ -17,6 +17,10 @@ fn main() {
     File::create(out_dir.join("commit-info.txt")).unwrap()
                                                  .write_all(commit_info().as_bytes())
                                                  .unwrap();
+    let log_level = env::var("LOG_LEVEL").unwrap_or(String::from("OFF"));
+    File::create(out_dir.join("log-level.txt")).unwrap()
+                                               .write_all(log_level.as_bytes())
+                                               .unwrap();
     println!("cargo:rerun-if-changed=build.rs");
 }
 
