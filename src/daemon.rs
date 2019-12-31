@@ -243,21 +243,21 @@ impl Daemon {
             Gr::Gid(gid) => {
                 for sector in self.client.get_sectors().unwrap_or_default() {
                     if gid == &sector.get_gid() {
-                        return DaemonMessage::Gr { sector: sector.clone() };
+                        return DaemonMessage::Gr { sector: sector };
                     }
                 }
             }
             Gr::Nam(name) => {
                 for sector in self.client.get_sectors().unwrap_or_default() {
                     if name == &sector.get_group() {
-                        return DaemonMessage::Gr { sector: sector.clone() };
+                        return DaemonMessage::Gr { sector: sector };
                     }
                 }
             }
             Gr::Ent(Ent::Set(pid)) => {
                 let mut ents = VecDeque::new();
                 for sector in self.client.get_sectors().unwrap_or_default() {
-                    ents.push_back(DaemonMessage::Gr { sector: sector.clone() });
+                    ents.push_back(DaemonMessage::Gr { sector: sector });
                 }
                 self.msg_cache.insert(*pid, ents).unwrap_or_default();
                 return DaemonMessage::Success;
