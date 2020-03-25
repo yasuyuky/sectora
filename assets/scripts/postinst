@@ -1,0 +1,89 @@
+#!/bin/bash -e
+
+function is_configured () {
+    conf_file=`echo $1`
+
+    set +e
+    start_line=`grep -n "^### DO NOT REMOVE! SECTORA SETTING START" ${conf_file}`
+    end_line=`grep -n "^### DO NOT REMOVE! SECTORA SETTING END" ${conf_file}`
+    set -e
+
+    if [ "$start_line" = "" -a "$end_line" = "" ]; then
+        # Success
+        return 0
+    fi
+    echo "Find sectora setting in $conf_file"
+    return 1
+}
+
+
+if [ "$1" = "configure" ] && [ -e /usr/share/debconf/confmodule ]; then
+    # Source debconf library.
+    . /usr/share/debconf/confmodule
+
+    systemctl daemon-reload
+
+    db_get sectora/init_config
+    init_config=$RET
+    db_stop
+    if [ "$init_config" = "true" ]; then
+        echo "Appending settigs...(Please restore configs from *.backup files when you gets some error)"
+
+        # setup nssswitch
+        is_configured /etc/nsswitch.conf
+        nss_res=$?
+        if [ $nss_res -eq 0 ]; then
+            cp /etc/nsswitch.conf /etc/nsswitch.conf.backup
+            cat << EOS >> /etc/nsswitch.conf
+
+### DO NOT REMOVE! SECTORA SETTING START ###
+passwd: files sectora
+shadow: files sectora
+group:  files sectora
+### DO NOT REMOVE! SECTORA SETTING END ###
+
+EOS
+        fi
+
+        # setup sshd_config
+        is_configured /etc/ssh/sshd_config
+        sshd_res=$?
+        if [ $sshd_res -eq 0 ]; then
+            cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
+            sed -i -e "s/^UsePAM/#UsePAM/" /etc/ssh/sshd_config
+            cat << EOS >> /etc/ssh/sshd_config
+
+### DO NOT REMOVE! SECTORA SETTING START ###
+AuthorizedKeysCommandUser root
+AuthorizedKeysCommand /usr/sbin/sectora.sh
+UsePAM yes
+### DO NOT REMOVE! SECTORA SETTING END ###
+
+EOS
+        fi
+
+        # setup pam
+        is_configured /etc/pam.d/sshd
+        pam_res=$?
+        if [ $pam_res -eq 0 ]; then
+            if [ -e /etc/pam.d/sshd ]; then
+                cp /etc/pam.d/sshd /etc/pam.d/sshd.backup
+            fi
+            cat << EOS >> /etc/pam.d/sshd
+
+### DO NOT REMOVE! SECTORA SETTING START ###
+auth requisite pam_exec.so quiet expose_authtok /usr/sbin/sectora pam
+auth optional pam_unix.so not_set_pass use_first_pass nodelay
+session required pam_mkhomedir.so skel: /etc/skel/ umask: 0022
+### DO NOT REMOVE! SECTORA SETTING END ###
+
+EOS
+        fi
+
+    # restart sshd
+    service ssh restart
+
+    fi
+
+    echo "Please setup github personal token to /etc/sectora.conf"
+fi
