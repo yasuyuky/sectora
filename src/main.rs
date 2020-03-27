@@ -20,7 +20,6 @@ use log::debug;
 use message::*;
 use std::env;
 use std::io::{Error, ErrorKind};
-use std::process;
 use structopt::StructOpt;
 use structs::Config;
 
@@ -67,7 +66,10 @@ enum Shell {
 
 fn main() -> Result<(), Error> {
     let command = Command::from_args();
-    let conn = connection::Connection::new(&format!("{:?}", command)).unwrap_or_else(|_| process::exit(11));
+    let conn = match connection::Connection::new(&format!("{:?}", command)) {
+        Ok(conn) => conn,
+        Err(err) => return Err(Error::new(ErrorKind::Other, format!("{:?}", err))),
+    };
     debug!("connected to socket: {:?}", conn);
 
     match command {
