@@ -19,7 +19,7 @@ mod structs;
 use log::debug;
 use message::*;
 use std::env;
-use std::process;
+use std::io::{Error, ErrorKind};
 use structopt::StructOpt;
 use structs::Config;
 
@@ -64,40 +64,48 @@ enum Shell {
     Elvish,
 }
 
-fn main() {
+fn main() -> Result<(), Error> {
     let command = Command::from_args();
-    let conn = connection::Connection::new(&format!("{:?}", command)).unwrap_or_else(|_| process::exit(11));
+    let conn = match connection::Connection::new(&format!("{:?}", command)) {
+        Ok(conn) => conn,
+        Err(err) => return Err(Error::new(ErrorKind::Other, format!("{:?}", err))),
+    };
     debug!("connected to socket: {:?}", conn);
 
     match command {
         Command::Check { confpath } => match Config::from_path(&confpath) {
-            Ok(_) => process::exit(0),
-            Err(_) => process::exit(11),
+            Ok(_) => return Ok(()),
+            Err(_) => return Err(Error::new(ErrorKind::Other, "check failed")),
         },
         Command::Key { user } => match conn.communicate(ClientMessage::Key { user }) {
             Ok(DaemonMessage::Key { keys }) => {
                 println!("{}", keys);
-                process::exit(0)
+                return Ok(());
             }
-            _ => process::exit(21),
+            _ => return Err(Error::new(ErrorKind::PermissionDenied, "key check failed")),
         },
         Command::Pam => match env::var("PAM_USER") {
             Ok(user) => match conn.communicate(ClientMessage::Pam { user }) {
-                Ok(DaemonMessage::Pam { result }) => process::exit(if result { 0 } else { 1 }),
-                _ => process::exit(31),
+                Ok(DaemonMessage::Pam { result }) => {
+                    if result {
+                        return Ok(());
+                    } else {
+                        return Err(Error::new(ErrorKind::NotFound, "user not found"));
+                    }
+                }
+                _ => return Err(Error::new(ErrorKind::Other, "faild")),
             },
-            Err(_) => process::exit(41),
+            Err(_) => return Err(Error::new(ErrorKind::ConnectionRefused, "failed")),
         },
         Command::CleanUp => match conn.communicate(ClientMessage::CleanUp) {
-            Ok(_) => process::exit(0),
-            Err(_) => process::exit(51),
+            Ok(_) => return Ok(()),
+            Err(_) => return Err(Error::new(ErrorKind::Other, "failed")),
         },
         Command::RateLimit => match conn.communicate(ClientMessage::RateLimit) {
             Ok(DaemonMessage::RateLimit { limit }) => {
                 println!("{:?}", limit);
-                process::exit(0)
             }
-            _ => process::exit(61),
+            _ => return Err(Error::new(ErrorKind::Other, "failed")),
         },
         Command::Version => {
             println!("{}",
@@ -115,4 +123,5 @@ fn main() {
             Command::clap().gen_completions_to("sectora", shell, &mut std::io::stdout());
         }
     };
+    return Ok(());
 }
