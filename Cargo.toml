@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"]
 build = "build.rs"
 edition = "2018"
+license-file = "LICENSE.md"
 
 [dependencies]
 futures = "0.3"
@@ -33,3 +34,29 @@ path = "src/daemon.rs"
 name = "nss_sectora"
 path = "src/lib.rs"
 crate-type = ["cdylib"]
+
+
+[package.metadata.deb]
+maintainer = "Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"
+copyright = "2017-2019 Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"
+depends = "$auto, systemd, openssh-server"
+extended-description = """\
+**Sector A**uthentication
+(formerly named as **ghteam-auth**)
+Using this program, you can grant login privileges on your servers to GitHub team members or outside collaborators of your repository.
+Implemented with Rust."""
+section = "admin"
+priority = "optional"
+assets = [
+    ["target/release/sectora", "usr/sbin/", "755"],
+    ["target/release/sectorad", "usr/sbin/", "755"],
+    ["target/release/libnss_sectora.so", "usr/lib/libnss_sectora.so", "644"],
+    ["target/release/libnss_sectora.so", "usr/lib/libnss_sectora.so.2", "644"],
+    ["assets/conf-files/sectora.conf", "etc/sectora.conf", "644"],
+    ["ansible/sectora.sh", "usr/sbin/", "755"],
+    ["ansible/templates/sectora.service", "etc/systemd/system/", "644"],
+]
+conf-files = [
+    "etc/sectora.conf",
+]
+maintainer-scripts = "assets/scripts"

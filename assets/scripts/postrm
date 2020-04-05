@@ -1,0 +1,34 @@
+#!/bin/bash -e
+
+function delete_sectora_setting () {
+    conf_file=`echo $1`
+
+    start_line=`grep -n "^### DO NOT REMOVE! SECTORA SETTING START" ${conf_file} | cut -d: -f1`
+    end_line=`grep -n "^### DO NOT REMOVE! SECTORA SETTING END" ${conf_file} | cut -d: -f1`
+    if [ "$start_line" = "" -o "$end_line" = "" ]; then
+        echo "Could not find sectora setting in ${conf_file}"
+        return 0
+    fi
+
+    echo "Remove sectora setting in ${conf_file}"
+    sed -i -e "${start_line},${end_line}d" $conf_file
+    return 0
+}
+
+
+if [ "$1" = purge ] && [ -e /usr/share/debconf/confmodule ]; then
+    # Source debconf library.
+    . /usr/share/debconf/confmodule
+    # Remove my changes to the db.
+    db_purge
+
+    # remove configures if available
+    delete_sectora_setting /etc/nsswitch.conf
+    delete_sectora_setting /etc/ssh/sshd_config
+    delete_sectora_setting /etc/pam.d/sshd
+
+    # remove configures
+    rm -rf /etc/sectora.conf
+
+    systemctl daemon-reload
+fi

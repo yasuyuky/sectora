@@ -15,7 +15,7 @@ ENTRIY_POINTS := src/main.rs src/daemon.rs src/lib.rs
 SRCS := $(filter-out $(ENTRIY_POINTS),$(wildcard src/*.rs))
 CARGO_FILES := Cargo.toml Cargo.lock rust-toolchain
 
-all: x64 arm
+all: x64 arm deb
 
 x64: x64-exe x64-daemon x64-lib
 
@@ -54,8 +54,15 @@ $(ARM_TARGET_DIR)/sectorad: src/daemon.rs $(SRCS) $(CARGO_FILES)
 $(ARM_TARGET_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
 	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --lib --release --target=$(ARM_TARGET)
 
+.PHONY: clean clean-x64 clean-arm clean-exe clean-lib clean-all deb deb-x64 deb-arm
 
-.PHONY: clean clean-x64 clean-arm clean-exe clean-lib clean-all
+deb: deb-x64 deb-arm
+
+deb-x64:
+	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) sh -c "cargo install --git https://github.com/mmstick/cargo-deb cargo-deb && cargo deb --target=$(X64_TARGET)"
+
+deb-arm:
+	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) sh -c "cargo install --git https://github.com/mmstick/cargo-deb cargo-deb && cargo deb --target=$(ARM_TARGET)"
 
 clean-x64:
 	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo clean
