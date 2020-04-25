@@ -12,7 +12,7 @@ function is_configured() {
         # Success
         return 0
     fi
-    echo "Find sectora setting in $conf_file"
+    echo "Found sectora settings in $conf_file"
     return 1
 }
 

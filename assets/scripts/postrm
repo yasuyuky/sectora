@@ -10,7 +10,7 @@ function delete_sectora_setting() {
         return 0
     fi
 
-    echo "Remove sectora setting in ${conf_file}"
+    echo "Removed sectora settings in ${conf_file}"
     sed -i -e "${start_line},${end_line}d" $conf_file
     return 0
 }
