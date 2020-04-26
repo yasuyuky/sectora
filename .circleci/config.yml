@@ -90,7 +90,7 @@ jobs:
           at: .
       - run: chmod 600 test/keys/*/id_rsa
       - setup_remote_docker
-      - run: apk add make tput ncurses
+      - run: apk add make ncurses
       - run: cd test && make test-deb
       - persist_to_workspace:
           root: .
