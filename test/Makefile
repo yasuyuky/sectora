@@ -50,9 +50,15 @@ up:
 	docker-compose up -d --build
 
 exec-login:
-	docker-compose exec client ssh hunter@host -i keys/user/id_rsa echo SUCCESS
-	docker-compose exec client ssh hunter@host -i keys/user/id_rsa id
-	docker-compose exec client ssh hunter@host -i keys/user/id_rsa sectora rate-limit
+	@echo '$(shell tput setaf 6)LOGIN TEST START$(shell tput sgr 0)'
+	@echo '$(shell tput setab 7)$(shell tput setaf 0) SSH $(shell tput sgr 0)'
+	@docker-compose exec client ssh hunter@host -i keys/user/id_rsa \
+		echo '"$(shell tput setaf 2)SUCCESS$(shell tput sgr 0)"'
+	@echo '$(shell tput setab 7)$(shell tput setaf 0) ID $(shell tput sgr 0)'
+	@docker-compose exec client ssh hunter@host -i keys/user/id_rsa id
+	@echo '$(shell tput setab 7)$(shell tput setaf 0) VERSION $(shell tput sgr 0)'
+	@docker-compose exec client ssh hunter@host -i keys/user/id_rsa sectora version
+	@echo '$(shell tput setaf 6)LOGIN TEST END$(shell tput sgr 0)'
 
 down:
 	docker-compose down
