@@ -1,3 +1,4 @@
+VERSION=$(shell grep "^version" ../Cargo.toml | cut -f 2 -d '"')
 
 .PHONY: test up setup down reset
 
@@ -9,6 +10,26 @@ test:
 	docker-compose exec ansible ssh hunter@sshd -i keys/user/id_rsa id
 	docker-compose exec ansible ssh hunter@sshd -i keys/user/id_rsa sectora rate-limit
 	make down
+
+test-deb:
+	make up
+	make setup-deb
+	docker-compose exec ansible ssh hunter@sshd -i keys/user/id_rsa echo SUCCESS
+	make down
+
+setup-deb:
+	make -j 2 setup-host setup-client-key
+
+setup-host-deb:
+	make setup-sshd
+	docker cp ../target/x86_64-unknown-linux-gnu/debian/sectora_$(VERSION)_amd64.deb `docker-compose ps -q sshd`:/root/
+	docker-compose exec sshd sh -c "yes | apt install --yes /root/sectora_$(VERSION)_amd64.deb"
+	docker cp ./testconf.toml `docker-compose ps -q sshd`:/etc/sectora.conf
+	docker-compose exec sshd systemctl start sectora
+	docker-compose exec sshd systemctl restart ssh
+
+setup-client-key:
+	docker cp ./keys `docker-compose ps -q ansible`:/work/keys
 
 up:
 	docker-compose up -d --build
