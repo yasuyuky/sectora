@@ -26,7 +26,7 @@ if [ "$1" = "configure" ] && [ -e /usr/share/debconf/confmodule ]; then
     init_config=$RET
     db_stop
     if [ "$init_config" = "true" ]; then
-        echo "Appending settigs...(Please restore configs from *.backup files when you gets some error)"
+        echo "Appending settings...(Please restore configs from *.backup files when you get some error)"
 
         # setup nssswitch
         is_configured /etc/nsswitch.conf
