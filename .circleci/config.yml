@@ -70,7 +70,7 @@ jobs:
           path: target/arm-unknown-linux-gnueabihf/debian/
           description: sectora debian pakage for arm
 
-  test:
+  test-ansible:
     docker:
       - image: docker/compose:1.25.0
     steps:
@@ -78,8 +78,23 @@ jobs:
           at: .
       - run: chmod 600 test/keys/*/id_rsa
       - setup_remote_docker
-      - run: apk add make
-      - run: cd test && make
+      - run: apk add make ncurses
+      - run: cd test && make test-ansible
+
+  test-deb:
+    docker:
+      - image: docker/compose:1.25.0
+    steps:
+      - attach_workspace:
+          at: .
+      - run: chmod 600 test/keys/*/id_rsa
+      - setup_remote_docker
+      - run: apk add make tput ncurses
+      - run: cd test && make test-deb
+      - persist_to_workspace:
+          root: .
+          paths:
+            - target/x86_64-unknown-linux-gnu/debian/
 
 workflows:
   version: 2
@@ -87,13 +102,16 @@ workflows:
     jobs:
       - build
       - build-arm
-      - test:
+      - test-ansible:
           requires:
             - build
       - build-deb-x64
       - build-deb-arm
+      - test-deb:
+          requires:
+            - build-deb-x64
       - store-deb:
           requires:
-            - test
+            - test-deb
             - build-deb-x64
             - build-deb-arm
