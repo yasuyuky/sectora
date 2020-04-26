@@ -45,6 +45,7 @@ jobs:
           root: .
           paths:
             - target/x86_64-unknown-linux-gnu/debian/
+            - test
 
   build-deb-arm:
     working_directory: /tmp/sectora
