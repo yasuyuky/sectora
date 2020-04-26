@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-function is_configured() {
+function check_config() {
     conf_file=$(echo $1)
 
     set +e
@@ -9,7 +9,7 @@ function is_configured() {
     set -e
 
     if [ "$start_line" = "" -a "$end_line" = "" ]; then
-        # Success
+        # Success (No settings found)
         return 0
     fi
     echo "Found sectora settings in $conf_file"
@@ -29,7 +29,7 @@ if [ "$1" = "configure" ] && [ -e /usr/share/debconf/confmodule ]; then
         echo "Appending settings...(Please restore configs from *.backup files when you get some error)"
 
         # setup nssswitch
-        is_configured /etc/nsswitch.conf
+        check_config /etc/nsswitch.conf
         nss_res=$?
         if [ $nss_res -eq 0 ]; then
             cp /etc/nsswitch.conf /etc/nsswitch.conf.backup
@@ -45,7 +45,7 @@ EOS
         fi
 
         # setup sshd_config
-        is_configured /etc/ssh/sshd_config
+        check_config /etc/ssh/sshd_config
         sshd_res=$?
         if [ $sshd_res -eq 0 ]; then
             cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
@@ -62,7 +62,7 @@ EOS
         fi
 
         # setup pam
-        is_configured /etc/pam.d/sshd
+        check_config /etc/pam.d/sshd
         pam_res=$?
         if [ $pam_res -eq 0 ]; then
             if [ -e /etc/pam.d/sshd ]; then
