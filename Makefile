@@ -1,5 +1,5 @@
 RUST_VER=$(shell cat rust-toolchain)
-VERSION=$(shell grep "^version" Cargo.toml | grep -o '[0-9]\.[0-9]\.[0-9]')
+VERSION=$(shell grep "^version" Cargo.toml | cut -f 2 -d '"')
 X64_TARGET=x86_64-unknown-linux-gnu
 ARM_TARGET=arm-unknown-linux-gnueabihf
 X64_RELEASE_DIR=target/$(X64_TARGET)/release
