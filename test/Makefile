@@ -23,20 +23,20 @@ setup-ansible:
 	docker-compose exec client ansible-playbook -i hosts localtest.yml
 
 setup-host-root:
-	docker cp ./keys/root/id_rsa.pub `docker-compose ps -q sshd`:/root/.ssh/authorized_keys
-	docker-compose exec sshd chown root:root /root/.ssh/authorized_keys
-	docker-compose exec sshd chmod 600 /root/.ssh/authorized_keys
+	docker cp ./keys/root/id_rsa.pub `docker-compose ps -q host`:/root/.ssh/authorized_keys
+	docker-compose exec host chown root:root /root/.ssh/authorized_keys
+	docker-compose exec host chmod 600 /root/.ssh/authorized_keys
 
 setup-client-key:
 	docker cp ./keys `docker-compose ps -q client`:/work/keys
 
 setup-host-deb:
 	make setup-host-root
-	docker cp ../target/x86_64-unknown-linux-gnu/debian/sectora_$(VERSION)_amd64.deb `docker-compose ps -q sshd`:/root/
-	docker-compose exec sshd sh -c "yes | apt install --yes /root/sectora_$(VERSION)_amd64.deb"
-	docker cp ./testconf.toml `docker-compose ps -q sshd`:/etc/sectora.conf
-	docker-compose exec sshd systemctl start sectora
-	docker-compose exec sshd systemctl restart ssh
+	docker cp ../target/x86_64-unknown-linux-gnu/debian/sectora_$(VERSION)_amd64.deb `docker-compose ps -q host`:/root/
+	docker-compose exec host sh -c "yes | apt install --yes /root/sectora_$(VERSION)_amd64.deb"
+	docker cp ./testconf.toml `docker-compose ps -q host`:/etc/sectora.conf
+	docker-compose exec host systemctl start sectora
+	docker-compose exec host systemctl restart ssh
 
 setup-client-ansible:
 	make setup-client-key
@@ -51,9 +51,9 @@ up:
 	docker-compose up -d --build
 
 exec-login:
-	docker-compose exec client ssh hunter@sshd -i keys/user/id_rsa echo SUCCESS
-	docker-compose exec client ssh hunter@sshd -i keys/user/id_rsa id
-	docker-compose exec client ssh hunter@sshd -i keys/user/id_rsa sectora rate-limit
+	docker-compose exec client ssh hunter@host -i keys/user/id_rsa echo SUCCESS
+	docker-compose exec client ssh hunter@host -i keys/user/id_rsa id
+	docker-compose exec client ssh hunter@host -i keys/user/id_rsa sectora rate-limit
 
 down:
 	docker-compose down
