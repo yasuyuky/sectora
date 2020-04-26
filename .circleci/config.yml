@@ -46,6 +46,7 @@ jobs:
           paths:
             - target/x86_64-unknown-linux-gnu/debian/
             - test
+            - Cargo.toml
 
   build-deb-arm:
     working_directory: /tmp/sectora
