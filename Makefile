@@ -55,7 +55,7 @@ $(X64_RELEASE_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
 	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --lib --release --target=$(X64_TARGET)
 
 $(X64_DEBIAN_DIR)/sectora_$(VERSION)_amd64.deb: src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES)
-	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --lib --release --target=$(X64_TARGET)
+	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) sh -c "cargo install cargo-deb && cargo deb --target=$(X64_TARGET)"
 
 $(ARM_RELEASE_DIR)/sectora: src/main.rs $(SRCS) $(CARGO_FILES)
 	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --bin sectora --release --target=$(ARM_TARGET)
