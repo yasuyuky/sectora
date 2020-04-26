@@ -1,3 +1,4 @@
 Host host
   StrictHostKeyChecking no
   UserKnownHostsFile=/dev/null
+  LogLevel ERROR
