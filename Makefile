@@ -66,11 +66,11 @@ $(ARM_RELEASE_DIR)/sectorad: src/daemon.rs $(SRCS) $(CARGO_FILES)
 $(ARM_RELEASE_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
 	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --lib --release --target=$(ARM_TARGET)
 
-$(ARM_DEBIAN_DIR)/sectora_$(VERSION)_armhf.deb:  src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES)
+$(ARM_DEBIAN_DIR)/sectora_$(VERSION)_armhf.deb: src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES)
 	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) sh -c "cargo install cargo-deb && cargo deb --target=$(ARM_TARGET)"
 
 
-.PHONY: clean clean-x64 clean-arm clean-exe clean-lib clean-all
+.PHONY: clean clean-x64 clean-arm clean-exe clean-lib clean-deb clean-all
 
 clean-x64:
 	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo clean
@@ -90,10 +90,15 @@ clean-lib:
 	rm -f $(X64_RELEASE_DIR)/libnss_sectora.so
 	rm -f $(ARM_RELEASE_DIR)/libnss_sectora.so
 
+clean-deb:
+	rm -f $(X64_DEBIAN_DIR)/sectora_$(VERSION)_amd64.deb
+	rm -f $(ARM_DEBIAN_DIR)/sectora_$(VERSION)_armhf.deb
+
 clean:
 	make clean-exe
 	make clean-daemon
 	make clean-lib
+	make clean-deb
 
 clean-all:
 	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo clean
