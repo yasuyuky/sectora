@@ -6,19 +6,19 @@ test:
 	make up
 	make setup
 	sleep 1
-	docker-compose exec ansible ssh hunter@sshd -i keys/user/id_rsa echo SUCCESS
-	docker-compose exec ansible ssh hunter@sshd -i keys/user/id_rsa id
-	docker-compose exec ansible ssh hunter@sshd -i keys/user/id_rsa sectora rate-limit
+	docker-compose exec client ssh hunter@sshd -i keys/user/id_rsa echo SUCCESS
+	docker-compose exec client ssh hunter@sshd -i keys/user/id_rsa id
+	docker-compose exec client ssh hunter@sshd -i keys/user/id_rsa sectora rate-limit
 	make down
 
 test-deb:
 	make up
 	make setup-deb
-	docker-compose exec ansible ssh hunter@sshd -i keys/user/id_rsa echo SUCCESS
+	docker-compose exec client ssh hunter@sshd -i keys/user/id_rsa echo SUCCESS
 	make down
 
 setup-deb:
-	make -j 2 setup-host setup-client-key
+	make -j 2 setup-host-deb setup-client-key
 
 setup-host-deb:
 	make setup-sshd
@@ -29,14 +29,14 @@ setup-host-deb:
 	docker-compose exec sshd systemctl restart ssh
 
 setup-client-key:
-	docker cp ./keys `docker-compose ps -q ansible`:/work/keys
+	docker cp ./keys `docker-compose ps -q client`:/work/keys
 
 up:
 	docker-compose up -d --build
 
 setup:
 	make -j 2 setup-sshd setup-ansible
-	docker-compose exec ansible ansible-playbook -i hosts localtest.yml
+	docker-compose exec client ansible-playbook -i hosts localtest.yml
 
 setup-sshd:
 	docker cp ./keys/root/id_rsa.pub `docker-compose ps -q sshd`:/root/.ssh/authorized_keys
@@ -44,13 +44,13 @@ setup-sshd:
 	docker-compose exec sshd chmod 600 /root/.ssh/authorized_keys
 
 setup-ansible:
-	docker cp ./ansible/hosts `docker-compose ps -q ansible`:/work/
-	docker cp ./ansible/localtest.yml `docker-compose ps -q ansible`:/work/
-	docker cp ../ansible/roles `docker-compose ps -q ansible`:/work/roles
-	docker cp ../ansible/templates `docker-compose ps -q ansible`:/work/templates
-	docker cp ../ansible/sectora.sh `docker-compose ps -q ansible`:/work/sectora.sh
-	docker cp ./keys `docker-compose ps -q ansible`:/work/keys
-	docker cp ../target/x86_64-unknown-linux-gnu/release `docker-compose ps -q ansible`:/work/release
+	docker cp ./client/hosts `docker-compose ps -q client`:/work/
+	docker cp ./client/localtest.yml `docker-compose ps -q client`:/work/
+	docker cp ../client/roles `docker-compose ps -q client`:/work/roles
+	docker cp ../client/templates `docker-compose ps -q client`:/work/templates
+	docker cp ../client/sectora.sh `docker-compose ps -q client`:/work/sectora.sh
+	docker cp ./keys `docker-compose ps -q client`:/work/keys
+	docker cp ../target/x86_64-unknown-linux-gnu/release `docker-compose ps -q client`:/work/release
 
 down:
 	docker-compose down

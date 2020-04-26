@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   json-server:
     build: ./json-server
@@ -9,7 +9,7 @@ services:
     privileged: true
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
-  ansible:
-    build: ./ansible
+  client:
+    build: ./client
     working_dir: /work
     command: sh -c 'while true; do sleep 1; done'
