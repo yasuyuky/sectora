@@ -74,6 +74,8 @@ jobs:
   test-ansible:
     docker:
       - image: docker/compose:1.25.0
+        environment:
+          TERM: xterm-256color
     steps:
       - attach_workspace:
           at: .
@@ -85,6 +87,8 @@ jobs:
   test-deb:
     docker:
       - image: docker/compose:1.25.0
+        environment:
+          TERM: xterm-256color
     steps:
       - attach_workspace:
           at: .
