@@ -31,7 +31,6 @@ setup-client-key:
 	docker cp ./keys `docker-compose ps -q client`:/work/keys
 
 setup-host-deb:
-	make setup-host-root
 	docker cp ../target/x86_64-unknown-linux-gnu/debian/sectora_$(VERSION)_amd64.deb `docker-compose ps -q host`:/root/
 	docker-compose exec host sh -c "yes | apt install --yes /root/sectora_$(VERSION)_amd64.deb"
 	docker cp ./testconf.toml `docker-compose ps -q host`:/etc/sectora.conf
