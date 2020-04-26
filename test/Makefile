@@ -5,7 +5,6 @@ VERSION=$(shell grep "^version" ../Cargo.toml | cut -f 2 -d '"')
 test-ansible:
 	make up
 	make setup-ansible
-	sleep 1
 	make exec-login
 	make down
 
@@ -21,6 +20,7 @@ setup-deb:
 setup-ansible:
 	make -j 2 setup-host-root setup-client-ansible
 	docker-compose exec client ansible-playbook -i hosts localtest.yml
+	sleep 1
 
 setup-host-root:
 	docker cp ./keys/root/id_rsa.pub `docker-compose ps -q host`:/root/.ssh/authorized_keys
