@@ -11,6 +11,11 @@ constants:
   image-rust-arm: &image-rust-arm
     image: yasuyuky/rust-arm:1.42.0
 
+  image-test: &image-test
+    image: docker/compose:1.25.0
+    environment:
+      TERM: xterm-256color
+
 jobs:
   build:
     working_directory: /tmp/sectora
@@ -74,9 +79,7 @@ jobs:
 
   test-ansible:
     docker:
-      - image: docker/compose:1.25.0
-        environment:
-          TERM: xterm-256color
+      - *image-test
     steps:
       - attach_workspace:
           at: .
@@ -87,9 +90,7 @@ jobs:
 
   test-deb:
     docker:
-      - image: docker/compose:1.25.0
-        environment:
-          TERM: xterm-256color
+      - *image-test
     steps:
       - attach_workspace:
           at: .
