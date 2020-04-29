@@ -11,6 +11,11 @@ constants:
   image-rust-arm: &image-rust-arm
     image: yasuyuky/rust-arm:1.42.0
 
+  image-test: &image-test
+    image: docker/compose:1.25.5
+    environment:
+      TERM: xterm-256color
+
 jobs:
   build:
     working_directory: /tmp/sectora
@@ -39,19 +44,21 @@ jobs:
     docker: *docker-image-rust-x64
     steps:
       - checkout
-      - run: cargo install --git https://github.com/mmstick/cargo-deb cargo-deb
+      - run: cargo install cargo-deb
       - run: cargo deb --target=x86_64-unknown-linux-gnu
       - persist_to_workspace:
           root: .
           paths:
             - target/x86_64-unknown-linux-gnu/debian/
+            - test
+            - Cargo.toml
 
   build-deb-arm:
     working_directory: /tmp/sectora
     docker: *docker-image-rust-arm
     steps:
       - checkout
-      - run: cargo install --git https://github.com/mmstick/cargo-deb cargo-deb
+      - run: cargo install cargo-deb
       - run: cargo deb --target=arm-unknown-linux-gnueabihf
       - persist_to_workspace:
           root: .
@@ -70,16 +77,31 @@ jobs:
           path: target/arm-unknown-linux-gnueabihf/debian/
           description: sectora debian pakage for arm
 
-  test:
+  test-ansible:
     docker:
-      - image: docker/compose:1.25.0
+      - *image-test
     steps:
       - attach_workspace:
           at: .
       - run: chmod 600 test/keys/*/id_rsa
       - setup_remote_docker
-      - run: apk add make
-      - run: cd test && make
+      - run: apk add make ncurses
+      - run: cd test && make test-ansible
+
+  test-deb:
+    docker:
+      - *image-test
+    steps:
+      - attach_workspace:
+          at: .
+      - run: chmod 600 test/keys/*/id_rsa
+      - setup_remote_docker
+      - run: apk add make ncurses
+      - run: cd test && make test-deb
+      - persist_to_workspace:
+          root: .
+          paths:
+            - target/x86_64-unknown-linux-gnu/debian/
 
 workflows:
   version: 2
@@ -87,13 +109,16 @@ workflows:
     jobs:
       - build
       - build-arm
-      - test:
+      - test-ansible:
           requires:
             - build
       - build-deb-x64
       - build-deb-arm
+      - test-deb:
+          requires:
+            - build-deb-x64
       - store-deb:
           requires:
-            - test
+            - test-deb
             - build-deb-x64
             - build-deb-arm

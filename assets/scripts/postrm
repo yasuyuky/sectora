@@ -1,10 +1,13 @@
 #!/bin/bash -e
 
+settings_start="### DO NOT REMOVE! SECTORA SETTINGS START ###"
+settings_end="### DO NOT REMOVE! SECTORA SETTINGS END ###"
+
 function delete_sectora_setting() {
     conf_file=$(echo $1)
 
-    start_line=$(grep -n "^### DO NOT REMOVE! SECTORA SETTING START" ${conf_file} | cut -d: -f1)
-    end_line=$(grep -n "^### DO NOT REMOVE! SECTORA SETTING END" ${conf_file} | cut -d: -f1)
+    start_line=$(grep -n "^${settings_start}" ${conf_file} | cut -d: -f1)
+    end_line=$(grep -n "^${settings_end}" ${conf_file} | cut -d: -f1)
     if [ "$start_line" = "" -o "$end_line" = "" ]; then
         echo "Could not find sectora setting in ${conf_file}"
         return 0

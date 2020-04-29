@@ -1,15 +1,15 @@
-version: '3'
+version: "3"
 services:
   json-server:
     build: ./json-server
     command: json-server --watch db.json --host 0.0.0.0 --routes routes.json
-  sshd:
+  host:
     image: yasuyuky/ubuntu-ssh:latest
     restart: always
     privileged: true
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
-  ansible:
-    build: ./ansible
+  client:
+    build: ./client
     working_dir: /work
     command: sh -c 'while true; do sleep 1; done'

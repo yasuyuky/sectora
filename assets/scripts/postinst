@@ -1,15 +1,18 @@
 #!/bin/bash -e
 
-function is_configured() {
+settings_start="### DO NOT REMOVE! SECTORA SETTINGS START ###"
+settings_end="### DO NOT REMOVE! SECTORA SETTINGS END ###"
+
+function check_config() {
     conf_file=$(echo $1)
 
     set +e
-    start_line=$(grep -n "^### DO NOT REMOVE! SECTORA SETTING START" ${conf_file})
-    end_line=$(grep -n "^### DO NOT REMOVE! SECTORA SETTING END" ${conf_file})
+    start_line=$(grep -n "^${settings_start}" ${conf_file})
+    end_line=$(grep -n "^${settings_end}" ${conf_file})
     set -e
 
     if [ "$start_line" = "" -a "$end_line" = "" ]; then
-        # Success
+        # Success (No settings found)
         return 0
     fi
     echo "Found sectora settings in $conf_file"
@@ -26,43 +29,43 @@ if [ "$1" = "configure" ] && [ -e /usr/share/debconf/confmodule ]; then
     init_config=$RET
     db_stop
     if [ "$init_config" = "true" ]; then
-        echo "Appending settigs...(Please restore configs from *.backup files when you gets some error)"
+        echo "Appending settings...(Please restore configs from *.backup files when you get some error)"
 
         # setup nssswitch
-        is_configured /etc/nsswitch.conf
+        check_config /etc/nsswitch.conf
         nss_res=$?
         if [ $nss_res -eq 0 ]; then
             cp /etc/nsswitch.conf /etc/nsswitch.conf.backup
             cat <<EOS >>/etc/nsswitch.conf
 
-### DO NOT REMOVE! SECTORA SETTING START ###
+${settings_start}
 passwd: files sectora
 shadow: files sectora
 group:  files sectora
-### DO NOT REMOVE! SECTORA SETTING END ###
+${settings_end}
 
 EOS
         fi
 
         # setup sshd_config
-        is_configured /etc/ssh/sshd_config
+        check_config /etc/ssh/sshd_config
         sshd_res=$?
         if [ $sshd_res -eq 0 ]; then
             cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
             sed -i -e "s/^UsePAM/#UsePAM/" /etc/ssh/sshd_config
             cat <<EOS >>/etc/ssh/sshd_config
 
-### DO NOT REMOVE! SECTORA SETTING START ###
+${settings_start}
 AuthorizedKeysCommandUser root
 AuthorizedKeysCommand /usr/sbin/sectora.sh
 UsePAM yes
-### DO NOT REMOVE! SECTORA SETTING END ###
+${settings_end}
 
 EOS
         fi
 
         # setup pam
-        is_configured /etc/pam.d/sshd
+        check_config /etc/pam.d/sshd
         pam_res=$?
         if [ $pam_res -eq 0 ]; then
             if [ -e /etc/pam.d/sshd ]; then
@@ -70,11 +73,11 @@ EOS
             fi
             cat <<EOS >>/etc/pam.d/sshd
 
-### DO NOT REMOVE! SECTORA SETTING START ###
+${settings_start}
 auth requisite pam_exec.so quiet expose_authtok /usr/sbin/sectora pam
 auth optional pam_unix.so not_set_pass use_first_pass nodelay
 session required pam_mkhomedir.so skel: /etc/skel/ umask: 0022
-### DO NOT REMOVE! SECTORA SETTING END ###
+${settings_end}
 
 EOS
         fi
