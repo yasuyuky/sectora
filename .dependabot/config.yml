@@ -5,3 +5,13 @@ update_configs:
     update_schedule: "live"
     default_reviewers:
       - "yasuyuky"
+  - package_manager: "docker"
+    directory: "/test/client"
+    update_schedule: "daily"
+    default_reviewers:
+      - "yasuyuky"
+  - package_manager: "docker"
+    directory: "/test/json-server"
+    update_schedule: "daily"
+    default_reviewers:
+      - "yasuyuky"
