@@ -37,3 +37,4 @@ jobs:
         working-directory: test
         env:
           COMPOSE_INTERACTIVE_NO_CLI: 1
+          TERM: xterm-256color
