@@ -1,0 +1,37 @@
+name: main
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x64, arm]
+        target: [lib, exe, daemon, deb]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: make ${{ matrix.target }}-${{ matrix.arch }}
+      - uses: actions/upload-artifact@v2
+        if: matrix.target == 'deb'
+        with:
+          name: sectora-${{ github.target }}
+          path: ${{ github.workspace }}/target/*/debian/*.deb
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: sectora-x64
+          path: target/x86_64-unknown-linux-gnu/debian/
+      - name: Run tests
+        run: make test-deb
+        working-directory: test
