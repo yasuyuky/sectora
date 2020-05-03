@@ -20,7 +20,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: matrix.target == 'deb'
         with:
-          name: sectora-${{ matrix.target }}
+          name: sectora-${{ matrix.arch }}
           path: ${{ github.workspace }}/target/*/debian/*.deb
 
   test:
