@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build
-        run: make ${{ matrix.target }}-${{ matrix.arch }}
+        run: make ${{ matrix.arch }}-${{ matrix.target }}
       - uses: actions/upload-artifact@v2
         if: matrix.target == 'deb'
         with:
