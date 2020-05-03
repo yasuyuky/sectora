@@ -32,7 +32,7 @@ setup-client-key:
 
 setup-host-deb:
 	docker cp ../target/x86_64-unknown-linux-gnu/debian/sectora_$(VERSION)_amd64.deb `docker-compose ps -q host`:/tmp/
-	docker-compose exec host sh -c "yes | apt install --yes /tmp/sectora_$(VERSION)_amd64.deb"
+	docker-compose exec -T host sh -c "yes | apt install --yes /tmp/sectora_$(VERSION)_amd64.deb"
 	docker cp ./testconf.toml `docker-compose ps -q host`:/etc/sectora.conf
 	docker-compose exec host systemctl start sectora
 	docker-compose exec host systemctl restart ssh
