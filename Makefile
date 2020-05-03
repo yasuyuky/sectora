@@ -17,7 +17,7 @@ DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
 ENTRIY_POINTS := src/main.rs src/daemon.rs src/lib.rs
 SRCS := $(filter-out $(ENTRIY_POINTS),$(wildcard src/*.rs))
 CARGO_FILES := Cargo.toml Cargo.lock rust-toolchain
-DOCKER_RUN=docker run -it --rm
+DOCKER_RUN=docker run --rm
 
 all: x64 arm deb
 
@@ -44,7 +44,7 @@ arm-lib: $(ARM_RELEASE_DIR)/libnss_sectora.so
 arm-deb: $(ARM_DEBIAN_DIR)/sectora_$(VERSION)_armhf.deb
 
 enter-build-image:
-	$(DOCKER_RUN) $(X64_BUILD_OPT) $(X64_BUILD_IMG) bash
+	$(DOCKER_RUN) -it $(X64_BUILD_OPT) $(X64_BUILD_IMG) bash
 
 $(X64_RELEASE_DIR)/sectora: src/main.rs $(SRCS) $(CARGO_FILES)
 	$(DOCKER_RUN) $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --bin sectora --release --target=$(X64_TARGET)
