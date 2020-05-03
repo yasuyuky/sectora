@@ -17,6 +17,7 @@ DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
 ENTRIY_POINTS := src/main.rs src/daemon.rs src/lib.rs
 SRCS := $(filter-out $(ENTRIY_POINTS),$(wildcard src/*.rs))
 CARGO_FILES := Cargo.toml Cargo.lock rust-toolchain
+DOCKER_RUN=docker run -it --rm
 
 all: x64 arm deb
 
@@ -43,40 +44,40 @@ arm-lib: $(ARM_RELEASE_DIR)/libnss_sectora.so
 arm-deb: $(ARM_DEBIAN_DIR)/sectora_$(VERSION)_armhf.deb
 
 enter-build-image:
-	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) bash
+	$(DOCKER_RUN) $(X64_BUILD_OPT) $(X64_BUILD_IMG) bash
 
 $(X64_RELEASE_DIR)/sectora: src/main.rs $(SRCS) $(CARGO_FILES)
-	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --bin sectora --release --target=$(X64_TARGET)
+	$(DOCKER_RUN) $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --bin sectora --release --target=$(X64_TARGET)
 
 $(X64_RELEASE_DIR)/sectorad: src/daemon.rs $(SRCS) $(CARGO_FILES)
-	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --bin sectorad --release --target=$(X64_TARGET)
+	$(DOCKER_RUN) $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --bin sectorad --release --target=$(X64_TARGET)
 
 $(X64_RELEASE_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
-	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --lib --release --target=$(X64_TARGET)
+	$(DOCKER_RUN) $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --lib --release --target=$(X64_TARGET)
 
 $(X64_DEBIAN_DIR)/sectora_$(VERSION)_amd64.deb: src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES)
-	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) sh -c "cargo install cargo-deb && cargo deb --target=$(X64_TARGET)"
+	$(DOCKER_RUN) $(X64_BUILD_OPT) $(X64_BUILD_IMG) sh -c "cargo install cargo-deb && cargo deb --target=$(X64_TARGET)"
 
 $(ARM_RELEASE_DIR)/sectora: src/main.rs $(SRCS) $(CARGO_FILES)
-	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --bin sectora --release --target=$(ARM_TARGET)
+	$(DOCKER_RUN) $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --bin sectora --release --target=$(ARM_TARGET)
 
 $(ARM_RELEASE_DIR)/sectorad: src/daemon.rs $(SRCS) $(CARGO_FILES)
-	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --bin sectorad --release --target=$(ARM_TARGET)
+	$(DOCKER_RUN) $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --bin sectorad --release --target=$(ARM_TARGET)
 
 $(ARM_RELEASE_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
-	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --lib --release --target=$(ARM_TARGET)
+	$(DOCKER_RUN) $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --lib --release --target=$(ARM_TARGET)
 
 $(ARM_DEBIAN_DIR)/sectora_$(VERSION)_armhf.deb: src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES)
-	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) sh -c "cargo install cargo-deb && cargo deb --target=$(ARM_TARGET)"
+	$(DOCKER_RUN) $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) sh -c "cargo install cargo-deb && cargo deb --target=$(ARM_TARGET)"
 
 
 .PHONY: clean clean-x64 clean-arm clean-exe clean-lib clean-deb clean-all
 
 clean-x64:
-	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo clean
+	$(DOCKER_RUN) $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo clean
 
 clean-arm:
-	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo clean
+	$(DOCKER_RUN) $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo clean
 
 clean-exe:
 	rm -f $(X64_RELEASE_DIR)/sectora
@@ -101,5 +102,5 @@ clean:
 	make clean-deb
 
 clean-all:
-	docker run -it --rm $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo clean
-	docker run -it --rm $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo clean
+	$(DOCKER_RUN) $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo clean
+	$(DOCKER_RUN) $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo clean
