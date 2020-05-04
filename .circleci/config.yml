@@ -28,6 +28,7 @@ jobs:
           root: .
           paths:
             - ansible
+            - assets
             - target
             - test
 

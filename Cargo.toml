@@ -53,8 +53,8 @@ assets = [
     ["target/release/libnss_sectora.so", "usr/lib/libnss_sectora.so", "644"],
     ["target/release/libnss_sectora.so", "usr/lib/libnss_sectora.so.2", "644"],
     ["assets/conf-files/sectora.conf", "etc/sectora.conf", "644"],
-    ["ansible/sectora.sh", "usr/sbin/", "755"],
-    ["ansible/templates/sectora.service", "etc/systemd/system/", "644"],
+    ["assets/sectora.sh", "usr/sbin/", "755"],
+    ["assets/sectora.service", "etc/systemd/system/", "644"],
 ]
 conf-files = [
     "etc/sectora.conf",

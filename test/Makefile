@@ -43,7 +43,8 @@ setup-client-ansible:
 	docker cp ./client/localtest.yml `docker-compose ps -q client`:/work/
 	docker cp ../ansible/roles `docker-compose ps -q client`:/work/roles
 	docker cp ../ansible/templates `docker-compose ps -q client`:/work/templates
-	docker cp ../ansible/sectora.sh `docker-compose ps -q client`:/work/sectora.sh
+	docker cp ../assets/sectora.service `docker-compose ps -q client`:/work/
+	docker cp ../assets/sectora.sh `docker-compose ps -q client`:/work/
 	docker cp ../target/x86_64-unknown-linux-gnu/release `docker-compose ps -q client`:/work/release
 
 up:
