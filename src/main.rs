@@ -123,5 +123,5 @@ fn main() -> Result<(), Error> {
             Command::clap().gen_completions_to("sectora", shell, &mut std::io::stdout());
         }
     };
-    return Ok(());
+    Ok(())
 }

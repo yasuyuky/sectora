@@ -1,8 +1,3 @@
-use hyper;
-use serde_json;
-use std;
-use toml;
-
 #[derive(Debug)]
 pub enum Error {
     Serde(serde_json::Error),

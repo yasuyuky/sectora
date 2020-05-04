@@ -1,5 +1,4 @@
 use crate::buffer::Buffer;
-use libc;
 use std::io::Error;
 
 #[repr(C)]

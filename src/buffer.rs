@@ -1,5 +1,3 @@
-use libc;
-use std;
 use std::ffi::CString;
 use std::io::{Error, ErrorKind};
 

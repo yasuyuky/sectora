@@ -1,12 +1,9 @@
 use crate::error::Error;
 use crate::structs::{Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
-use futures;
 use glob::glob;
 use hyper::body::HttpBody;
 use hyper::{header, Body, Client, Request};
 use hyper_tls::HttpsConnector;
-use serde_json;
-use std;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;

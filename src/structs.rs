@@ -1,12 +1,10 @@
 use crate::error::{Error, ParseSectorError, ParseSectorGroupError, ParseSectorTypeError};
-use std;
 use std::collections::HashMap;
 use std::fmt;
 use std::fs::File;
 use std::io::Read;
 use std::str::FromStr;
 use std::string::ToString;
-use toml;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
