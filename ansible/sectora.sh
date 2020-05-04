@@ -1,2 +1,1 @@
-#!/bin/bash
-sectora key $1
+../assets/sectora.sh
