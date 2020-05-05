@@ -12,16 +12,12 @@ impl<E> From<E> for Ignore where E: Error
     fn from(_: E) -> Ignore { Ignore }
 }
 
-fn main() {
+fn main() -> Result<(), std::io::Error> {
     let out_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());
-    File::create(out_dir.join("commit-info.txt")).unwrap()
-                                                 .write_all(commit_info().as_bytes())
-                                                 .unwrap();
-    let log_level = env::var("LOG_LEVEL").unwrap_or(String::from("OFF"));
-    File::create(out_dir.join("log-level.txt")).unwrap()
-                                               .write_all(log_level.as_bytes())
-                                               .unwrap();
-    println!("cargo:rerun-if-changed=build.rs");
+    File::create(out_dir.join("commit-info.txt"))?.write_all(commit_info().as_bytes())?;
+    let log_level = env::var("LOG_LEVEL").unwrap_or_else(|_| "OFF".to_string());
+    File::create(out_dir.join("log-level.txt"))?.write_all(log_level.as_bytes())?;
+    Ok(println!("cargo:rerun-if-changed=build.rs"))
 }
 
 fn commit_info() -> String {
