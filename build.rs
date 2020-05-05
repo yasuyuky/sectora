@@ -28,18 +28,11 @@ fn commit_info() -> String {
 }
 
 fn commit_hash() -> Result<String, Ignore> {
-    Ok(String::from_utf8(Command::new("git").args(&["rev-parse",
-                                                    "--short=10",
-                                                    "HEAD"])
-                                            .output()?
-                                            .stdout)?)
+    let args = &["rev-parse", "--short=10", "HEAD"];
+    Ok(String::from_utf8(Command::new("git").args(args).output()?.stdout)?)
 }
 
 fn commit_date() -> Result<String, Ignore> {
-    Ok(String::from_utf8(Command::new("git").args(&["log",
-                                                    "-1",
-                                                    "--date=short",
-                                                    "--pretty=format:%cd"])
-                                            .output()?
-                                            .stdout)?)
+    let args = &["log", "-1", "--date=short", "--pretty=format:%cd"];
+    Ok(String::from_utf8(Command::new("git").args(args).output()?.stdout)?)
 }
