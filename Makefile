@@ -11,8 +11,10 @@ ARM_BUILD_IMG=yasuyuky/rust-arm:${RUST_VER}
 COMMON_BUILD_OPT= -v ${PWD}:/source -w /source
 LOG_LEVEL:=OFF
 OPENSSL_STATIC_OPT= -e OPENSSL_STATIC=yes -e OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ -e OPENSSL_INCLUDE_DIR=/usr/include -e LOG_LEVEL=$(LOG_LEVEL)
-X64_BUILD_OPT= -v ${PWD}/.cargo-x64/registry:/usr/local/cargo/registry $(COMMON_BUILD_OPT) $(OPENSSL_STATIC_OPT)
-ARM_BUILD_OPT= -v ${PWD}/.cargo-arm/registry:/usr/local/cargo/registry $(COMMON_BUILD_OPT)
+X64_BUILD_VOL= -v ${PWD}/.cargo-x64/registry:/usr/local/cargo/registry
+ARM_BUILD_VOL= -v ${PWD}/.cargo-arm/registry:/usr/local/cargo/registry
+X64_BUILD_OPT= $(X64_BUILD_VOL) $(COMMON_BUILD_OPT) $(OPENSSL_STATIC_OPT)
+ARM_BUILD_OPT= $(ARM_BUILD_VOL) $(COMMON_BUILD_OPT)
 DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
 ENTRIY_POINTS := src/main.rs src/daemon.rs src/lib.rs
 SRCS := $(filter-out $(ENTRIY_POINTS),$(wildcard src/*.rs))
