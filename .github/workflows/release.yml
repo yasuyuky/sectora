@@ -26,7 +26,7 @@ jobs:
       - name: Get the version in cargo
         id: cargo_ver
         run: |
-          VERSION=v$(grep '^version' Cargo.toml | cut -d '"' -f 2)
+          VERSION=$(grep '^version' Cargo.toml | cut -d '"' -f 2)
           echo ${VERSION}
           echo ::set-output name=version::${VERSION}
           echo ::set-output name=v::v${VERSION}
