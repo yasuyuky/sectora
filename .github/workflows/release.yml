@@ -13,16 +13,21 @@ jobs:
 
       - name: Get Date
         id: get_date
-        run: echo ::set-output name=date::$(date +'%Y.%m.%d')
+        run: |
+          date +'%Y.%m.%d'
+          echo ::set-output name=date::$(date +'%Y.%m.%d')
 
       - name: Get the Tag
         id: get_tag
-        run: echo ::set-output name=tag::${GITHUB_REF/refs\/tags\//}
+        run: |
+          echo ${GITHUB_REF/refs\/tags\//}
+          echo ::set-output name=tag::${GITHUB_REF/refs\/tags\//}
 
       - name: Get the version in cargo
         id: cargo_ver
         run: |
           VERSION=v$(grep '^version' Cargo.toml | cut -d '"' -f 2)
+          echo ${VERSION}
           echo ::set-output name=version::${VERSION}
           echo ::set-output name=v::v${VERSION}
 
