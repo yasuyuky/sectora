@@ -37,7 +37,7 @@ jobs:
           body: Automated release
           draft: false
           prerelease: false
-        if: ${{ steps.cargo_ver.outputs.v == steps.get_tag.outputs.tag }}
+        if: steps.cargo_ver.outputs.v == steps.get_tag.outputs.tag
 
       - name: Build deb
         run: make deb
@@ -51,7 +51,7 @@ jobs:
           asset_path: target/x86_64-unknown-linux-gnu/debian/sectora_${{ steps.cargo_ver.outputs.version }}_amd64.deb
           asset_name: sectora_${{ steps.cargo_ver.outputs.version }}_amd64.deb
           asset_content_type: application/vnd.debian.binary-package
-        if: ${{ steps.cargo_ver.outputs.v == steps.get_tag.outputs.tag }}
+        if: steps.cargo_ver.outputs.v == steps.get_tag.outputs.tag
 
       - name: Upload Release Asset arm
         uses: actions/upload-release-asset@v1
@@ -62,4 +62,4 @@ jobs:
           asset_path: target/arm-unknown-linux-gnueabihf/debian/sectora_${{ steps.cargo_ver.outputs.version }}_armhf.deb
           asset_name: sectora_${{ steps.cargo_ver.outputs.version }}_armhf.deb
           asset_content_type: application/vnd.debian.binary-package
-        if: ${{ steps.cargo_ver.outputs.v == steps.get_tag.outputs.tag }}
+        if: steps.cargo_ver.outputs.v == steps.get_tag.outputs.tag
