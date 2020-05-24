@@ -15,6 +15,10 @@ jobs:
         target: [lib, exe, daemon, deb]
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/cache@v1
+        with:
+          path: .cargo-${{ matrix.arch }}
+          key: ${{ matrix.arch }}-${{ hashFiles('Cargo.lock') }}
       - name: Build
         run: make ${{ matrix.arch }}-${{ matrix.target }}
       - uses: actions/upload-artifact@v2
