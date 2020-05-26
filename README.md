@@ -11,6 +11,7 @@ Implemented with Rust.
 ## How to build
 
 [![CircleCI](https://circleci.com/gh/yasuyuky/sectora.svg?style=svg)](https://circleci.com/gh/yasuyuky/sectora)
+[![Github Actions](https://github.com/yasuyuky/sectora/workflows/ci/badge.svg)](https://github.com/yasuyuky/sectora/actions)
 
 ### On linux
 
