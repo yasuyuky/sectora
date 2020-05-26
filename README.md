@@ -8,26 +8,14 @@ Using this program, you can grant login privileges on your servers to GitHub tea
 
 Implemented with Rust.
 
-## How to build
-
 [![CircleCI](https://circleci.com/gh/yasuyuky/sectora.svg?style=svg)](https://circleci.com/gh/yasuyuky/sectora)
 [![Github Actions](https://github.com/yasuyuky/sectora/workflows/ci/badge.svg)](https://github.com/yasuyuky/sectora/actions)
 
-### On linux
+## How to build manually
 
-```
-cargo build --release
-```
+See [Makefile](https://github.com/yasuyuky/sectora/blob/master/Makefile) for details
 
-### Cross-compile on other platforms using Docker
-
-```
-make
-```
-
-See Makefile for details
-
-## How to install and setup
+## How to install and setup manually
 
 1. Copy executable and shared object to each path
 2. Put config file for this program
