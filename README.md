@@ -11,6 +11,18 @@ Implemented with Rust.
 [![CircleCI](https://circleci.com/gh/yasuyuky/sectora.svg?style=svg)](https://circleci.com/gh/yasuyuky/sectora)
 [![Github Actions](https://github.com/yasuyuky/sectora/workflows/ci/badge.svg)](https://github.com/yasuyuky/sectora/actions)
 
+# How to Use
+
+1. Generate the ssh key pair and [upload the public key to GitHub](https://help.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account)
+
+2. Use [the deb file](https://github.com/yasuyuky/sectora/releases) to setup sectora to the server
+
+   - You need a developer token
+
+3. Log in to the server with your private key
+
+# Manual Setup
+
 ## How to build manually
 
 See [Makefile](https://github.com/yasuyuky/sectora/blob/master/Makefile) for details
