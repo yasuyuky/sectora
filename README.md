@@ -11,6 +11,10 @@ Implemented with Rust.
 [![CircleCI](https://circleci.com/gh/yasuyuky/sectora.svg?style=svg)](https://circleci.com/gh/yasuyuky/sectora)
 [![Github Actions](https://github.com/yasuyuky/sectora/workflows/ci/badge.svg)](https://github.com/yasuyuky/sectora/actions)
 
+# How it works
+
+![how it works](how-it-works.svg)
+
 # How to Use
 
 1. Generate the ssh key pair and [upload the public key to GitHub](https://help.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account)
