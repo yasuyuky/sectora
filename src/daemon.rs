@@ -36,7 +36,7 @@ use structs::{Config, SocketConfig, UserConfig};
 async fn main() {
     applog::init(Some("sectorad"));
     let mut d = Daemon::new();
-    d.run().expect("run");
+    d.run().await.expect("run");
     log::debug!("Run stopped");
 }
 
@@ -66,7 +66,7 @@ impl Daemon {
                  msg_cache: HashMap::new() }
     }
 
-    fn run(&mut self) -> Result<(), Error> {
+    async fn run(&mut self) -> Result<(), Error> {
         let socket = unix::net::UnixDatagram::bind(&self.socket_conf.socket_path)?;
         fs::set_permissions(&self.socket_conf.socket_path,
                             unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
@@ -76,37 +76,38 @@ impl Daemon {
             let (recv_cnt, src) = socket.recv_from(&mut buf)?;
             let msgstr = String::from_utf8(buf[..recv_cnt].to_vec()).expect("decode msg str");
             log::debug!("recv: {}, src:{:?}", msgstr, src);
-            let response = self.handle(&msgstr.parse::<ClientMessage>().expect("parse ClientMessage"));
+            let response = self.handle(&msgstr.parse::<ClientMessage>().expect("parse ClientMessage"))
+                               .await;
             log::debug!("-> response: {}", response);
             socket.send_to(&response.to_string().as_bytes(), src.as_pathname().expect("src"))?;
         }
     }
 
-    fn handle(&mut self, msg: &ClientMessage) -> DaemonMessage {
+    async fn handle(&mut self, msg: &ClientMessage) -> DaemonMessage {
         match msg {
-            ClientMessage::Key { user } => match self.client.get_user_public_key(&user) {
+            ClientMessage::Key { user } => match self.client.get_user_public_key(&user).await {
                 Ok(keys) => DaemonMessage::Key { keys },
                 Err(_) => DaemonMessage::Error { message: String::from("get key failed") },
             },
-            ClientMessage::Pam { user } => match self.client.check_pam(&user) {
+            ClientMessage::Pam { user } => match self.client.check_pam(&user).await {
                 Ok(result) => DaemonMessage::Pam { result },
                 Err(_) => DaemonMessage::Error { message: String::from("check pam failed") },
             },
-            ClientMessage::CleanUp => match self.client.clear_all_caches() {
+            ClientMessage::CleanUp => match self.client.clear_all_caches().await {
                 Ok(_) => DaemonMessage::Success,
                 Err(_) => DaemonMessage::Error { message: String::from("clean up failed") },
             },
-            ClientMessage::RateLimit => match self.client.get_rate_limit() {
+            ClientMessage::RateLimit => match self.client.get_rate_limit().await {
                 Ok(ratelimit) => DaemonMessage::RateLimit { limit: ratelimit.rate.limit },
                 Err(_) => DaemonMessage::Error { message: String::from("clean up failed") },
             },
-            ClientMessage::SectorGroups => match self.client.get_sectors() {
+            ClientMessage::SectorGroups => match self.client.get_sectors().await {
                 Ok(sectors) => DaemonMessage::SectorGroups { sectors },
                 Err(_) => DaemonMessage::Error { message: String::from("get sectors failed") },
             },
-            ClientMessage::Pw(pw) => self.handle_pw(pw),
-            ClientMessage::Sp(sp) => self.handle_sp(sp),
-            ClientMessage::Gr(gr) => self.handle_gr(gr),
+            ClientMessage::Pw(pw) => self.handle_pw(pw).await,
+            ClientMessage::Sp(sp) => self.handle_sp(sp).await,
+            ClientMessage::Gr(gr) => self.handle_gr(gr).await,
         }
     }
 
@@ -156,10 +157,10 @@ impl Daemon {
         pass
     }
 
-    fn handle_pw(&mut self, pw: &Pw) -> DaemonMessage {
+    async fn handle_pw(&mut self, pw: &Pw) -> DaemonMessage {
         match pw {
             Pw::Uid(uid) => {
-                for sector in self.client.get_sectors().unwrap_or_default() {
+                for sector in self.client.get_sectors().await.unwrap_or_default() {
                     for member in sector.members.values() {
                         if uid == &member.id {
                             let (home, sh) = self.get_home_sh(&member.login);
@@ -173,7 +174,7 @@ impl Daemon {
                 }
             }
             Pw::Nam(name) => {
-                for sector in self.client.get_sectors().unwrap_or_default() {
+                for sector in self.client.get_sectors().await.unwrap_or_default() {
                     for member in sector.members.values() {
                         if name == &member.login {
                             let (home, sh) = self.get_home_sh(&member.login);
@@ -188,7 +189,7 @@ impl Daemon {
             }
             Pw::Ent(Ent::Set(pid)) => {
                 let mut ents = VecDeque::new();
-                for sector in self.client.get_sectors().unwrap_or_default() {
+                for sector in self.client.get_sectors().await.unwrap_or_default() {
                     for member in sector.members.values() {
                         let (home, sh) = self.get_home_sh(&member.login);
                         let pw = DaemonMessage::Pw { login: member.login.clone(),
@@ -208,10 +209,10 @@ impl Daemon {
         DaemonMessage::Error { message: String::from("not found") }
     }
 
-    fn handle_sp(&mut self, sp: &Sp) -> DaemonMessage {
+    async fn handle_sp(&mut self, sp: &Sp) -> DaemonMessage {
         match sp {
             Sp::Nam(name) => {
-                for sector in self.client.get_sectors().unwrap_or_default() {
+                for sector in self.client.get_sectors().await.unwrap_or_default() {
                     if let Some(member) = sector.members.get(name) {
                         let pass = self.get_pass(name);
                         return DaemonMessage::Sp { login: member.login.clone(),
@@ -221,7 +222,7 @@ impl Daemon {
             }
             Sp::Ent(Ent::Set(pid)) => {
                 let mut ents = VecDeque::new();
-                for sector in self.client.get_sectors().unwrap_or_default() {
+                for sector in self.client.get_sectors().await.unwrap_or_default() {
                     for member in sector.members.values() {
                         let pass = self.get_pass(&member.login);
                         let sp = DaemonMessage::Sp { login: member.login.clone(),
@@ -238,17 +239,17 @@ impl Daemon {
         DaemonMessage::Error { message: String::from("not found") }
     }
 
-    fn handle_gr(&mut self, gr: &Gr) -> DaemonMessage {
+    async fn handle_gr(&mut self, gr: &Gr) -> DaemonMessage {
         match gr {
             Gr::Gid(gid) => {
-                for sector in self.client.get_sectors().unwrap_or_default() {
+                for sector in self.client.get_sectors().await.unwrap_or_default() {
                     if gid == &sector.get_gid() {
                         return DaemonMessage::Gr { sector };
                     }
                 }
             }
             Gr::Nam(name) => {
-                for sector in self.client.get_sectors().unwrap_or_default() {
+                for sector in self.client.get_sectors().await.unwrap_or_default() {
                     if name == &sector.get_group() {
                         return DaemonMessage::Gr { sector };
                     }
@@ -256,7 +257,7 @@ impl Daemon {
             }
             Gr::Ent(Ent::Set(pid)) => {
                 let mut ents = VecDeque::new();
-                for sector in self.client.get_sectors().unwrap_or_default() {
+                for sector in self.client.get_sectors().await.unwrap_or_default() {
                     ents.push_back(DaemonMessage::Gr { sector });
                 }
                 self.msg_cache.insert(*pid, ents).unwrap_or_default();

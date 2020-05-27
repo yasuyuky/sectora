@@ -44,11 +44,11 @@ impl GithubClient {
         Ok(())
     }
 
-    fn get_contents_from_url(&self, url: &str) -> Result<String, Error> {
+    async fn get_contents_from_url(&self, url: &str) -> Result<String, Error> {
         let mut all_contents: Vec<serde_json::value::Value> = Vec::new();
         let mut page = 1;
         loop {
-            let mut new_array = self.get_contents_from_url_page(url, page)?;
+            let mut new_array = self.get_contents_from_url_page(url, page).await?;
             if new_array.is_empty() {
                 break;
             }
@@ -84,18 +84,18 @@ impl GithubClient {
         Ok(buff)
     }
 
-    fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::Value>, Error> {
+    async fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::Value>, Error> {
         let req = self.build_page_request(url, page)?;
-        let resp = futures::executor::block_on(self.run_request(req))?;
+        let resp = self.run_request(req).await?;
         Ok(serde_json::from_slice(&resp)?)
     }
 
-    fn get_contents(&self, url: &str) -> Result<String, Error> {
+    async fn get_contents(&self, url: &str) -> Result<String, Error> {
         match self.load_contents_from_cache(url) {
             Ok((metadata, cache_contents)) => match std::time::SystemTime::now().duration_since(metadata.modified()?) {
                 Ok(caching_duration) => {
                     if caching_duration.as_secs() > self.conf.cache_duration {
-                        match self.get_contents_from_url(url) {
+                        match self.get_contents_from_url(url).await {
                             Ok(contents_from_url) => Ok(contents_from_url),
                             Err(_) => Ok(cache_contents),
                         }
@@ -105,93 +105,94 @@ impl GithubClient {
                 }
                 Err(_) => Ok(cache_contents),
             },
-            Err(_) => self.get_contents_from_url(url),
+            Err(_) => self.get_contents_from_url(url).await,
         }
     }
 
-    pub fn get_user_public_key(&self, user: &str) -> Result<String, Error> {
+    pub async fn get_user_public_key(&self, user: &str) -> Result<String, Error> {
         let url = format!("{}/users/{}/keys", self.conf.endpoint, user);
-        let contents = self.get_contents(&url)?;
+        let contents = self.get_contents(&url).await?;
         let keys = serde_json::from_str::<Vec<PublicKey>>(&contents)?;
         Ok(keys.iter().map(|k| k.key.clone()).collect::<Vec<_>>().join("\n"))
     }
 
-    pub fn check_pam(&self, user: &str) -> Result<bool, Error> {
-        let sectors = self.get_sectors()?;
+    pub async fn check_pam(&self, user: &str) -> Result<bool, Error> {
+        let sectors = self.get_sectors().await?;
         Ok(sectors.iter().any(|team| team.members.contains_key(user)))
     }
 
-    pub fn get_sectors(&self) -> Result<Vec<SectorGroup>, Error> {
-        let mut sectors: Vec<SectorGroup> = self.get_teams_result()?;
-        sectors.append(&mut self.get_repos_result()?);
+    pub async fn get_sectors(&self) -> Result<Vec<SectorGroup>, Error> {
+        let mut sectors: Vec<SectorGroup> = self.get_teams_result().await?;
+        sectors.append(&mut self.get_repos_result().await?);
         Ok(sectors)
     }
 
-    fn get_teams_result(&self) -> Result<Vec<SectorGroup>, Error> {
-        let gh_teams = self.get_team_map(&self.conf.org)?;
+    async fn get_teams_result(&self) -> Result<Vec<SectorGroup>, Error> {
+        let gh_teams = self.get_team_map(&self.conf.org).await?;
         let mut teams = Vec::new();
         for team_conf in &self.conf.team {
             if let Some(gh_team) = gh_teams.get(&team_conf.name) {
                 teams.push(SectorGroup { sector: Sector::from(gh_team.clone()),
                                          gid: team_conf.gid,
                                          group: team_conf.group.clone(),
-                                         members: self.get_team_members(gh_team.id)? });
+                                         members: self.get_team_members(gh_team.id).await? });
             }
         }
         Ok(teams)
     }
 
-    fn get_team_map(&self, org: &str) -> Result<HashMap<String, Team>, Error> {
+    async fn get_team_map(&self, org: &str) -> Result<HashMap<String, Team>, Error> {
         let url = format!("{}/orgs/{}/teams", self.conf.endpoint, org);
-        let contents = self.get_contents(&url)?;
+        let contents = self.get_contents(&url).await?;
         let teams = serde_json::from_str::<Vec<Team>>(&contents)?;
         Ok(teams.iter().map(|t| (t.name.clone(), t.clone())).collect())
     }
 
-    fn get_team_members(&self, mid: u64) -> Result<HashMap<String, Member>, Error> {
+    async fn get_team_members(&self, mid: u64) -> Result<HashMap<String, Member>, Error> {
         let url = format!("{}/teams/{}/members", self.conf.endpoint, mid);
-        let contents = self.get_contents(&url)?;
+        let contents = self.get_contents(&url).await?;
         let members = serde_json::from_str::<Vec<Member>>(&contents)?;
         Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
     }
 
-    fn get_repos_result(&self) -> Result<Vec<SectorGroup>, Error> {
-        let gh_repos = self.get_repo_map(&self.conf.org)?;
+    async fn get_repos_result(&self) -> Result<Vec<SectorGroup>, Error> {
+        let gh_repos = self.get_repo_map(&self.conf.org).await?;
         let mut repos = Vec::new();
         for repo_conf in &self.conf.repo {
             if let Some(gh_repo) = gh_repos.get(&repo_conf.name) {
                 repos.push(SectorGroup { sector: Sector::from(gh_repo.clone()),
                                          gid: repo_conf.gid,
                                          group: repo_conf.group.clone(),
-                                         members: self.get_repo_collaborators(&self.conf.org, &gh_repo.name)? });
+                                         members: self.get_repo_collaborators(&self.conf.org, &gh_repo.name)
+                                                      .await? });
             }
         }
         Ok(repos)
     }
 
-    fn get_repo_map(&self, org: &str) -> Result<HashMap<String, Repo>, Error> {
+    async fn get_repo_map(&self, org: &str) -> Result<HashMap<String, Repo>, Error> {
         let url = format!("{}/orgs/{}/repos", self.conf.endpoint, org);
-        let contents = self.get_contents(&url)?;
+        let contents = self.get_contents(&url).await?;
         let repos = serde_json::from_str::<Vec<Repo>>(&contents)?;
         Ok(repos.iter().map(|t| (t.name.clone(), t.clone())).collect())
     }
 
-    fn get_repo_collaborators(&self, org: &str, repo_name: &str) -> Result<HashMap<String, Member>, Error> {
+    async fn get_repo_collaborators(&self, org: &str, repo_name: &str) -> Result<HashMap<String, Member>, Error> {
         let url = format!("{}/repos/{}/{}/collaborators?affiliation=outside",
                           self.conf.endpoint, org, repo_name);
-        let contents = self.get_contents(&url)?;
+        let contents = self.get_contents(&url).await?;
         let members = serde_json::from_str::<Vec<Member>>(&contents)?;
         Ok(members.iter().map(|m| (m.login.clone(), m.clone())).collect())
     }
 
-    pub fn get_rate_limit(&self) -> Result<RateLimit, Error> {
+    pub async fn get_rate_limit(&self) -> Result<RateLimit, Error> {
         let url = format!("{}/rate_limit", self.conf.endpoint);
         let req = self.build_request(&url)?;
         let resp = futures::executor::block_on(self.run_request(req))?;
         Ok(serde_json::from_slice(&resp)?)
     }
 
-    pub fn clear_all_caches(&self) -> Result<(), Error> {
+    pub async fn clear_all_caches(&self) -> Result<(), Error> {
         let mut path = self.get_cache_path("");
         path.push("**/*");
         for entry in glob(&path.to_str().unwrap()).unwrap() {

@@ -1,4 +1,4 @@
-version: "3"
+version: '3'
 services:
   json-server:
     build: ./json-server
@@ -7,6 +7,8 @@ services:
     image: yasuyuky/ubuntu-ssh:latest
     restart: always
     privileged: true
+    ports:
+      - '2022:22'
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
   client:
