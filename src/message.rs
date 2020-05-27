@@ -57,6 +57,8 @@ pub enum DaemonMessage {
     },
     RateLimit {
         limit: usize,
+        remaining: usize,
+        reset: usize,
     },
     SectorGroups {
         sectors: Vec<structs::SectorGroup>,
@@ -138,7 +140,9 @@ impl fmt::Display for DaemonMessage {
             DaemonMessage::Success => write!(f, "d:success"),
             DaemonMessage::Key { keys } => write!(f, "d:key:{}", keys),
             DaemonMessage::Pam { result } => write!(f, "d:pam:{}", result),
-            DaemonMessage::RateLimit { limit } => write!(f, "d:ratelimit:{}", limit),
+            DaemonMessage::RateLimit { limit,
+                                       remaining,
+                                       reset, } => write!(f, "d:ratelimit:{}:{}:{}", limit, remaining, reset),
             DaemonMessage::SectorGroups { sectors } => {
                 let ss: Vec<String> = sectors.iter().map(|s| s.to_string()).collect();
                 write!(f, "d:sectors:{}", ss.join("\n"))
@@ -247,7 +251,20 @@ impl FromStr for DaemonMessage {
         } else if s == "d:success" {
             Ok(DaemonMessage::Success)
         } else if s.starts_with("d:ratelimit:") {
-            Ok(DaemonMessage::RateLimit { limit: s.get(12..).unwrap_or("0").parse::<usize>().unwrap_or(0) })
+            let fields: Vec<String> = s.get(12..)
+                                       .unwrap_or_default()
+                                       .split(':')
+                                       .map(|s| s.to_string())
+                                       .collect();
+            if fields.len() < 3 {
+                return Err(ParseMessageError::ParseDaemonMessageError);
+            }
+            let limit = fields[0].clone().parse().unwrap_or(0);
+            let remaining = fields[1].clone().parse().unwrap_or(0);
+            let reset = fields[2].clone().parse().unwrap_or(0);
+            Ok(DaemonMessage::RateLimit { limit,
+                                          remaining,
+                                          reset })
         } else if s.starts_with("d:sectors:") {
             let sectors = s.get(10..)
                            .unwrap_or_default()

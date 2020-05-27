@@ -102,8 +102,10 @@ fn main() -> Result<(), Error> {
             Err(_) => return Err(Error::new(ErrorKind::Other, "failed")),
         },
         Command::RateLimit => match conn.communicate(ClientMessage::RateLimit) {
-            Ok(DaemonMessage::RateLimit { limit }) => {
-                println!("{:?}", limit);
+            Ok(DaemonMessage::RateLimit { limit,
+                                          remaining,
+                                          reset, }) => {
+                println!("remaining: {}/{}, reset:{}", remaining, limit, reset);
             }
             _ => return Err(Error::new(ErrorKind::Other, "failed")),
         },
