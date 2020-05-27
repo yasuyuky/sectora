@@ -98,7 +98,9 @@ impl Daemon {
                 Err(_) => DaemonMessage::Error { message: String::from("clean up failed") },
             },
             ClientMessage::RateLimit => match self.client.get_rate_limit().await {
-                Ok(ratelimit) => DaemonMessage::RateLimit { limit: ratelimit.rate.limit },
+                Ok(rl) => DaemonMessage::RateLimit { limit: rl.rate.limit,
+                                                     remaining: rl.rate.remaining,
+                                                     reset: rl.rate.reset },
                 Err(_) => DaemonMessage::Error { message: String::from("clean up failed") },
             },
             ClientMessage::SectorGroups => match self.client.get_sectors().await {
