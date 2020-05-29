@@ -2,6 +2,7 @@ use crate::error::Error;
 use crate::structs::{Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
 use glob::glob;
 use hyper::body::HttpBody;
+use hyper::client::HttpConnector;
 use hyper::{header, Body, Client, Request};
 use hyper_tls::HttpsConnector;
 use std::collections::HashMap;
@@ -9,6 +10,7 @@ use std::fs::File;
 use std::io::prelude::*;
 
 pub struct GithubClient {
+    client: Client<HttpsConnector<HttpConnector>>,
     pub conf: Config,
 }
 
@@ -17,7 +19,9 @@ impl GithubClient {
         if std::env::var("SSL_CERT_FILE").is_err() {
             std::env::set_var("SSL_CERT_FILE", &config.cert_path);
         }
-        GithubClient { conf: config.clone() }
+        let client = Client::builder().build(HttpsConnector::new());
+        GithubClient { client,
+                       conf: config.clone() }
     }
 
     fn get_cache_path(&self, url: &str) -> std::path::PathBuf {
@@ -75,8 +79,7 @@ impl GithubClient {
     }
 
     async fn run_request(&self, req: Request<Body>) -> Result<Vec<u8>, Error> {
-        let client = Client::builder().build(HttpsConnector::new());
-        let mut resp = client.request(req).await?;
+        let mut resp = self.client.request(req).await?;
         let mut buff: Vec<u8> = Vec::new();
         while let Some(chunk) = resp.body_mut().data().await {
             buff.write_all(&chunk?)?;
