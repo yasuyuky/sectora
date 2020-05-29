@@ -67,10 +67,14 @@ impl Daemon {
     }
 
     async fn run(&mut self) -> Result<(), Error> {
+        let rl = self.client.get_rate_limit().await.expect("get rate limit");
+        log::info!("Rate Limit: {:?}", rl);
+        let sectors = self.client.get_sectors().await.expect("get sectors");
+        log::info!("{} sector[s] loaded", sectors.len());
         let socket = unix::net::UnixDatagram::bind(&self.socket_conf.socket_path)?;
         fs::set_permissions(&self.socket_conf.socket_path,
                             unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
-        log::debug!("Start running @ {}", &self.socket_conf.socket_path);
+        log::info!("Start running @ {}", &self.socket_conf.socket_path);
         loop {
             let mut buf = [0u8; 4096];
             let (recv_cnt, src) = socket.recv_from(&mut buf)?;
