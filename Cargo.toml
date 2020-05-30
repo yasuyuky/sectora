@@ -38,7 +38,7 @@ crate-type = ["cdylib"]
 
 [package.metadata.deb]
 maintainer = "Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"
-copyright = "2017-2019 Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"
+copyright = "2017-2020 Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"
 depends = "$auto, systemd, openssh-server"
 extended-description = """\
 **Sector A**uthentication
