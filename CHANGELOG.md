@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 
 ## [Unreleased]
 
+---
+
+## [Released]
+
+## [0.2.0] - 2020.05.30
+
 ### Added
 
 - Enhance rate limit information
@@ -18,10 +24,6 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 
 - Make http client reusable
 - Update some depnedencies
-
----
-
-## [Released]
 
 ## [0.1.0] - 2020.05.16
 
@@ -38,6 +40,7 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 
 <!-- Versions -->
 
-[unreleased]: https://github.com/yasuyuky/sectora/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/yasuyuky/sectora/compare/v0.2.0...HEAD
 [released]: https://github.com/yasuyuky/sectora/releases
+[0.2.0]: https://github.com/yasuyuky/sectora/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/yasuyuky/sectora/releases/v0.1.0
