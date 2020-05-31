@@ -8,6 +8,7 @@ extern crate libc;
 extern crate log;
 #[macro_use]
 extern crate serde;
+extern crate sd_notify;
 extern crate serde_json;
 extern crate structopt;
 extern crate syslog;
@@ -74,6 +75,7 @@ impl Daemon {
         let socket = unix::net::UnixDatagram::bind(&self.socket_conf.socket_path)?;
         fs::set_permissions(&self.socket_conf.socket_path,
                             unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
+        let _ = sd_notify::notify(true, &[sd_notify::NotifyState::Ready]);
         log::info!("Start running @ {}", &self.socket_conf.socket_path);
         loop {
             let mut buf = [0u8; 4096];
