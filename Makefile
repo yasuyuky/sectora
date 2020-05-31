@@ -18,6 +18,7 @@ ARM_BUILD_OPT= $(ARM_BUILD_VOL) $(COMMON_BUILD_OPT)
 DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
 ENTRIY_POINTS := src/main.rs src/daemon.rs src/lib.rs
 SRCS := $(filter-out $(ENTRIY_POINTS),$(wildcard src/*.rs))
+ASSETS := $(wildcard assets/*) $(wildcard assets/*/*)
 CARGO_FILES := Cargo.toml Cargo.lock rust-toolchain
 DOCKER_RUN=docker run --rm
 
@@ -57,7 +58,7 @@ $(X64_RELEASE_DIR)/sectorad: src/daemon.rs $(SRCS) $(CARGO_FILES)
 $(X64_RELEASE_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
 	$(DOCKER_RUN) $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo build --lib --release --target=$(X64_TARGET)
 
-$(X64_DEBIAN_DIR)/sectora_$(VERSION)_amd64.deb: src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES)
+$(X64_DEBIAN_DIR)/sectora_$(VERSION)_amd64.deb: src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES) $(ASSETS)
 	$(DOCKER_RUN) $(X64_BUILD_OPT) $(X64_BUILD_IMG) sh -c "cargo install cargo-deb --root .cargo && CARGO_HOME=.cargo cargo deb --target=$(X64_TARGET)"
 
 $(ARM_RELEASE_DIR)/sectora: src/main.rs $(SRCS) $(CARGO_FILES)
@@ -69,7 +70,7 @@ $(ARM_RELEASE_DIR)/sectorad: src/daemon.rs $(SRCS) $(CARGO_FILES)
 $(ARM_RELEASE_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
 	$(DOCKER_RUN) $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --lib --release --target=$(ARM_TARGET)
 
-$(ARM_DEBIAN_DIR)/sectora_$(VERSION)_armhf.deb: src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES)
+$(ARM_DEBIAN_DIR)/sectora_$(VERSION)_armhf.deb: src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES) $(ASSETS)
 	$(DOCKER_RUN) $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) sh -c "cargo install cargo-deb --root .cargo && CARGO_HOME=.cargo cargo deb --target=$(ARM_TARGET)"
 
 
