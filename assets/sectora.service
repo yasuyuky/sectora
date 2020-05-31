@@ -3,6 +3,7 @@ Description=Sectora Daemon
 After=network.target
 
 [Service]
+Type=notify
 ExecStart=/usr/sbin/sectorad
 # Environment=LOG_LEVEL=DEBUG
 # Environment=RUST_BACKTRACE=1
