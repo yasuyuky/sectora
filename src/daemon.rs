@@ -85,7 +85,10 @@ impl Daemon {
             let response = self.handle(&msgstr.parse::<ClientMessage>().expect("parse ClientMessage"))
                                .await;
             log::debug!("-> response: {}", response);
-            socket.send_to(&response.to_string().as_bytes(), src.as_pathname().expect("src"))?;
+            match socket.send_to(&response.to_string().as_bytes(), src.as_pathname().expect("src")) {
+                Ok(sendsize) => log::debug!("send: {}", sendsize),
+                Err(err) => log::warn!("failed to send back to the client {:?}:{}", src, err),
+            }
         }
     }
 
