@@ -9,7 +9,11 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 ### Added
 
 - Notify Systemd
-- Update rust version
+
+### Changed
+
+- Update the rust version
+- Handle the send-back error
 
 ---
 
