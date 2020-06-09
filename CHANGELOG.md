@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 
 - Update the rust version
 - Handle the send-back error
+- Update default AuthorizedKeysCommand style
 
 ---
 

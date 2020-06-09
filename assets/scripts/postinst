@@ -57,7 +57,7 @@ EOS
 
 ${settings_start}
 AuthorizedKeysCommandUser root
-AuthorizedKeysCommand /usr/sbin/sectora.sh
+AuthorizedKeysCommand /usr/sbin/sectora key %u
 UsePAM yes
 ${settings_end}
 
