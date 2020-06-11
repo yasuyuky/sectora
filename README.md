@@ -15,7 +15,7 @@ Implemented with Rust.
 
 ![how it works](how-it-works.svg)
 
-# How to Use
+# How to use
 
 1. Generate the ssh key pair and [upload the public key to GitHub](https://help.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account)
 
@@ -58,7 +58,7 @@ Put `libnss_sectora.so` to `/usr/lib/`.
 
 `ln -s /usr/lib/libnss_sectora.so /usr/lib/libnss_sectora.so.2`
 
-### Put config file for this program.
+### Put config file for this program
 
 The minimal setting is like as follows.
 
