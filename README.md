@@ -15,13 +15,15 @@ Implemented with Rust.
 
 ![how it works](how-it-works.svg)
 
-# How to Use
+# How to use
 
 1. Generate the ssh key pair and [upload the public key to GitHub](https://help.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account)
 
 2. Use [the deb file](https://github.com/yasuyuky/sectora/releases) to setup sectora to the server
 
-   - You need a developer token
+   - You need a developer token with the following scope
+     - read:org
+     - repo (optional)
 
 3. Log in to the server with your private key
 
@@ -56,7 +58,7 @@ Put `libnss_sectora.so` to `/usr/lib/`.
 
 `ln -s /usr/lib/libnss_sectora.so /usr/lib/libnss_sectora.so.2`
 
-### Put config file for this program.
+### Put config file for this program
 
 The minimal setting is like as follows.
 
