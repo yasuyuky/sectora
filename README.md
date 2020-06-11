@@ -21,7 +21,9 @@ Implemented with Rust.
 
 2. Use [the deb file](https://github.com/yasuyuky/sectora/releases) to setup sectora to the server
 
-   - You need a developer token
+   - You need a developer token with the following scope
+     - read:org
+     - repo (optional)
 
 3. Log in to the server with your private key
 
