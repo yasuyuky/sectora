@@ -17,12 +17,6 @@ jobs:
           date +'%Y.%m.%d'
           echo ::set-output name=date::$(date +'%Y.%m.%d')
 
-      - name: Get the Tag
-        id: get_tag
-        run: |
-          echo ${GITHUB_REF/refs\/tags\//}
-          echo ::set-output name=tag::${GITHUB_REF/refs\/tags\//}
-
       - name: Get the version in cargo
         id: cargo_ver
         run: |
@@ -30,6 +24,7 @@ jobs:
           echo ${VERSION}
           echo ::set-output name=version::${VERSION}
           echo ::set-output name=v::v${VERSION}
+          test ${GITHUB_REF/refs\/tags\//} = v${VERSION}
 
       - name: Create Release
         id: create_release
@@ -42,7 +37,6 @@ jobs:
           body: Automated release
           draft: false
           prerelease: false
-        if: steps.cargo_ver.outputs.v == steps.get_tag.outputs.tag
 
       - name: Build deb
         run: make deb
@@ -56,7 +50,6 @@ jobs:
           asset_path: target/x86_64-unknown-linux-gnu/debian/sectora_${{ steps.cargo_ver.outputs.version }}_amd64.deb
           asset_name: sectora_${{ steps.cargo_ver.outputs.version }}_amd64.deb
           asset_content_type: application/vnd.debian.binary-package
-        if: steps.cargo_ver.outputs.v == steps.get_tag.outputs.tag
 
       - name: Upload Release Asset arm
         uses: actions/upload-release-asset@v1
@@ -67,4 +60,3 @@ jobs:
           asset_path: target/arm-unknown-linux-gnueabihf/debian/sectora_${{ steps.cargo_ver.outputs.version }}_armhf.deb
           asset_name: sectora_${{ steps.cargo_ver.outputs.version }}_armhf.deb
           asset_content_type: application/vnd.debian.binary-package
-        if: steps.cargo_ver.outputs.v == steps.get_tag.outputs.tag
