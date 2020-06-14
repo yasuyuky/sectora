@@ -27,9 +27,22 @@ jobs:
           name: sectora-${{ matrix.arch }}
           path: ${{ github.workspace }}/target/*/debian/*.deb
 
-  test:
-    needs: build
+  set-dists:
     runs-on: ubuntu-latest
+    outputs:
+      dists: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          content=$(curl -L https://raw.githubusercontent.com/yasuyuky/docker-ssh-test/master/dist.json | jq -c .)
+          echo "::set-output name=matrix::${content}"
+          echo ${content}
+
+  test:
+    needs: [build, set-dists]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.set-dists.outputs.dists) }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
@@ -37,7 +50,7 @@ jobs:
           name: sectora-x64
           path: target
       - name: Run tests
-        run: make test-deb
+        run: make test-deb dist=${{ matrix.dist }} ver=${{ matrix.ver }}
         working-directory: test
         env:
           COMPOSE_INTERACTIVE_NO_CLI: 1
