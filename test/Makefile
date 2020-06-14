@@ -1,4 +1,6 @@
 VERSION=$(shell grep "^version" ../Cargo.toml | cut -f 2 -d '"')
+dist:=ubuntu
+ver:=bionic
 
 .PHONY: test-ansible test-deb up down reset
 
@@ -48,7 +50,8 @@ setup-client-ansible:
 	docker cp ../target/x86_64-unknown-linux-gnu/release `docker-compose ps -q client`:/work/release
 
 up:
-	docker-compose up -d --build
+	@echo '$(shell tput setaf 6)$(dist) $(shell tput setaf 3)$(ver)$(shell tput sgr 0)'
+	dist=$(dist) ver=$(ver) docker-compose up -d --build
 
 exec-login:
 	@echo '$(shell tput setaf 6)LOGIN TEST START$(shell tput sgr 0)'
@@ -58,7 +61,7 @@ exec-login:
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) ID $(shell tput sgr 0)'
 	@docker-compose exec -T client ssh hunter@host -i keys/user/id_rsa id
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) VERSION $(shell tput sgr 0)'
-	@docker-compose exec -T client ssh hunter@host -i keys/user/id_rsa sectora version
+	@docker-compose exec -T client ssh hunter@host -i keys/user/id_rsa /usr/sbin/sectora version
 	@echo '$(shell tput setaf 6)LOGIN TEST END$(shell tput sgr 0)'
 
 down:

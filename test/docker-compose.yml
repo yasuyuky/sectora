@@ -4,7 +4,7 @@ services:
     build: ./json-server
     command: json-server --watch db.json --host 0.0.0.0 --routes routes.json
   host:
-    image: yasuyuky/ubuntu-ssh:latest
+    image: yasuyuky/ssh-test:${dist}.${ver}
     restart: always
     privileged: true
     ports:
