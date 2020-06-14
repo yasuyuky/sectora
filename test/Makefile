@@ -58,7 +58,7 @@ exec-login:
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) ID $(shell tput sgr 0)'
 	@docker-compose exec -T client ssh hunter@host -i keys/user/id_rsa id
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) VERSION $(shell tput sgr 0)'
-	@docker-compose exec -T client ssh hunter@host -i keys/user/id_rsa sectora version
+	@docker-compose exec -T client ssh hunter@host -i keys/user/id_rsa /usr/sbin/sectora version
 	@echo '$(shell tput setaf 6)LOGIN TEST END$(shell tput sgr 0)'
 
 down:
