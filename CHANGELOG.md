@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 
 ## [Unreleased]
 
+---
+
+## [Released]
+
+## [0.3.0] - 2020-06-16
+
 ### Added
 
 - Notify Systemd
@@ -15,10 +21,7 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 - Update the rust version
 - Handle the send-back error
 - Update default AuthorizedKeysCommand style
-
----
-
-## [Released]
+- Update depnedencies
 
 ## [0.2.0] - 2020.05.30
 
@@ -50,7 +53,8 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 
 <!-- Versions -->
 
-[unreleased]: https://github.com/yasuyuky/sectora/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/yasuyuky/sectora/compare/v0.3.0...HEAD
 [released]: https://github.com/yasuyuky/sectora/releases
+[0.3.0]: https://github.com/yasuyuky/sectora/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/yasuyuky/sectora/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/yasuyuky/sectora/releases/v0.1.0
