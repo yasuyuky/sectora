@@ -32,9 +32,7 @@ if [ "$1" = "configure" ] && [ -e /usr/share/debconf/confmodule ]; then
         echo "Appending settings...(Please restore configs from *.backup files when you get some error)"
 
         # setup nssswitch
-        check_config /etc/nsswitch.conf
-        nss_res=$?
-        if [ $nss_res -eq 0 ]; then
+        if check_config /etc/nsswitch.conf; then
             cp /etc/nsswitch.conf /etc/nsswitch.conf.backup
             cat <<EOS >>/etc/nsswitch.conf
 
@@ -48,9 +46,7 @@ EOS
         fi
 
         # setup sshd_config
-        check_config /etc/ssh/sshd_config
-        sshd_res=$?
-        if [ $sshd_res -eq 0 ]; then
+        if check_config /etc/ssh/sshd_config; then
             cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
             sed -i -e "s/^UsePAM/#UsePAM/" /etc/ssh/sshd_config
             cat <<EOS >>/etc/ssh/sshd_config
@@ -65,9 +61,7 @@ EOS
         fi
 
         # setup pam
-        check_config /etc/pam.d/sshd
-        pam_res=$?
-        if [ $pam_res -eq 0 ]; then
+        if check_config /etc/pam.d/sshd; then
             if [ -e /etc/pam.d/sshd ]; then
                 cp /etc/pam.d/sshd /etc/pam.d/sshd.backup
             fi
