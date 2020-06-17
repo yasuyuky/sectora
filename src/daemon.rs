@@ -72,7 +72,9 @@ impl Daemon {
         log::info!("Rate Limit: {:?}", rl);
         let sectors = self.client.get_sectors().await.expect("get sectors");
         log::info!("{} sector[s] loaded", sectors.len());
-        std::fs::remove_file(&self.socket_conf.socket_path)?;
+        if fs::metadata(&self.socket_conf.socket_path).is_ok() {
+            std::fs::remove_file(&self.socket_conf.socket_path)?;
+        }
         let socket = unix::net::UnixDatagram::bind(&self.socket_conf.socket_path)?;
         fs::set_permissions(&self.socket_conf.socket_path,
                             unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
