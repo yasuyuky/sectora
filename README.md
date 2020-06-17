@@ -146,7 +146,7 @@ Add the following lines to `/etc/pam.d/sshd`.
 ```
 account requisite pam_exec.so quiet /usr/sbin/sectora pam
 auth optional pam_unix.so not_set_pass use_first_pass nodelay
-session required pam_mkhomedir.so skel: /etc/skel/ umask: 0022
+session required pam_mkhomedir.so skel=/etc/skel/ umask=0022
 ```
 
 Also, comment out the following line.
