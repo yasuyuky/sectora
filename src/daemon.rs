@@ -51,7 +51,7 @@ struct Daemon {
 impl Drop for Daemon {
     fn drop(&mut self) {
         log::debug!("Drop daemon");
-        fs::remove_file(&self.socket_conf.socket_path).expect("remove socket");
+        let _ = fs::remove_file(&self.socket_conf.socket_path);
     }
 }
 
