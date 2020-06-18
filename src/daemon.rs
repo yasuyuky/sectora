@@ -44,6 +44,7 @@ async fn main() {
 struct Daemon {
     client: GithubClient,
     socket_conf: SocketConfig,
+    socket: unix::net::UnixDatagram,
     msg_cache: HashMap<u32, VecDeque<DaemonMessage>>,
 }
 
@@ -60,10 +61,17 @@ impl Daemon {
         let socket_conf = SocketConfig::new();
         fs::create_dir_all(&socket_conf.socket_dir).expect("create socket dir");
         fs::set_permissions(&socket_conf.socket_dir, unix::fs::PermissionsExt::from_mode(0o777)).unwrap_or_default();
+        if fs::metadata(&socket_conf.socket_path).is_ok() {
+            std::fs::remove_file(&socket_conf.socket_path).expect("remove socket before bind");
+        }
+        let socket = unix::net::UnixDatagram::bind(&socket_conf.socket_path).expect("bind socket");
+        fs::set_permissions(&socket_conf.socket_path,
+                            unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
         let client = GithubClient::new(&config);
         log::debug!("Initialised");
         Daemon { client,
                  socket_conf,
+                 socket,
                  msg_cache: HashMap::new() }
     }
 
@@ -72,20 +80,17 @@ impl Daemon {
         log::info!("Rate Limit: {:?}", rl);
         let sectors = self.client.get_sectors().await.expect("get sectors");
         log::info!("{} sector[s] loaded", sectors.len());
-        let socket = unix::net::UnixDatagram::bind(&self.socket_conf.socket_path)?;
-        fs::set_permissions(&self.socket_conf.socket_path,
-                            unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
         let _ = sd_notify::notify(true, &[sd_notify::NotifyState::Ready]);
         log::info!("Start running @ {}", &self.socket_conf.socket_path);
         loop {
             let mut buf = [0u8; 4096];
-            let (recv_cnt, src) = socket.recv_from(&mut buf)?;
+            let (recv_cnt, src) = self.socket.recv_from(&mut buf)?;
             let msgstr = String::from_utf8(buf[..recv_cnt].to_vec()).expect("decode msg str");
             log::debug!("recv: {}, src:{:?}", msgstr, src);
             let response = self.handle(&msgstr.parse::<ClientMessage>().expect("parse ClientMessage"))
                                .await;
             log::debug!("-> response: {}", response);
-            match socket.send_to(&response.to_string().as_bytes(), src.as_pathname().expect("src")) {
+            match self.socket.send_to(&response.to_string().as_bytes(), src.as_pathname().expect("src")) {
                 Ok(sendsize) => log::debug!("send: {}", sendsize),
                 Err(err) => log::warn!("failed to send back to the client {:?}:{}", src, err),
             }
