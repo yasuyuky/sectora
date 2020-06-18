@@ -47,5 +47,7 @@ impl Connection {
 }
 
 impl Drop for Connection {
-    fn drop(&mut self) { std::fs::remove_file(&Self::socket_path(&self.conf)).unwrap_or_default(); }
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&Self::socket_path(&self.conf));
+    }
 }
