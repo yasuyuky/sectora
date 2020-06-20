@@ -3,8 +3,10 @@ name = "sectora"
 version = "0.3.0"
 authors = ["Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"]
 build = "build.rs"
+description = "SSH authentication with the GitHub team and repo"
 edition = "2018"
-license-file = "LICENSE.md"
+license = "MIT"
+readme = "README.md"
 
 [dependencies]
 futures = "0.3"
