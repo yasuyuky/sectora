@@ -6,6 +6,7 @@ build = "build.rs"
 description = "SSH authentication with the GitHub team and repo"
 edition = "2018"
 license = "MIT"
+readme = "README.md"
 
 [dependencies]
 futures = "0.3"
