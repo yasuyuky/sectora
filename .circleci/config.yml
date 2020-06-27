@@ -2,14 +2,14 @@ version: 2
 
 constants:
   image-rust-x64: &image-rust-x64
-    image: rust:1.44.0-stretch
+    image: rust:1.44.1-stretch
     environment:
       OPENSSL_STATIC: yes
       OPENSSL_LIB_DIR: /usr/lib/x86_64-linux-gnu/
       OPENSSL_INCLUDE_DIR: /usr/include
 
   image-rust-arm: &image-rust-arm
-    image: yasuyuky/rust-arm:1.44.0
+    image: yasuyuky/rust-arm:1.44.1
 
   image-test: &image-test
     image: docker/compose:1.25.5
