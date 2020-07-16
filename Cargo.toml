@@ -20,7 +20,7 @@ nix = "0.17"
 hyper = "0.13"
 hyper-tls = "0.4"
 structopt = "0.3"
-log = "0.4.8"
+log = "0.4.11"
 syslog = "5.0"
 tokio = { version = "0.2", features = [ "macros", "rt-core", "rt-threaded"] }
 sd-notify = "0.1.1"
