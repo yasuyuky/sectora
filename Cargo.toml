@@ -51,13 +51,13 @@ Implemented with Rust."""
 section = "admin"
 priority = "optional"
 assets = [
-    ["target/release/sectora", "/usr/sbin/", "755"],
-    ["target/release/sectorad", "/usr/sbin/", "755"],
-    ["target/release/libnss_sectora.so", "/usr/lib/libnss_sectora.so", "644"],
-    ["target/release/libnss_sectora.so", "/usr/lib/libnss_sectora.so.2", "644"],
-    ["assets/conf-files/sectora.conf", "/etc/sectora.conf", "644"],
-    ["assets/sectora.sh", "/usr/sbin/", "755"],
-    ["assets/sectora.service", "/etc/systemd/system/", "644"],
+    ["target/release/sectora", "usr/sbin/", "755"],
+    ["target/release/sectorad", "usr/sbin/", "755"],
+    ["target/release/libnss_sectora.so", "usr/lib/libnss_sectora.so", "644"],
+    ["target/release/libnss_sectora.so", "usr/lib/libnss_sectora.so.2", "644"],
+    ["assets/conf-files/sectora.conf", "etc/sectora.conf", "644"],
+    ["assets/sectora.sh", "usr/sbin/", "755"],
+    ["assets/sectora.service", "etc/systemd/system/", "644"],
 ]
 conf-files = [
     "etc/sectora.conf",
