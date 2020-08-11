@@ -60,6 +60,6 @@ assets = [
     ["assets/sectora.service", "etc/systemd/system/", "644"],
 ]
 conf-files = [
-    "etc/sectora.conf",
+    "/etc/sectora.conf",
 ]
 maintainer-scripts = "assets/scripts"
