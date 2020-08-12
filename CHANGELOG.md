@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 ### Changed
 
 - Tweak PAM settings
+- Update depnedencies
 
 ### Fixed
 
