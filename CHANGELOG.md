@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 
 - Tweak PAM settings
 
+### Fixed
+
+- Use the abusolute path for conffiles
+
 ---
 
 ## [Released]
