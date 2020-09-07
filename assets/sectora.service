@@ -1,6 +1,6 @@
 [Unit]
 Description=Sectora Daemon
-After=network.target
+After=network-online.target
 
 [Service]
 Type=notify
@@ -13,3 +13,4 @@ StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
+Requires=network-online.target
