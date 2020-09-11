@@ -1,6 +1,6 @@
 [package]
 name = "sectora"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"]
 build = "build.rs"
 description = "SSH authentication with the GitHub team and repo"
