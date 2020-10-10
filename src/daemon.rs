@@ -65,8 +65,7 @@ impl Daemon {
             std::fs::remove_file(&socket_conf.socket_path).expect("remove socket before bind");
         }
         let socket = unix::net::UnixDatagram::bind(&socket_conf.socket_path).expect("bind socket");
-        fs::set_permissions(&socket_conf.socket_path,
-                            unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
+        fs::set_permissions(&socket_conf.socket_path, unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
         let client = GithubClient::new(&config);
         log::debug!("Initialised");
         Daemon { client,
@@ -90,7 +89,9 @@ impl Daemon {
             let response = self.handle(&msgstr.parse::<ClientMessage>().expect("parse ClientMessage"))
                                .await;
             log::debug!("-> response: {}", response);
-            match self.socket.send_to(&response.to_string().as_bytes(), src.as_pathname().expect("src")) {
+            match self.socket
+                      .send_to(&response.to_string().as_bytes(), src.as_pathname().expect("src"))
+            {
                 Ok(sendsize) => log::debug!("send: {}", sendsize),
                 Err(err) => log::warn!("failed to send back to the client {:?}:{}", src, err),
             }
