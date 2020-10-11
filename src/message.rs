@@ -30,6 +30,11 @@ pub enum Ent {
     End(u32),
 }
 
+pub struct DividedMessage {
+    pub cont: bool,
+    pub message: String,
+}
+
 #[derive(Debug)]
 pub enum ClientMessage {
     Key { user: String },
