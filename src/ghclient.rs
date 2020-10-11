@@ -112,11 +112,11 @@ impl GithubClient {
         }
     }
 
-    pub async fn get_user_public_key(&self, user: &str) -> Result<String, Error> {
+    pub async fn get_user_public_keys(&self, user: &str) -> Result<Vec<String>, Error> {
         let url = format!("{}/users/{}/keys", self.conf.endpoint, user);
         let contents = self.get_contents(&url).await?;
         let keys = serde_json::from_str::<Vec<PublicKey>>(&contents)?;
-        Ok(keys.iter().map(|k| k.key.clone()).collect::<Vec<_>>().join("\n"))
+        Ok(keys.iter().map(|k| k.key.clone()).collect())
     }
 
     pub async fn check_pam(&self, user: &str) -> Result<bool, Error> {

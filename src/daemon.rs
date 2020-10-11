@@ -100,8 +100,8 @@ impl Daemon {
 
     async fn handle(&mut self, msg: &ClientMessage) -> DaemonMessage {
         match msg {
-            ClientMessage::Key { user } => match self.client.get_user_public_key(&user).await {
-                Ok(keys) => DaemonMessage::Key { keys },
+            ClientMessage::Key { user } => match self.client.get_user_public_keys(&user).await {
+                Ok(keys) => DaemonMessage::Key { keys: keys.join("\n") },
                 Err(_) => DaemonMessage::Error { message: String::from("get key failed") },
             },
             ClientMessage::Pam { user } => match self.client.check_pam(&user).await {
