@@ -64,6 +64,16 @@ enum Shell {
     Elvish,
 }
 
+fn show_keys(conn: &connection::Connection, user: &str) -> Result<(), Error> {
+    match conn.communicate(ClientMessage::Key { user: user.to_owned() }) {
+        Ok(DaemonMessage::Key { keys }) => {
+            println!("{}", keys);
+            return Ok(());
+        }
+        _ => return Err(Error::new(ErrorKind::PermissionDenied, "key check failed")),
+    }
+}
+
 fn main() -> Result<(), Error> {
     let command = Command::from_args();
     let conn = match connection::Connection::new(&format!("{:?}", command)) {
@@ -77,13 +87,7 @@ fn main() -> Result<(), Error> {
             Ok(_) => return Ok(()),
             Err(_) => return Err(Error::new(ErrorKind::Other, "check failed")),
         },
-        Command::Key { user } => match conn.communicate(ClientMessage::Key { user }) {
-            Ok(DaemonMessage::Key { keys }) => {
-                println!("{}", keys);
-                return Ok(());
-            }
-            _ => return Err(Error::new(ErrorKind::PermissionDenied, "key check failed")),
-        },
+        Command::Key { user } => show_keys(&conn, &user)?,
         Command::Pam => match env::var("PAM_USER") {
             Ok(user) => match conn.communicate(ClientMessage::Pam { user }) {
                 Ok(DaemonMessage::Pam { result }) => {
