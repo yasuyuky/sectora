@@ -89,11 +89,26 @@ impl Daemon {
             let response = self.handle(&msgstr.parse::<ClientMessage>().expect("parse ClientMessage"))
                                .await;
             log::debug!("-> response: {}", response);
-            match self.socket
-                      .send_to(&response.to_string().as_bytes(), src.as_pathname().expect("src"))
-            {
-                Ok(sendsize) => log::debug!("send: {}", sendsize),
-                Err(err) => log::warn!("failed to send back to the client {:?}:{}", src, err),
+
+            let msg = response.to_string();
+            let msgs = message::DividedMessage::new(&msg, 1024);
+            let src_path = src.as_pathname().expect("src");
+            for (i, dividedmsg) in msgs.iter().enumerate() {
+                match self.socket.send_to(dividedmsg.to_string().as_bytes(), src_path) {
+                    Ok(sendsize) => log::debug!("send: {}", sendsize),
+                    Err(err) => log::warn!("failed to send back to the client {:?}:{}", src, err),
+                }
+                if i != msgs.len() - 1 {
+                    let mut buf = [0u8; 4096];
+                    let (recv_cnt, _) = self.socket.recv_from(&mut buf)?;
+                    let msgstr = String::from_utf8(buf[..recv_cnt].to_vec()).expect("decode msg str");
+                    match self.handle(&msgstr.parse::<ClientMessage>().expect("parse ClientMessage"))
+                              .await
+                    {
+                        DaemonMessage::Success => continue,
+                        _ => break,
+                    }
+                }
             }
         }
     }
@@ -125,6 +140,7 @@ impl Daemon {
             ClientMessage::Pw(pw) => self.handle_pw(pw).await,
             ClientMessage::Sp(sp) => self.handle_sp(sp).await,
             ClientMessage::Gr(gr) => self.handle_gr(gr).await,
+            ClientMessage::Cont => DaemonMessage::Success,
         }
     }
 

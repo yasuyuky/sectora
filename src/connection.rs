@@ -32,17 +32,21 @@ impl Connection {
 
     pub fn communicate(&self, msg: ClientMessage) -> Result<DaemonMessage, error::Error> {
         self.conn.send(msg.to_string().as_bytes())?;
+        let mut msgstr = String::new();
         let mut buf = [0u8; 4096];
-        let recv_cnt = match self.conn.recv(&mut buf) {
-            Ok(cnt) => cnt,
-            Err(e) => {
-                log::debug!("ERROR: failed to recv msg, {}", e);
-                return Err(error::Error::from(e));
+        while let Ok(cnt) = self.conn.recv(&mut buf) {
+            log::debug!("msg cnt, {}", cnt);
+            let msg = String::from_utf8(buf[..cnt].to_vec()).unwrap()
+                                                            .parse::<DividedMessage>()?;
+            msgstr.push_str(&msg.message);
+            if msg.cont {
+                let _ = self.conn.send(ClientMessage::Cont.to_string().as_bytes())?;
+            } else {
+                break;
             }
-        };
-        let s = String::from_utf8(buf[..recv_cnt].to_vec()).unwrap();
-        log::debug!("recieved: {}", s);
-        Ok(s.parse::<DaemonMessage>()?)
+        }
+        log::debug!("recieved: {}", msgstr);
+        Ok(msgstr.parse::<DaemonMessage>()?)
     }
 }
 
