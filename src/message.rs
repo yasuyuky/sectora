@@ -30,8 +30,51 @@ pub enum Ent {
     End(u32),
 }
 
+pub struct DividedMessage {
+    pub cont: bool,
+    pub message: String,
+}
+
+impl DividedMessage {
+    #[allow(dead_code)]
+    pub fn new(msg: &str, size: usize) -> Vec<Self> {
+        let mut msgs = vec![];
+        let mut idx = 0;
+        while idx + size < msg.len() {
+            msgs.push(Self { cont: true,
+                             message: msg[idx..idx + size].to_owned() });
+            idx += size
+        }
+        msgs.push(Self { cont: false,
+                         message: msg[idx..msg.len()].to_owned() });
+        msgs
+    }
+}
+
+impl fmt::Display for DividedMessage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{}", if self.cont { 1 } else { 0 }, self.message)
+    }
+}
+
+impl FromStr for DividedMessage {
+    type Err = ParseMessageError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.starts_with("0:") {
+            Ok(Self { cont: false,
+                      message: s[2..].to_owned() })
+        } else if s.starts_with("1:") {
+            Ok(Self { cont: true,
+                      message: s[2..].to_owned() })
+        } else {
+            Err(ParseMessageError::ParseClientMessageError)
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum ClientMessage {
+    Cont,
     Key { user: String },
     Pam { user: String },
     CleanUp,
@@ -121,6 +164,7 @@ impl fmt::Display for Gr {
 impl fmt::Display for ClientMessage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            ClientMessage::Cont => write!(f, "c:cont"),
             ClientMessage::Key { user } => write!(f, "c:key:{}", user),
             ClientMessage::Pam { user } => write!(f, "c:pam:{}", user),
             ClientMessage::CleanUp => write!(f, "c:cleanup"),
@@ -219,7 +263,9 @@ impl FromStr for Gr {
 impl FromStr for ClientMessage {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("c:key:") {
+        if s.starts_with("c:cont") {
+            Ok(ClientMessage::Cont)
+        } else if s.starts_with("c:key:") {
             Ok(ClientMessage::Key { user: String::from(s.get(6..).unwrap_or_default()) })
         } else if s.starts_with("c:pam:") {
             Ok(ClientMessage::Pam { user: String::from(s.get(6..).unwrap_or_default()) })
