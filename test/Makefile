@@ -26,8 +26,8 @@ setup-ansible:
 
 setup-host-root:
 	docker cp ./keys/root/id_rsa.pub `docker-compose ps -q host`:/root/.ssh/authorized_keys
-	docker-compose exec host chown root:root /root/.ssh/authorized_keys
-	docker-compose exec host chmod 600 /root/.ssh/authorized_keys
+	docker-compose exec host chown -R root:root /root/.ssh/
+	docker-compose exec host chmod -R 600 /root/.ssh/
 
 setup-client-key:
 	docker cp ./keys `docker-compose ps -q client`:/work/keys
