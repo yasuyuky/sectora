@@ -34,7 +34,7 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          content=$(curl -L https://raw.githubusercontent.com/yasuyuky/docker-ssh-test/master/dist.json | jq -c .)
+          content=$(curl -L https://raw.githubusercontent.com/yasuyuky/docker-ssh-test/main/dist.json | jq -c .)
           echo "::set-output name=matrix::${content}"
           echo ${content}
 
