@@ -1,5 +1,4 @@
 Template: sectora/init_config
 Type: boolean
 Default: true
-Description: Do you want to append the sectora settings ?
-
+Description: Do you want to append the sectora settings?
