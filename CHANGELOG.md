@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 
 ## [Unreleased]
 
+### Changed
+
+- tokio 1.0
+
 ---
 
 ## [Released]
