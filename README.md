@@ -31,7 +31,7 @@ Implemented with Rust.
 
 ## How to build manually
 
-See [Makefile](https://github.com/yasuyuky/sectora/blob/master/Makefile) for details
+See [Makefile](https://github.com/yasuyuky/sectora/blob/main/Makefile) for details
 
 ## How to install and setup manually
 
@@ -42,7 +42,7 @@ See [Makefile](https://github.com/yasuyuky/sectora/blob/master/Makefile) for det
 5. Configure sshd
 6. Configure PAM (Optional)
 
-[A setting example of ansible is available](https://github.com/yasuyuky/sectora/blob/master/ansible/)
+[A setting example of ansible is available](https://github.com/yasuyuky/sectora/blob/main/ansible/)
 
 ### Copy the executable file and shared object to each path
 
