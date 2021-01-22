@@ -6,13 +6,27 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 
 ## [Unreleased]
 
-### Changed
-
-- tokio 1.0
-
 ---
 
 ## [Released]
+
+## [0.4.0] - 2021-01-22
+
+### Changed
+
+- Update dependencies
+- Use tokio 1.0
+- Allow long messages
+
+### Fixed
+
+- fix unknown key name issue #356
+
+## [0.3.2] - 2020-09-12
+
+### Changed
+
+- Update dependencies
 
 ## [0.3.1] - 2020-08-12
 
@@ -68,9 +82,11 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 
 <!-- Versions -->
 
-[unreleased]: https://github.com/yasuyuky/sectora/compare/v0.3.0...HEAD
+[unreleased]: https://github.com/yasuyuky/sectora/compare/v0.4.0...HEAD
 [released]: https://github.com/yasuyuky/sectora/releases
-[0.3.0]: https://github.com/yasuyuky/sectora/compare/v0.3.0...v0.3.1
+[0.4.0]: https://github.com/yasuyuky/sectora/compare/v0.3.2...v0.4.0
+[0.3.2]: https://github.com/yasuyuky/sectora/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/yasuyuky/sectora/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/yasuyuky/sectora/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/yasuyuky/sectora/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/yasuyuky/sectora/releases/v0.1.0

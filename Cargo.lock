@@ -644,7 +644,7 @@ checksum = "aef40838bbb143707f8309b1e92e6ba3225287592968ba6f6e3b6de4a9816486"
 
 [[package]]
 name = "sectora"
-version = "0.3.2"
+version = "0.4.0"
 dependencies = [
  "futures",
  "glob",
