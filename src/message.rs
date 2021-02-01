@@ -60,12 +60,12 @@ impl fmt::Display for DividedMessage {
 impl FromStr for DividedMessage {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("0:") {
+        if let Some(msg) = s.strip_prefix("0:") {
             Ok(Self { cont: false,
-                      message: s[2..].to_owned() })
-        } else if s.starts_with("1:") {
+                      message: msg.to_owned() })
+        } else if let Some(msg) = s.strip_prefix("1:") {
             Ok(Self { cont: true,
-                      message: s[2..].to_owned() })
+                      message: msg.to_owned() })
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
@@ -205,12 +205,12 @@ impl fmt::Display for DaemonMessage {
 impl FromStr for Ent {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("set|") {
-            Ok(Ent::Set(s.get(4..).unwrap_or_default().parse::<u32>().unwrap()))
-        } else if s.starts_with("get|") {
-            Ok(Ent::Get(s.get(4..).unwrap_or_default().parse::<u32>().unwrap()))
-        } else if s.starts_with("end|") {
-            Ok(Ent::End(s.get(4..).unwrap_or_default().parse::<u32>().unwrap()))
+        if let Some(msg) = s.strip_prefix("set|") {
+            Ok(Ent::Set(msg.parse::<u32>().unwrap()))
+        } else if let Some(msg) = s.strip_prefix("get|") {
+            Ok(Ent::Get(msg.parse::<u32>().unwrap()))
+        } else if let Some(msg) = s.strip_prefix("end|") {
+            Ok(Ent::End(msg.parse::<u32>().unwrap()))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
@@ -220,12 +220,12 @@ impl FromStr for Ent {
 impl FromStr for Pw {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("uid=") {
-            Ok(Pw::Uid(s.get(4..).unwrap_or_default().parse::<u64>().unwrap()))
-        } else if s.starts_with("name=") {
-            Ok(Pw::Nam(String::from(s.get(5..).unwrap_or_default())))
-        } else if s.starts_with("ent=") {
-            Ok(Pw::Ent(s.get(4..).unwrap_or_default().parse::<Ent>().unwrap()))
+        if let Some(msg) = s.strip_prefix("uid=") {
+            Ok(Pw::Uid(msg.parse::<u64>().unwrap()))
+        } else if let Some(msg) = s.strip_prefix("name=") {
+            Ok(Pw::Nam(String::from(msg)))
+        } else if let Some(msg) = s.strip_prefix("ent=") {
+            Ok(Pw::Ent(msg.parse::<Ent>().unwrap()))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
@@ -235,10 +235,10 @@ impl FromStr for Pw {
 impl FromStr for Sp {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("name=") {
-            Ok(Sp::Nam(String::from(s.get(5..).unwrap_or_default())))
-        } else if s.starts_with("ent=") {
-            Ok(Sp::Ent(s.get(4..).unwrap_or_default().parse::<Ent>().unwrap()))
+        if let Some(msg) = s.strip_prefix("name=") {
+            Ok(Sp::Nam(String::from(msg)))
+        } else if let Some(msg) = s.strip_prefix("ent=") {
+            Ok(Sp::Ent(msg.parse::<Ent>().unwrap()))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
@@ -248,12 +248,12 @@ impl FromStr for Sp {
 impl FromStr for Gr {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("gid=") {
-            Ok(Gr::Gid(s.get(4..).unwrap_or_default().parse::<u64>().unwrap()))
-        } else if s.starts_with("name=") {
-            Ok(Gr::Nam(String::from(s.get(5..).unwrap_or_default())))
-        } else if s.starts_with("ent=") {
-            Ok(Gr::Ent(s.get(4..).unwrap_or_default().parse::<Ent>().unwrap()))
+        if let Some(msg) = s.strip_prefix("gid=") {
+            Ok(Gr::Gid(msg.parse::<u64>().unwrap()))
+        } else if let Some(msg) = s.strip_prefix("name=") {
+            Ok(Gr::Nam(String::from(msg)))
+        } else if let Some(msg) = s.strip_prefix("ent=") {
+            Ok(Gr::Ent(msg.parse::<Ent>().unwrap()))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
@@ -263,24 +263,24 @@ impl FromStr for Gr {
 impl FromStr for ClientMessage {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("c:cont") {
+        if let Some(_) = s.strip_prefix("c:cont") {
             Ok(ClientMessage::Cont)
-        } else if s.starts_with("c:key:") {
-            Ok(ClientMessage::Key { user: String::from(s.get(6..).unwrap_or_default()) })
-        } else if s.starts_with("c:pam:") {
-            Ok(ClientMessage::Pam { user: String::from(s.get(6..).unwrap_or_default()) })
+        } else if let Some(msg) = s.strip_prefix("c:key:") {
+            Ok(ClientMessage::Key { user: String::from(msg) })
+        } else if let Some(msg) = s.strip_prefix("c:pam:") {
+            Ok(ClientMessage::Pam { user: String::from(msg) })
         } else if s == "c:cleanup" {
             Ok(ClientMessage::CleanUp)
         } else if s == "c:ratelimit" {
             Ok(ClientMessage::RateLimit)
         } else if s == "c:sectors" {
             Ok(ClientMessage::SectorGroups)
-        } else if s.starts_with("c:pw:") {
-            Ok(ClientMessage::Pw(s.get(5..).unwrap_or_default().parse::<Pw>()?))
-        } else if s.starts_with("c:sp:") {
-            Ok(ClientMessage::Sp(s.get(5..).unwrap_or_default().parse::<Sp>()?))
-        } else if s.starts_with("c:gr:") {
-            Ok(ClientMessage::Gr(s.get(5..).unwrap_or_default().parse::<Gr>()?))
+        } else if let Some(msg) = s.strip_prefix("c:pw:") {
+            Ok(ClientMessage::Pw(msg.parse::<Pw>()?))
+        } else if let Some(msg) = s.strip_prefix("c:sp:") {
+            Ok(ClientMessage::Sp(msg.parse::<Sp>()?))
+        } else if let Some(msg) = s.strip_prefix("c:gr:") {
+            Ok(ClientMessage::Gr(msg.parse::<Gr>()?))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
@@ -290,18 +290,14 @@ impl FromStr for ClientMessage {
 impl FromStr for DaemonMessage {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("d:key:") {
-            Ok(DaemonMessage::Key { keys: String::from(s.get(6..).unwrap_or_default()) })
-        } else if s.starts_with("d:pam:") {
-            Ok(DaemonMessage::Pam { result: FromStr::from_str(s.get(6..).unwrap_or("false")).unwrap_or(false) })
+        if let Some(msg) = s.strip_prefix("d:key:") {
+            Ok(DaemonMessage::Key { keys: String::from(msg) })
+        } else if let Some(msg) = s.strip_prefix("d:pam:") {
+            Ok(DaemonMessage::Pam { result: FromStr::from_str(msg).unwrap_or(false) })
         } else if s == "d:success" {
             Ok(DaemonMessage::Success)
-        } else if s.starts_with("d:ratelimit:") {
-            let fields: Vec<String> = s.get(12..)
-                                       .unwrap_or_default()
-                                       .split(':')
-                                       .map(|s| s.to_string())
-                                       .collect();
+        } else if let Some(msg) = s.strip_prefix("d:ratelimit:") {
+            let fields: Vec<String> = msg.split(':').map(|s| s.to_string()).collect();
             if fields.len() < 3 {
                 return Err(ParseMessageError::ParseDaemonMessageError);
             }
@@ -311,19 +307,13 @@ impl FromStr for DaemonMessage {
             Ok(DaemonMessage::RateLimit { limit,
                                           remaining,
                                           reset })
-        } else if s.starts_with("d:sectors:") {
-            let sectors = s.get(10..)
-                           .unwrap_or_default()
-                           .split('\n')
-                           .filter_map(|l| l.parse::<structs::SectorGroup>().ok())
-                           .collect();
+        } else if let Some(msg) = s.strip_prefix("d:sectors:") {
+            let sectors = msg.split('\n')
+                             .filter_map(|l| l.parse::<structs::SectorGroup>().ok())
+                             .collect();
             Ok(DaemonMessage::SectorGroups { sectors })
-        } else if s.starts_with("d:pw:") {
-            let fields: Vec<String> = s.get(5..)
-                                       .unwrap_or_default()
-                                       .split(':')
-                                       .map(|s| s.to_string())
-                                       .collect();
+        } else if let Some(msg) = s.strip_prefix("d:pw:") {
+            let fields: Vec<String> = msg.split(':').map(|s| s.to_string()).collect();
             if fields.len() < 5 {
                 return Err(ParseMessageError::ParseDaemonMessageError);
             }
@@ -338,19 +328,15 @@ impl FromStr for DaemonMessage {
                                                              sh }),
                 _ => Err(ParseMessageError::ParseDaemonMessageError),
             }
-        } else if s.starts_with("d:sp:") {
-            let fields: Vec<String> = s.get(5..)
-                                       .unwrap_or_default()
-                                       .split(':')
-                                       .map(|s| s.to_string())
-                                       .collect();
+        } else if let Some(msg) = s.strip_prefix("d:sp:") {
+            let fields: Vec<String> = msg.split(':').map(|s| s.to_string()).collect();
             if fields.len() < 2 {
                 return Err(ParseMessageError::ParseDaemonMessageError);
             }
             Ok(DaemonMessage::Sp { login: fields[0].clone(),
                                    pass: fields[1].clone() })
-        } else if s.starts_with("d:gr:") {
-            match s.get(5..).unwrap_or_default().parse::<structs::SectorGroup>() {
+        } else if let Some(msg) = s.strip_prefix("d:gr:") {
+            match msg.parse::<structs::SectorGroup>() {
                 Ok(sector) => Ok(DaemonMessage::Gr { sector }),
                 _ => Err(ParseMessageError::ParseDaemonMessageError),
             }
