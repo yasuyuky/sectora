@@ -263,24 +263,24 @@ impl FromStr for Gr {
 impl FromStr for ClientMessage {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("c:cont") {
+        if let Some(_) = s.strip_prefix("c:cont") {
             Ok(ClientMessage::Cont)
-        } else if s.starts_with("c:key:") {
-            Ok(ClientMessage::Key { user: String::from(s.get(6..).unwrap_or_default()) })
-        } else if s.starts_with("c:pam:") {
-            Ok(ClientMessage::Pam { user: String::from(s.get(6..).unwrap_or_default()) })
+        } else if let Some(msg) = s.strip_prefix("c:key:") {
+            Ok(ClientMessage::Key { user: String::from(msg) })
+        } else if let Some(msg) = s.strip_prefix("c:pam:") {
+            Ok(ClientMessage::Pam { user: String::from(msg) })
         } else if s == "c:cleanup" {
             Ok(ClientMessage::CleanUp)
         } else if s == "c:ratelimit" {
             Ok(ClientMessage::RateLimit)
         } else if s == "c:sectors" {
             Ok(ClientMessage::SectorGroups)
-        } else if s.starts_with("c:pw:") {
-            Ok(ClientMessage::Pw(s.get(5..).unwrap_or_default().parse::<Pw>()?))
-        } else if s.starts_with("c:sp:") {
-            Ok(ClientMessage::Sp(s.get(5..).unwrap_or_default().parse::<Sp>()?))
-        } else if s.starts_with("c:gr:") {
-            Ok(ClientMessage::Gr(s.get(5..).unwrap_or_default().parse::<Gr>()?))
+        } else if let Some(msg) = s.strip_prefix("c:pw:") {
+            Ok(ClientMessage::Pw(msg.parse::<Pw>()?))
+        } else if let Some(msg) = s.strip_prefix("c:sp:") {
+            Ok(ClientMessage::Sp(msg.parse::<Sp>()?))
+        } else if let Some(msg) = s.strip_prefix("c:gr:") {
+            Ok(ClientMessage::Gr(msg.parse::<Gr>()?))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
