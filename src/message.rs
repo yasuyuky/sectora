@@ -60,12 +60,12 @@ impl fmt::Display for DividedMessage {
 impl FromStr for DividedMessage {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("0:") {
+        if let Some(msg) = s.strip_prefix("0:") {
             Ok(Self { cont: false,
-                      message: s[2..].to_owned() })
-        } else if s.starts_with("1:") {
+                      message: msg.to_owned() })
+        } else if let Some(msg) = s.strip_prefix("1:") {
             Ok(Self { cont: true,
-                      message: s[2..].to_owned() })
+                      message: msg.to_owned() })
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
