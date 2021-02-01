@@ -205,12 +205,12 @@ impl fmt::Display for DaemonMessage {
 impl FromStr for Ent {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("set|") {
-            Ok(Ent::Set(s.get(4..).unwrap_or_default().parse::<u32>().unwrap()))
-        } else if s.starts_with("get|") {
-            Ok(Ent::Get(s.get(4..).unwrap_or_default().parse::<u32>().unwrap()))
-        } else if s.starts_with("end|") {
-            Ok(Ent::End(s.get(4..).unwrap_or_default().parse::<u32>().unwrap()))
+        if let Some(msg) = s.strip_prefix("set|") {
+            Ok(Ent::Set(msg.parse::<u32>().unwrap()))
+        } else if let Some(msg) = s.strip_prefix("get|") {
+            Ok(Ent::Get(msg.parse::<u32>().unwrap()))
+        } else if let Some(msg) = s.strip_prefix("end|") {
+            Ok(Ent::End(msg.parse::<u32>().unwrap()))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
