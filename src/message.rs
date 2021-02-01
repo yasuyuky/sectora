@@ -290,18 +290,14 @@ impl FromStr for ClientMessage {
 impl FromStr for DaemonMessage {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("d:key:") {
-            Ok(DaemonMessage::Key { keys: String::from(s.get(6..).unwrap_or_default()) })
-        } else if s.starts_with("d:pam:") {
-            Ok(DaemonMessage::Pam { result: FromStr::from_str(s.get(6..).unwrap_or("false")).unwrap_or(false) })
+        if let Some(msg) = s.strip_prefix("d:key:") {
+            Ok(DaemonMessage::Key { keys: String::from(msg) })
+        } else if let Some(msg) = s.strip_prefix("d:pam:") {
+            Ok(DaemonMessage::Pam { result: FromStr::from_str(msg).unwrap_or(false) })
         } else if s == "d:success" {
             Ok(DaemonMessage::Success)
-        } else if s.starts_with("d:ratelimit:") {
-            let fields: Vec<String> = s.get(12..)
-                                       .unwrap_or_default()
-                                       .split(':')
-                                       .map(|s| s.to_string())
-                                       .collect();
+        } else if let Some(msg) = s.strip_prefix("d:ratelimit:") {
+            let fields: Vec<String> = msg.split(':').map(|s| s.to_string()).collect();
             if fields.len() < 3 {
                 return Err(ParseMessageError::ParseDaemonMessageError);
             }
@@ -311,19 +307,13 @@ impl FromStr for DaemonMessage {
             Ok(DaemonMessage::RateLimit { limit,
                                           remaining,
                                           reset })
-        } else if s.starts_with("d:sectors:") {
-            let sectors = s.get(10..)
-                           .unwrap_or_default()
-                           .split('\n')
-                           .filter_map(|l| l.parse::<structs::SectorGroup>().ok())
-                           .collect();
+        } else if let Some(msg) = s.strip_prefix("d:sectors:") {
+            let sectors = msg.split('\n')
+                             .filter_map(|l| l.parse::<structs::SectorGroup>().ok())
+                             .collect();
             Ok(DaemonMessage::SectorGroups { sectors })
-        } else if s.starts_with("d:pw:") {
-            let fields: Vec<String> = s.get(5..)
-                                       .unwrap_or_default()
-                                       .split(':')
-                                       .map(|s| s.to_string())
-                                       .collect();
+        } else if let Some(msg) = s.strip_prefix("d:pw:") {
+            let fields: Vec<String> = msg.split(':').map(|s| s.to_string()).collect();
             if fields.len() < 5 {
                 return Err(ParseMessageError::ParseDaemonMessageError);
             }
@@ -338,19 +328,15 @@ impl FromStr for DaemonMessage {
                                                              sh }),
                 _ => Err(ParseMessageError::ParseDaemonMessageError),
             }
-        } else if s.starts_with("d:sp:") {
-            let fields: Vec<String> = s.get(5..)
-                                       .unwrap_or_default()
-                                       .split(':')
-                                       .map(|s| s.to_string())
-                                       .collect();
+        } else if let Some(msg) = s.strip_prefix("d:sp:") {
+            let fields: Vec<String> = msg.split(':').map(|s| s.to_string()).collect();
             if fields.len() < 2 {
                 return Err(ParseMessageError::ParseDaemonMessageError);
             }
             Ok(DaemonMessage::Sp { login: fields[0].clone(),
                                    pass: fields[1].clone() })
-        } else if s.starts_with("d:gr:") {
-            match s.get(5..).unwrap_or_default().parse::<structs::SectorGroup>() {
+        } else if let Some(msg) = s.strip_prefix("d:gr:") {
+            match msg.parse::<structs::SectorGroup>() {
                 Ok(sector) => Ok(DaemonMessage::Gr { sector }),
                 _ => Err(ParseMessageError::ParseDaemonMessageError),
             }
