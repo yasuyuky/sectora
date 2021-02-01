@@ -248,12 +248,12 @@ impl FromStr for Sp {
 impl FromStr for Gr {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("gid=") {
-            Ok(Gr::Gid(s.get(4..).unwrap_or_default().parse::<u64>().unwrap()))
-        } else if s.starts_with("name=") {
-            Ok(Gr::Nam(String::from(s.get(5..).unwrap_or_default())))
-        } else if s.starts_with("ent=") {
-            Ok(Gr::Ent(s.get(4..).unwrap_or_default().parse::<Ent>().unwrap()))
+        if let Some(msg) = s.strip_prefix("gid=") {
+            Ok(Gr::Gid(msg.parse::<u64>().unwrap()))
+        } else if let Some(msg) = s.strip_prefix("name=") {
+            Ok(Gr::Nam(String::from(msg)))
+        } else if let Some(msg) = s.strip_prefix("ent=") {
+            Ok(Gr::Ent(msg.parse::<Ent>().unwrap()))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
