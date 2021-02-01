@@ -220,12 +220,12 @@ impl FromStr for Ent {
 impl FromStr for Pw {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("uid=") {
-            Ok(Pw::Uid(s.get(4..).unwrap_or_default().parse::<u64>().unwrap()))
-        } else if s.starts_with("name=") {
-            Ok(Pw::Nam(String::from(s.get(5..).unwrap_or_default())))
-        } else if s.starts_with("ent=") {
-            Ok(Pw::Ent(s.get(4..).unwrap_or_default().parse::<Ent>().unwrap()))
+        if let Some(msg) = s.strip_prefix("uid=") {
+            Ok(Pw::Uid(msg.parse::<u64>().unwrap()))
+        } else if let Some(msg) = s.strip_prefix("name=") {
+            Ok(Pw::Nam(String::from(msg)))
+        } else if let Some(msg) = s.strip_prefix("ent=") {
+            Ok(Pw::Ent(msg.parse::<Ent>().unwrap()))
         } else {
             Err(ParseMessageError::ParseClientMessageError)
         }
