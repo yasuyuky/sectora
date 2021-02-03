@@ -1,8 +1,6 @@
 extern crate glob;
-#[macro_use]
 extern crate lazy_static;
 extern crate log;
-#[macro_use]
 extern crate serde;
 extern crate serde_json;
 extern crate structopt;

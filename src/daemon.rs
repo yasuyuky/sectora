@@ -2,11 +2,9 @@ extern crate futures;
 extern crate glob;
 extern crate hyper;
 extern crate hyper_tls;
-#[macro_use]
 extern crate lazy_static;
 extern crate libc;
 extern crate log;
-#[macro_use]
 extern crate serde;
 extern crate sd_notify;
 extern crate serde_json;
