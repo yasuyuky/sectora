@@ -263,7 +263,7 @@ impl FromStr for Gr {
 impl FromStr for ClientMessage {
     type Err = ParseMessageError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if let Some(_) = s.strip_prefix("c:cont") {
+        if s == "c:cont" {
             Ok(ClientMessage::Cont)
         } else if let Some(msg) = s.strip_prefix("c:key:") {
             Ok(ClientMessage::Key { user: String::from(msg) })

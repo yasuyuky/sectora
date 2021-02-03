@@ -1,8 +1,6 @@
 extern crate glob;
-#[macro_use]
 extern crate lazy_static;
 extern crate log;
-#[macro_use]
 extern crate serde;
 extern crate serde_json;
 extern crate structopt;
@@ -68,9 +66,9 @@ fn show_keys(conn: &connection::Connection, user: &str) -> Result<(), Error> {
     match conn.communicate(ClientMessage::Key { user: user.to_owned() }) {
         Ok(DaemonMessage::Key { keys }) => {
             println!("{}", keys);
-            return Ok(());
+            Ok(())
         }
-        _ => return Err(Error::new(ErrorKind::PermissionDenied, "key check failed")),
+        _ => Err(Error::new(ErrorKind::PermissionDenied, "key check failed")),
     }
 }
 

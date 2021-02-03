@@ -1,6 +1,7 @@
 use std::env;
 use std::path::Path;
 use std::string::String;
+use lazy_static::lazy_static;
 
 const DEFAULT_CONF_PATH_STR: &str = "/etc/sectora.conf";
 

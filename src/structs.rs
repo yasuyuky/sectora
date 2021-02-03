@@ -1,4 +1,5 @@
 use crate::error::{Error, ParseSectorError, ParseSectorGroupError, ParseSectorTypeError};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
 use std::fs::File;
