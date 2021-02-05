@@ -17,7 +17,7 @@ glob = "0.3"
 libc = "0.2"
 lazy_static = "1.4"
 nix = "0.19"
-hyper = { version = "0.14.2", features=[ "http1", "client", "tcp" ] }
+hyper = { version = "0.14.3", features=[ "http1", "client", "tcp" ] }
 hyper-tls = "0.5.0"
 structopt = "0.3"
 log = "0.4.14"
