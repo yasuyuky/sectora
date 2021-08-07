@@ -6,8 +6,8 @@ X64_RELEASE_DIR=target/$(X64_TARGET)/release
 ARM_RELEASE_DIR=target/$(ARM_TARGET)/release
 X64_DEBIAN_DIR=target/$(X64_TARGET)/debian
 ARM_DEBIAN_DIR=target/$(ARM_TARGET)/debian
-X64_BUILD_IMG=yasuyuky/rust-ubuntu:${RUST_VER}
-ARM_BUILD_IMG=yasuyuky/rust-arm:${RUST_VER}
+X64_BUILD_IMG=ghcr.io/yasuyuky/rust-ubuntu:${RUST_VER}
+ARM_BUILD_IMG=ghcr.io/yasuyuky/rust-arm:${RUST_VER}
 COMMON_BUILD_OPT= -v ${PWD}:/source -w /source
 LOG_LEVEL:=OFF
 OPENSSL_STATIC_OPT= -e OPENSSL_STATIC=yes -e OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ -e OPENSSL_INCLUDE_DIR=/usr/include -e LOG_LEVEL=$(LOG_LEVEL)
