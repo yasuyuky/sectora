@@ -22,7 +22,7 @@ hyper-tls = "0.5.0"
 structopt = "0.3"
 log = "0.4.14"
 syslog = "5.0"
-tokio = { version = "1.9", features = [ "macros", "rt", "rt-multi-thread"] }
+tokio = { version = "1.10", features = [ "macros", "rt", "rt-multi-thread"] }
 sd-notify = "0.3.0"
 
 [[bin]]
