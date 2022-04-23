@@ -17,12 +17,16 @@ test-deb:
 	make down
 
 setup-deb:
+	@echo '::group::Installing deb packages'
 	make -j 2 setup-host-deb setup-client-key
+	@echo '::endgroup::'
 
 setup-ansible:
+	@echo '::group::Installing ansible packages'
 	make -j 2 setup-host-root setup-client-ansible
 	docker-compose exec client ansible-playbook -i hosts localtest.yml
 	sleep 1
+	@echo '::endgroup::'
 
 setup-host-root:
 	docker cp ./keys/root/id_rsa.pub `docker-compose ps -q host`:/root/.ssh/authorized_keys
@@ -50,14 +54,18 @@ setup-client-ansible:
 	docker cp ../target/x86_64-unknown-linux-gnu/release `docker-compose ps -q client`:/work/release
 
 up:
+	@echo '::group::Starting containers'
 	@echo '$(shell tput setaf 6)$(dist) $(shell tput setaf 3)$(ver)$(shell tput sgr 0)'
 	dist=$(dist) ver=$(ver) docker-compose up -d --build
+	@echo '::endgroup::'
 
 exec-login:
 	@echo '$(shell tput setaf 6)LOGIN TEST START$(shell tput sgr 0)'
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) SSH $(shell tput sgr 0)'
 	@docker-compose exec -T client ssh hunter@host -i keys/user/id_rsa \
 		echo '"$(shell tput setaf 2)SUCCESS$(shell tput sgr 0)"'
+	@docker-compose exec -T client ssh hunter@host -i keys/user/id_rsa \
+		echo '::notice title=$(dist)/$(ver)::success'
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) ID $(shell tput sgr 0)'
 	@docker-compose exec -T client ssh hunter@host -i keys/user/id_rsa id
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) VERSION $(shell tput sgr 0)'
@@ -65,7 +73,9 @@ exec-login:
 	@echo '$(shell tput setaf 6)LOGIN TEST END$(shell tput sgr 0)'
 
 down:
+	@echo '::group::Stopping containers'
 	docker-compose down
+	@echo '::endgroup::'
 
 reset:
 	cd .. && make x64 LOG_LEVEL=DEBUG
