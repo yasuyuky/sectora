@@ -58,6 +58,8 @@ exec-login:
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) SSH $(shell tput sgr 0)'
 	@docker-compose exec -T client ssh hunter@host -i keys/user/id_rsa \
 		echo '"$(shell tput setaf 2)SUCCESS$(shell tput sgr 0)"'
+	@docker-compose exec -T client ssh hunter@host -i keys/user/id_rsa \
+		echo '::notice title=$(dist)/$(ver)::success'
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) ID $(shell tput sgr 0)'
 	@docker-compose exec -T client ssh hunter@host -i keys/user/id_rsa id
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) VERSION $(shell tput sgr 0)'
