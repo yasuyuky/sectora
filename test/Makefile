@@ -19,14 +19,14 @@ test-deb:
 setup-deb:
 	@echo '::group::Installing deb packages'
 	make -j 2 setup-host-deb setup-client-key
-	@echo '::endgroup'
+	@echo '::endgroup::'
 
 setup-ansible:
 	@echo '::group::Installing ansible packages'
 	make -j 2 setup-host-root setup-client-ansible
 	docker-compose exec client ansible-playbook -i hosts localtest.yml
 	sleep 1
-	@echo '::endgroup'
+	@echo '::endgroup::'
 
 setup-host-root:
 	docker cp ./keys/root/id_rsa.pub `docker-compose ps -q host`:/root/.ssh/authorized_keys
@@ -57,7 +57,7 @@ up:
 	@echo '::group::Starting containers'
 	@echo '$(shell tput setaf 6)$(dist) $(shell tput setaf 3)$(ver)$(shell tput sgr 0)'
 	dist=$(dist) ver=$(ver) docker-compose up -d --build
-	@echo '::endgroup'
+	@echo '::endgroup::'
 
 exec-login:
 	@echo '$(shell tput setaf 6)LOGIN TEST START$(shell tput sgr 0)'
@@ -75,7 +75,7 @@ exec-login:
 down:
 	@echo '::group::Stopping containers'
 	docker-compose down
-	@echo '::endgroup'
+	@echo '::endgroup::'
 
 reset:
 	cd .. && make x64 LOG_LEVEL=DEBUG
