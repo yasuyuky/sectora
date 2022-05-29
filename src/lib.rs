@@ -1,8 +1,3 @@
-extern crate lazy_static;
-extern crate libc;
-extern crate nix;
-extern crate serde;
-
 mod applog;
 mod buffer;
 mod connection;

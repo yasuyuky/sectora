@@ -1,18 +1,3 @@
-extern crate futures;
-extern crate glob;
-extern crate hyper;
-extern crate hyper_tls;
-extern crate lazy_static;
-extern crate libc;
-extern crate log;
-extern crate serde;
-extern crate sd_notify;
-extern crate serde_json;
-extern crate structopt;
-extern crate syslog;
-extern crate tokio;
-extern crate toml;
-
 mod applog;
 mod error;
 mod ghclient;
