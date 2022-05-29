@@ -40,7 +40,7 @@ impl Drop for Daemon {
 
 impl Daemon {
     fn new() -> Self {
-        let config = Config::from_path(&(*CONF_PATH)).expect("valid config");
+        let config = Config::from_path(*CONF_PATH).expect("valid config");
         let socket_conf = SocketConfig::new();
         fs::create_dir_all(&socket_conf.socket_dir).expect("create socket dir");
         fs::set_permissions(&socket_conf.socket_dir, unix::fs::PermissionsExt::from_mode(0o777)).unwrap_or_default();
@@ -98,11 +98,11 @@ impl Daemon {
 
     async fn handle(&mut self, msg: &ClientMessage) -> DaemonMessage {
         match msg {
-            ClientMessage::Key { user } => match self.client.get_user_public_keys(&user).await {
+            ClientMessage::Key { user } => match self.client.get_user_public_keys(user).await {
                 Ok(keys) => DaemonMessage::Key { keys: keys.join("\n") },
                 Err(_) => DaemonMessage::Error { message: String::from("get key failed") },
             },
-            ClientMessage::Pam { user } => match self.client.check_pam(&user).await {
+            ClientMessage::Pam { user } => match self.client.check_pam(user).await {
                 Ok(result) => DaemonMessage::Pam { result },
                 Err(_) => DaemonMessage::Error { message: String::from("check pam failed") },
             },

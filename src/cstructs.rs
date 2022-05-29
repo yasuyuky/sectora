@@ -87,6 +87,6 @@ impl Group {
     }
 
     pub fn pack_args(&mut self, buf: &mut Buffer, name: &str, id: u64, members: &[&str]) -> Result<(), Error> {
-        self.pack(buf, name, "x", id as libc::gid_t, &members)
+        self.pack(buf, name, "x", id as libc::gid_t, members)
     }
 }
