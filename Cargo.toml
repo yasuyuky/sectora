@@ -4,7 +4,7 @@ version = "0.4.0"
 authors = ["Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"]
 build = "build.rs"
 description = "SSH authentication with the GitHub team and repo"
-edition = "2018"
+edition = "2021"
 license = "MIT"
 readme = "README.md"
 
@@ -17,12 +17,12 @@ glob = "0.3"
 libc = "0.2"
 lazy_static = "1.4"
 nix = "0.24"
-hyper = { version = "0.14.7", features=[ "http1", "client", "tcp" ] }
+hyper = { version = "0.14.7", features = ["http1", "client", "tcp"] }
 hyper-tls = "0.5.0"
 structopt = "0.3"
 log = "0.4.17"
 syslog = "6.0"
-tokio = { version = "1.16", features = [ "macros", "rt", "rt-multi-thread"] }
+tokio = { version = "1.16", features = ["macros", "rt", "rt-multi-thread"] }
 sd-notify = "0.4.0"
 
 [[bin]]
@@ -37,7 +37,6 @@ path = "src/daemon.rs"
 name = "nss_sectora"
 path = "src/lib.rs"
 crate-type = ["cdylib"]
-
 
 [package.metadata.deb]
 maintainer = "Yasuyuki YAMADA <yasuyuki.ymd@gmail.com>"
@@ -59,7 +58,5 @@ assets = [
     ["assets/sectora.sh", "usr/sbin/", "755"],
     ["assets/sectora.service", "etc/systemd/system/", "644"],
 ]
-conf-files = [
-    "/etc/sectora.conf",
-]
+conf-files = ["/etc/sectora.conf"]
 maintainer-scripts = "assets/scripts"

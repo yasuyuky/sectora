@@ -198,7 +198,7 @@ impl GithubClient {
     pub async fn clear_all_caches(&self) -> Result<(), Error> {
         let mut path = self.get_cache_path("");
         path.push("**/*");
-        for entry in glob(&path.to_str().unwrap()).unwrap() {
+        for entry in glob(path.to_str().unwrap()).unwrap() {
             match entry {
                 Ok(path) => {
                     if path.is_file() {

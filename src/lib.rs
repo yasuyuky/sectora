@@ -1,8 +1,3 @@
-extern crate lazy_static;
-extern crate libc;
-extern crate nix;
-extern crate serde;
-
 mod applog;
 mod buffer;
 mod connection;
@@ -85,6 +80,9 @@ macro_rules! try_unwrap {
     }};
 }
 
+/// # Safety
+///
+/// This function intended to be called from nss
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, pwptr: *mut Passwd,
                                                  buf: *mut libc::c_char, buflen: libc::size_t,
@@ -107,6 +105,9 @@ pub unsafe extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, 
     fail!(errnop, Errno::ENOENT, NssStatus::NotFound)
 }
 
+/// # Safety
+///
+/// This function intended to be called from nss
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, buf: *mut libc::c_char,
                                                  buflen: libc::size_t, errnop: *mut libc::c_int)
@@ -128,6 +129,9 @@ pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut P
     fail!(errnop, Errno::ENOENT, NssStatus::NotFound)
 }
 
+/// # Safety
+///
+/// This function intended to be called from nss
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
     let conn = try_unwrap!(Connection::new("_nss_sectora_setpwent"));
@@ -138,6 +142,9 @@ pub unsafe extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
     libc::c_int::from(NssStatus::TryAgain)
 }
 
+/// # Safety
+///
+/// This function intended to be called from nss
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
@@ -159,6 +166,9 @@ pub unsafe extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut l
     fail!(errnop, Errno::ENOENT, NssStatus::NotFound)
 }
 
+/// # Safety
+///
+/// This function intended to be called from nss
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_endpwent() -> libc::c_int {
     let conn = try_unwrap!(Connection::new("_nss_sectora_endpwent"));
@@ -169,6 +179,9 @@ pub unsafe extern "C" fn _nss_sectora_endpwent() -> libc::c_int {
     libc::c_int::from(NssStatus::TryAgain)
 }
 
+/// # Safety
+///
+/// This function intended to be called from nss
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, spptr: *mut Spwd,
                                                  buf: *mut libc::c_char, buflen: libc::size_t,
@@ -186,6 +199,9 @@ pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, 
     fail!(errnop, Errno::ENOENT, NssStatus::NotFound)
 }
 
+/// # Safety
+///
+/// This function intended to be called from nss
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_setspent() -> libc::c_int {
     let conn = try_unwrap!(Connection::new("_nss_sectora_setspent"));
@@ -196,6 +212,9 @@ pub unsafe extern "C" fn _nss_sectora_setspent() -> libc::c_int {
     libc::c_int::from(NssStatus::Success)
 }
 
+/// # Safety
+///
+/// This function intended to be called from nss
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
@@ -212,6 +231,9 @@ pub unsafe extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut lib
     fail!(errnop, Errno::ENOENT, NssStatus::NotFound)
 }
 
+/// # Safety
+///
+/// This function intended to be called from nss
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_endspent() -> libc::c_int {
     let conn = try_unwrap!(Connection::new("_nss_sectora_endspent"));
@@ -222,6 +244,9 @@ pub unsafe extern "C" fn _nss_sectora_endspent() -> libc::c_int {
     libc::c_int::from(NssStatus::TryAgain)
 }
 
+/// # Safety
+///
+/// This function intended to be called from nss
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut Group, buf: *mut libc::c_char,
                                                  buflen: libc::size_t, errnop: *mut libc::c_int)
@@ -239,6 +264,9 @@ pub unsafe extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut G
     fail!(errnop, Errno::ENOENT, NssStatus::NotFound)
 }
 
+/// # Safety
+///
+/// This function intended to be called from nss
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, grptr: *mut Group,
                                                  buf: *mut libc::c_char, buflen: libc::size_t,
@@ -257,6 +285,9 @@ pub unsafe extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, 
     fail!(errnop, Errno::ENOENT, NssStatus::NotFound)
 }
 
+/// # Safety
+///
+/// This function intended to be called from nss
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
     let conn = try_unwrap!(Connection::new("_nss_sectora_setgrent"));
@@ -267,6 +298,9 @@ pub unsafe extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
     libc::c_int::from(NssStatus::Success)
 }
 
+/// # Safety
+///
+/// This function intended to be called from nss
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
@@ -284,6 +318,9 @@ pub unsafe extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut li
     fail!(errnop, Errno::ENOENT, NssStatus::NotFound)
 }
 
+/// # Safety
+///
+/// This function intended to be called from nss
 #[no_mangle]
 pub unsafe extern "C" fn _nss_sectora_endgrent() -> libc::c_int {
     let conn = try_unwrap!(Connection::new("_nss_sectora_endgrent"));

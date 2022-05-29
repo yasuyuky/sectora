@@ -1,12 +1,3 @@
-extern crate glob;
-extern crate lazy_static;
-extern crate log;
-extern crate serde;
-extern crate serde_json;
-extern crate structopt;
-extern crate syslog;
-extern crate toml;
-
 mod applog;
 mod connection;
 mod error;
