@@ -9,11 +9,6 @@ updates:
   open-pull-requests-limit: 10
   reviewers:
   - yasuyuky
-  ignore:
-  - dependency-name: hyper
-    versions:
-    - 0.14.3
-    - 0.14.7
 - package-ecosystem: docker
   directory: "/test/client"
   schedule:
