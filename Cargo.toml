@@ -23,7 +23,7 @@ structopt = "0.3"
 log = "0.4.17"
 syslog = "6.0"
 tokio = { version = "1.20", features = ["macros", "rt", "rt-multi-thread"] }
-sd-notify = "0.4.0"
+sd-notify = "0.4.1"
 
 [[bin]]
 name = "sectora"
