@@ -8,7 +8,6 @@ Using this program, you can grant login privileges on your servers to GitHub tea
 
 Implemented with Rust.
 
-[![CircleCI](https://circleci.com/gh/yasuyuky/sectora.svg?style=svg)](https://circleci.com/gh/yasuyuky/sectora)
 [![Github Actions](https://github.com/yasuyuky/sectora/workflows/ci/badge.svg)](https://github.com/yasuyuky/sectora/actions)
 
 # How it works
