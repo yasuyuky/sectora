@@ -43,6 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{ fromJson(needs.set-dists.outputs.dists) }}
+      fail-fast: false
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
