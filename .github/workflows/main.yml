@@ -37,7 +37,7 @@ jobs:
       - id: set-matrix
         run: |
           content=$(curl -L https://raw.githubusercontent.com/yasuyuky/docker-ssh-test/main/dist.json | jq -c .)
-          echo matrix=${content} >>&GITHUB_OUTPUT
+          echo matrix=${content} >>$GITHUB_OUTPUT
           echo ${content}
 
   test:
