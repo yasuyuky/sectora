@@ -15,15 +15,15 @@ jobs:
         id: get_date
         run: |
           date +'%Y.%m.%d'
-          echo ::set-output name=date::$(date +'%Y.%m.%d')
+          echo date=$(date +'%Y.%m.%d') >>$GITHUB_OUTPUT
 
       - name: Get the version in cargo
         id: cargo_ver
         run: |
           VERSION=$(grep '^version' Cargo.toml | cut -d '"' -f 2)
           echo ${VERSION}
-          echo ::set-output name=version::${VERSION}
-          echo ::set-output name=v::v${VERSION}
+          echo version=${VERSION} >>$GITHUB_OUTPUT
+          echo v=v${VERSION} >>$GITHUB_OUTPUT
           test ${GITHUB_REF/refs\/tags\//} = v${VERSION}
 
       - name: Create Release
