@@ -71,7 +71,7 @@ $(ARM_RELEASE_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
 	$(DOCKER_RUN) $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo build --lib --release --target=$(ARM_TARGET)
 
 $(ARM_DEBIAN_DIR)/sectora_$(VERSION)_armhf.deb: src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES) $(ASSETS)
-	$(DOCKER_RUN) $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) sh -c "cargo install cargo-deb --root .cargo && CARGO_HOME=.cargo cargo deb --target=$(ARM_TARGET)"
+	$(DOCKER_RUN) $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) sh -c "cargo install -f cargo-deb --root .cargo && CARGO_HOME=.cargo cargo deb --target=$(ARM_TARGET)"
 
 
 .PHONY: clean clean-x64 clean-arm clean-exe clean-lib clean-deb clean-all
