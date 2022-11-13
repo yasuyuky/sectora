@@ -16,7 +16,7 @@ jobs:
         arch: [x64, arm]
         target: [lib, exe, daemon, deb]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/cache@v1
         with:
           path: ${{ github.workspace }}/.cargo-${{ matrix.arch }}
@@ -47,7 +47,7 @@ jobs:
       matrix: ${{ fromJson(needs.set-dists.outputs.dists) }}
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/download-artifact@v2
         with:
           name: sectora-x64
