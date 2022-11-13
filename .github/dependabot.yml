@@ -1,29 +1,35 @@
 version: 2
 updates:
-- package-ecosystem: cargo
-  directory: "/"
-  schedule:
-    interval: daily
-    time: "09:00"
-    timezone: Asia/Tokyo
-  open-pull-requests-limit: 10
-  reviewers:
-  - yasuyuky
-- package-ecosystem: docker
-  directory: "/test/client"
-  schedule:
-    interval: daily
-    time: "09:00"
-    timezone: Asia/Tokyo
-  open-pull-requests-limit: 10
-  reviewers:
-  - yasuyuky
-- package-ecosystem: docker
-  directory: "/test/json-server"
-  schedule:
-    interval: daily
-    time: "09:00"
-    timezone: Asia/Tokyo
-  open-pull-requests-limit: 10
-  reviewers:
-  - yasuyuky
+  - package-ecosystem: cargo
+    directory: '/'
+    schedule:
+      interval: daily
+      time: '09:00'
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 10
+    reviewers:
+      - yasuyuky
+  - package-ecosystem: docker
+    directory: '/test/client'
+    schedule:
+      interval: daily
+      time: '09:00'
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 10
+    reviewers:
+      - yasuyuky
+  - package-ecosystem: docker
+    directory: '/test/json-server'
+    schedule:
+      interval: daily
+      time: '09:00'
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 10
+    reviewers:
+      - yasuyuky
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: daily
+      time: '09:00'
+      timezone: Asia/Tokyo
