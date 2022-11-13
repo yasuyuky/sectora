@@ -17,7 +17,7 @@ jobs:
         target: [lib, exe, daemon, deb]
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/cache@v1
+      - uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/.cargo-${{ matrix.arch }}
           key: ${{ matrix.arch }}-${{ hashFiles('Cargo.lock') }}
