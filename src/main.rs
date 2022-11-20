@@ -17,17 +17,11 @@ use structs::Config;
 #[structopt(rename_all = "kebab-case")]
 enum Command {
     /// Gets user public key
-    Key {
-        #[structopt(parse(from_str))]
-        user: String,
-    },
+    Key { user: String },
     /// Executes pam check
     Pam,
     /// Check configuration
-    Check {
-        #[structopt(parse(from_os_str))]
-        confpath: std::path::PathBuf,
-    },
+    Check { confpath: std::path::PathBuf },
     /// Cleans caches up
     #[structopt(alias = "cleanup")]
     CleanUp,
