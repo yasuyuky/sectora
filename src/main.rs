@@ -5,7 +5,8 @@ mod message;
 mod statics;
 mod structs;
 
-use clap::Parser;
+use clap::{CommandFactory, Parser};
+use clap_complete::{generate, shells};
 use log::debug;
 use message::*;
 use std::env;
@@ -104,13 +105,14 @@ fn main() -> Result<(), Error> {
         }
         Command::Completion { shell } => {
             let shell = match shell {
-                Shell::Bash => structopt::clap::Shell::Bash,
-                Shell::Fish => structopt::clap::Shell::Fish,
-                Shell::Zsh => structopt::clap::Shell::Zsh,
-                Shell::PowerShell => structopt::clap::Shell::PowerShell,
-                Shell::Elvish => structopt::clap::Shell::Elvish,
+                Shell::Bash => shells::Shell::Bash,
+                Shell::Fish => shells::Shell::Fish,
+                Shell::Zsh => shells::Shell::Zsh,
+                Shell::PowerShell => shells::Shell::PowerShell,
+                Shell::Elvish => shells::Shell::Elvish,
             };
-            Command::clap().gen_completions_to("sectora", shell, &mut std::io::stdout());
+            let mut cmd = Command::command();
+            generate(shell, &mut cmd, "wagon", &mut std::io::stdout());
         }
     };
     Ok(())
