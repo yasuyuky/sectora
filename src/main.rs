@@ -11,7 +11,6 @@ use log::debug;
 use message::*;
 use std::env;
 use std::io::{Error, ErrorKind};
-use structopt::StructOpt;
 use structs::Config;
 
 #[derive(Debug, Parser)]
