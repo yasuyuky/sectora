@@ -83,6 +83,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap_complete"
+version = "4.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96b0fba905b035a30d25c1b585bf1171690712fbb0ad3ac47214963aa4acc36c"
+dependencies = [
+ "clap 4.0.26",
+]
+
+[[package]]
 name = "clap_derive"
 version = "4.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -641,6 +650,7 @@ name = "sectora"
 version = "0.4.0"
 dependencies = [
  "clap 4.0.26",
+ "clap_complete",
  "futures",
  "glob",
  "hyper",
