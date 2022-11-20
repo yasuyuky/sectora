@@ -5,6 +5,7 @@ mod message;
 mod statics;
 mod structs;
 
+use clap::Parser;
 use log::debug;
 use message::*;
 use std::env;
@@ -12,7 +13,7 @@ use std::io::{Error, ErrorKind};
 use structopt::StructOpt;
 use structs::Config;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 #[structopt(rename_all = "kebab-case")]
 enum Command {
     /// Gets user public key
@@ -43,7 +44,7 @@ enum Command {
 }
 
 #[allow(clippy::enum_variant_names)]
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 #[structopt(rename_all = "kebab-case")]
 enum Shell {
     Bash,
@@ -64,7 +65,7 @@ fn show_keys(conn: &connection::Connection, user: &str) -> Result<(), Error> {
 }
 
 fn main() -> Result<(), Error> {
-    let command = Command::from_args();
+    let command = Command::parse();
     let conn = match connection::Connection::new(&format!("{:?}", command)) {
         Ok(conn) => conn,
         Err(err) => return Err(Error::new(ErrorKind::Other, format!("{:?}", err))),
