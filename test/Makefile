@@ -56,7 +56,12 @@ setup-client-ansible:
 up:
 	@echo '::group::Starting containers'
 	@echo '$(shell tput setaf 6)$(dist) $(shell tput setaf 3)$(ver)$(shell tput sgr 0)'
-	dist=$(dist) ver=$(ver) docker-compose up -d --build
+	docker network create -d bridge testnw
+	docker build -t json-server ./json-server
+	docker run -d --network testnw --name json-server -h json-server json-server json-server --watch db.json --host 0.0.0.0 --routes routes.json
+	docker run -d --network testnw --name host -h host --privileged --cgroupns=host -v /sys/fs/cgroup:/sys/fs/cgroup:rw yasuyuky/ssh-test:$(dist).$(ver)
+	docker build -t client client
+	docker run -d --network testnw --name client -h client -w /work client sh -c 'while true; do sleep 1; done'
 	@echo '::endgroup::'
 
 exec-login:
@@ -74,7 +79,10 @@ exec-login:
 
 down:
 	@echo '::group::Stopping containers'
-	docker-compose down
+	docker rm -f json-server
+	docker rm -f host
+	docker rm -f client
+	docker network rm testnw
 	@echo '::endgroup::'
 
 reset:
