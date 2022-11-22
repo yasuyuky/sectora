@@ -29,29 +29,29 @@ setup-ansible:
 	@echo '::endgroup::'
 
 setup-host-root:
-	docker cp ./keys/root/id_rsa.pub `docker-compose ps -q host`:/root/.ssh/authorized_keys
+	docker cp ./keys/root/id_rsa.pub host:/root/.ssh/authorized_keys
 	docker-compose exec host chown -R root:root /root/.ssh/
 	docker-compose exec host chmod -R 600 /root/.ssh/
 
 setup-client-key:
-	docker cp ./keys `docker-compose ps -q client`:/work/keys
+	docker cp ./keys client:/work/keys
 
 setup-host-deb:
-	docker cp ../target/x86_64-unknown-linux-gnu/debian/sectora_$(VERSION)_amd64.deb `docker-compose ps -q host`:/tmp/
+	docker cp ../target/x86_64-unknown-linux-gnu/debian/sectora_$(VERSION)_amd64.deb host:/tmp/
 	docker-compose exec -T host sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/sectora_$(VERSION)_amd64.deb"
-	docker cp ./testconf.toml `docker-compose ps -q host`:/etc/sectora.conf
+	docker cp ./testconf.toml host:/etc/sectora.conf
 	time docker-compose exec -T host systemctl start sectora
 	time docker-compose exec -T host systemctl restart ssh
 
 setup-client-ansible:
 	make setup-client-key
-	docker cp ./client/hosts `docker-compose ps -q client`:/work/
-	docker cp ./client/localtest.yml `docker-compose ps -q client`:/work/
-	docker cp ../ansible/roles `docker-compose ps -q client`:/work/roles
-	docker cp ../ansible/templates `docker-compose ps -q client`:/work/templates
-	docker cp ../assets/sectora.service `docker-compose ps -q client`:/work/
-	docker cp ../assets/sectora.sh `docker-compose ps -q client`:/work/
-	docker cp ../target/x86_64-unknown-linux-gnu/release `docker-compose ps -q client`:/work/release
+	docker cp ./client/hosts client:/work/
+	docker cp ./client/localtest.yml client:/work/
+	docker cp ../ansible/roles client:/work/roles
+	docker cp ../ansible/templates client:/work/templates
+	docker cp ../assets/sectora.service client:/work/
+	docker cp ../assets/sectora.sh client:/work/
+	docker cp ../target/x86_64-unknown-linux-gnu/release client:/work/release
 
 up:
 	@echo '::group::Starting containers'
