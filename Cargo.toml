@@ -19,11 +19,12 @@ lazy_static = "1.4"
 nix = "0.25"
 hyper = { version = "0.14.23", features = ["http1", "client", "tcp"] }
 hyper-tls = "0.5.0"
-structopt = "0.3"
 log = "0.4.17"
 syslog = "6.0"
 tokio = { version = "1.21", features = ["macros", "rt", "rt-multi-thread"] }
 sd-notify = "0.4.1"
+clap = { version = "4.0.26", features = ["derive"] }
+clap_complete = "4.0.5"
 
 [[bin]]
 name = "sectora"

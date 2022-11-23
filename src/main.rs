@@ -5,28 +5,23 @@ mod message;
 mod statics;
 mod structs;
 
+use clap::{CommandFactory, Parser};
+use clap_complete::{generate, shells};
 use log::debug;
 use message::*;
 use std::env;
 use std::io::{Error, ErrorKind};
-use structopt::StructOpt;
 use structs::Config;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 #[structopt(rename_all = "kebab-case")]
 enum Command {
     /// Gets user public key
-    Key {
-        #[structopt(parse(from_str))]
-        user: String,
-    },
+    Key { user: String },
     /// Executes pam check
     Pam,
     /// Check configuration
-    Check {
-        #[structopt(parse(from_os_str))]
-        confpath: std::path::PathBuf,
-    },
+    Check { confpath: std::path::PathBuf },
     /// Cleans caches up
     #[structopt(alias = "cleanup")]
     CleanUp,
@@ -43,7 +38,7 @@ enum Command {
 }
 
 #[allow(clippy::enum_variant_names)]
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 #[structopt(rename_all = "kebab-case")]
 enum Shell {
     Bash,
@@ -64,7 +59,7 @@ fn show_keys(conn: &connection::Connection, user: &str) -> Result<(), Error> {
 }
 
 fn main() -> Result<(), Error> {
-    let command = Command::from_args();
+    let command = Command::parse();
     let conn = match connection::Connection::new(&format!("{:?}", command)) {
         Ok(conn) => conn,
         Err(err) => return Err(Error::new(ErrorKind::Other, format!("{:?}", err))),
@@ -109,13 +104,14 @@ fn main() -> Result<(), Error> {
         }
         Command::Completion { shell } => {
             let shell = match shell {
-                Shell::Bash => structopt::clap::Shell::Bash,
-                Shell::Fish => structopt::clap::Shell::Fish,
-                Shell::Zsh => structopt::clap::Shell::Zsh,
-                Shell::PowerShell => structopt::clap::Shell::PowerShell,
-                Shell::Elvish => structopt::clap::Shell::Elvish,
+                Shell::Bash => shells::Shell::Bash,
+                Shell::Fish => shells::Shell::Fish,
+                Shell::Zsh => shells::Shell::Zsh,
+                Shell::PowerShell => shells::Shell::PowerShell,
+                Shell::Elvish => shells::Shell::Elvish,
             };
-            Command::clap().gen_completions_to("sectora", shell, &mut std::io::stdout());
+            let mut cmd = Command::command();
+            generate(shell, &mut cmd, "wagon", &mut std::io::stdout());
         }
     };
     Ok(())
