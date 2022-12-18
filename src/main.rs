@@ -14,7 +14,7 @@ use std::io::{Error, ErrorKind};
 use structs::Config;
 
 #[derive(Debug, Parser)]
-#[structopt(rename_all = "kebab-case")]
+#[clap(rename_all = "kebab-case")]
 enum Command {
     /// Gets user public key
     Key { user: String },
@@ -23,23 +23,23 @@ enum Command {
     /// Check configuration
     Check { confpath: std::path::PathBuf },
     /// Cleans caches up
-    #[structopt(alias = "cleanup")]
+    #[clap(alias = "cleanup")]
     CleanUp,
     /// Get rate limit for github api
-    #[structopt(alias = "ratelimit")]
+    #[clap(alias = "ratelimit")]
     RateLimit,
     /// Displays version details
     Version,
     /// Displays completion
     Completion {
-        #[structopt(subcommand)]
+        #[clap(subcommand)]
         shell: Shell,
     },
 }
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Parser)]
-#[structopt(rename_all = "kebab-case")]
+#[clap(rename_all = "kebab-case")]
 enum Shell {
     Bash,
     Fish,
