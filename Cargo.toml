@@ -23,7 +23,7 @@ log = "0.4.17"
 syslog = "6.0"
 tokio = { version = "1.23", features = ["macros", "rt", "rt-multi-thread"] }
 sd-notify = "0.4.1"
-clap = { version = "4.0.29", features = ["derive"] }
+clap = { version = "4.0.30", features = ["derive"] }
 clap_complete = "4.0.6"
 
 [[bin]]
