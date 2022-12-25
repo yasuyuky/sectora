@@ -18,6 +18,15 @@ test-deb:
 	make exec-login
 	make down
 
+test-deb-from-env:
+	make up
+	make create-test-conf-env
+	make setup-deb
+	make setup-client-key-env
+	make exec-login
+	make down
+	make revert-test-conf
+
 setup-deb:
 	@echo '::group::Installing deb packages'
 	make -j 2 setup-host-deb setup-client-key
