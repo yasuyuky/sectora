@@ -54,6 +54,9 @@ create-test-conf-env:
 	@echo "name = \"${TEST_GITHUB_TEAM}\""   >> testconf.toml
 	@echo "gid = 2022"                       >> testconf.toml
 
+revert-test-conf:
+	git checkout testconf.toml
+
 setup-host-deb:
 	docker cp ../target/x86_64-unknown-linux-gnu/debian/sectora_$(VERSION)_amd64.deb host:/tmp/
 	docker exec host sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/sectora_$(VERSION)_amd64.deb"
