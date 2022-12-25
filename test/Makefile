@@ -38,6 +38,14 @@ setup-host-root:
 setup-client-key:
 	docker cp ./keys client:/work/keys
 
+setup-client-key-env:
+	@echo "$${TEST_PRIVATE_KEY}" > $(keyfile)
+	chmod 600 $(keyfile)
+	docker exec client rm -rf /work/keys
+	docker exec client mkdir -p /work/keys/user/
+	docker cp $(keyfile) client:/work/keys/user/$(keyfile)
+	rm $(keyfile)
+
 setup-host-deb:
 	docker cp ../target/x86_64-unknown-linux-gnu/debian/sectora_$(VERSION)_amd64.deb host:/tmp/
 	docker exec host sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/sectora_$(VERSION)_amd64.deb"
