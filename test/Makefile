@@ -1,6 +1,7 @@
 VERSION=$(shell grep "^version" ../Cargo.toml | cut -f 2 -d '"')
 dist:=ubuntu
 ver:=bionic
+user:=hunter
 
 .PHONY: test-ansible test-deb up down reset
 
@@ -67,14 +68,14 @@ up:
 exec-login:
 	@echo '$(shell tput setaf 6)LOGIN TEST START$(shell tput sgr 0)'
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) SSH $(shell tput sgr 0)'
-	@docker exec client ssh hunter@host -i keys/user/id_rsa \
+	@docker exec client ssh $(user)@host -i keys/user/id_rsa \
 		echo '"$(shell tput setaf 2)SUCCESS$(shell tput sgr 0)"'
-	@docker exec client ssh hunter@host -i keys/user/id_rsa \
+	@docker exec client ssh $(user)@host -i keys/user/id_rsa \
 		echo '::notice title=$(dist)/$(ver)::success'
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) ID $(shell tput sgr 0)'
-	@docker exec client ssh hunter@host -i keys/user/id_rsa id
+	@docker exec client ssh $(user)@host -i keys/user/id_rsa id
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) VERSION $(shell tput sgr 0)'
-	@docker exec client ssh hunter@host -i keys/user/id_rsa /usr/sbin/sectora version
+	@docker exec client ssh $(user)@host -i keys/user/id_rsa /usr/sbin/sectora version
 	@echo '$(shell tput setaf 6)LOGIN TEST END$(shell tput sgr 0)'
 
 down:
