@@ -46,6 +46,14 @@ setup-client-key-env:
 	docker cp $(keyfile) client:/work/keys/user/$(keyfile)
 	rm $(keyfile)
 
+create-test-conf-env:
+	@echo "token = \"${TEST_GITHUB_TOKEN}\""  > testconf.toml
+	@echo "org = \"${TEST_GITHUB_ORG}\""     >> testconf.toml
+	@echo                                    >> testconf.toml
+	@echo '[[team]]'                         >> testconf.toml
+	@echo "name = \"${TEST_GITHUB_TEAM}\""   >> testconf.toml
+	@echo "gid = 2022"                       >> testconf.toml
+
 setup-host-deb:
 	docker cp ../target/x86_64-unknown-linux-gnu/debian/sectora_$(VERSION)_amd64.deb host:/tmp/
 	docker exec host sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/sectora_$(VERSION)_amd64.deb"
