@@ -6,13 +6,13 @@ keyfile:=id_rsa
 
 .PHONY: test-ansible test-deb up down reset
 
-test-ansible:
+test-ansible-stub:
 	make up
 	make setup-ansible
 	make exec-login
 	make down
 
-test-deb:
+test-deb-stub:
 	make up
 	make setup-deb
 	make exec-login
