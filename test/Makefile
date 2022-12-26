@@ -23,7 +23,7 @@ test-deb-from-env:
 	make create-test-conf-env
 	make setup-deb
 	make setup-client-key-env
-	make exec-login
+	make user=${TEST_USER} exec-login
 	make down
 	make revert-test-conf
 
