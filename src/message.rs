@@ -52,9 +52,7 @@ impl DividedMessage {
 }
 
 impl fmt::Display for DividedMessage {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}:{}", if self.cont { 1 } else { 0 }, self.message)
-    }
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{}:{}", i32::from(self.cont), self.message) }
 }
 
 impl FromStr for DividedMessage {
