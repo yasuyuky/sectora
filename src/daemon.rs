@@ -40,7 +40,7 @@ impl Drop for Daemon {
 
 impl Daemon {
     fn new() -> Self {
-        let config = Config::from_path(*CONF_PATH).expect("valid config");
+        let config = Config::from_path(&CONF_PATH).expect("valid config");
         let socket_conf = SocketConfig::new();
         fs::create_dir_all(&socket_conf.socket_dir).expect("create socket dir");
         fs::set_permissions(&socket_conf.socket_dir, unix::fs::PermissionsExt::from_mode(0o777)).unwrap_or_default();
