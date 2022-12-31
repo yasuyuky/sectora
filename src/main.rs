@@ -2,7 +2,6 @@ mod applog;
 mod connection;
 mod error;
 mod message;
-mod statics;
 mod structs;
 
 use clap::{CommandFactory, Parser};

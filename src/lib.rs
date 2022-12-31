@@ -4,7 +4,6 @@ mod connection;
 mod cstructs;
 mod error;
 mod message;
-mod statics;
 mod structs;
 
 use buffer::Buffer;
