@@ -683,7 +683,6 @@ dependencies = [
  "glob",
  "hyper",
  "hyper-tls",
- "lazy_static",
  "libc",
  "log",
  "nix",
