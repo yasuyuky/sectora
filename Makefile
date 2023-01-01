@@ -102,7 +102,7 @@ $(AARCH64_RELEASE_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
 $(AARCH64_DEBIAN_DIR)/sectora_$(VERSION)_arm64.deb: src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES) $(ASSETS)
 	$(DOCKER_RUN) $(AARCH64_BUILD_OPT) $(AARCH64_BUILD_IMG) sh -c "cargo install -f cargo-deb --root .cargo && CARGO_HOME=.cargo cargo deb --target=$(AARCH64_TARGET)"
 
-.PHONY: clean clean-x64 clean-arm clean-exe clean-lib clean-deb clean-all
+.PHONY: clean clean-x64 clean-arm clean-aarch64 clean-exe clean-lib clean-deb clean-all
 
 clean-x64:
 	$(DOCKER_RUN) $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo clean
@@ -114,20 +114,16 @@ clean-aarch64:
 	$(DOCKER_RUN) $(AARCH64_BUILD_OPT) $(AARCH64_BUILD_IMG) cargo clean
 
 clean-exe:
-	rm -f $(X64_RELEASE_DIR)/sectora
-	rm -f $(ARM_RELEASE_DIR)/sectora
+	rm -f target/*/release/sectora
 
 clean-daemon:
-	rm -f $(X64_RELEASE_DIR)/sectorad
-	rm -f $(ARM_RELEASE_DIR)/sectorad
+	rm -f target/*/release/sectorad
 
 clean-lib:
-	rm -f $(X64_RELEASE_DIR)/libnss_sectora.so
-	rm -f $(ARM_RELEASE_DIR)/libnss_sectora.so
+	rm -f target/*/release/libnss_sectora.so
 
 clean-deb:
-	rm -f $(X64_DEBIAN_DIR)/sectora_$(VERSION)_amd64.deb
-	rm -f $(ARM_DEBIAN_DIR)/sectora_$(VERSION)_armhf.deb
+	rm -f target/*/debian/sectora_$(VERSION)_*.deb
 
 clean:
 	make clean-exe
@@ -138,3 +134,4 @@ clean:
 clean-all:
 	$(DOCKER_RUN) $(X64_BUILD_OPT) $(X64_BUILD_IMG) cargo clean
 	$(DOCKER_RUN) $(ARM_BUILD_OPT) $(ARM_BUILD_IMG) cargo clean
+	$(DOCKER_RUN) $(AARCH64_BUILD_OPT) $(AARCH64_BUILD_IMG) cargo clean
