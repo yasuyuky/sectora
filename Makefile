@@ -14,12 +14,12 @@ ARM_BUILD_IMG=ghcr.io/yasuyuky/rust-arm:${RUST_VER}
 AARCH64_BUILD_IMG=ghcr.io/yasuyuky/rust-ubuntu:${RUST_VER}
 COMMON_BUILD_OPT= -v ${PWD}:/source -w /source
 LOG_LEVEL:=OFF
-OPENSSL_STATIC_OPT= -e OPENSSL_STATIC=yes -e OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ -e OPENSSL_INCLUDE_DIR=/usr/include -e LOG_LEVEL=$(LOG_LEVEL)
+OPENSSL_STATIC_OPT_X64= -e OPENSSL_STATIC=yes -e OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu/ -e OPENSSL_INCLUDE_DIR=/usr/include -e LOG_LEVEL=$(LOG_LEVEL)
 OPENSSL_STATIC_OPT_AARCH64= -e OPENSSL_STATIC=yes -e OPENSSL_LIB_DIR=/usr/lib/aarch64-linux-gnu/ -e OPENSSL_INCLUDE_DIR=/usr/include -e LOG_LEVEL=$(LOG_LEVEL)
 X64_BUILD_VOL= -v ${PWD}/.cargo-x64/registry:/usr/local/cargo/registry -v ${PWD}/.cargo-x64/bin:/source/.cargo/bin
 ARM_BUILD_VOL= -v ${PWD}/.cargo-arm/registry:/usr/local/cargo/registry -v ${PWD}/.cargo-arm/bin:/source/.cargo/bin
 X64_BUILD_VOL= -v ${PWD}/.cargo-aarch64/registry:/usr/local/cargo/registry -v ${PWD}/.cargo-aarch64/bin:/source/.cargo/bin
-X64_BUILD_OPT= $(X64_BUILD_VOL) $(COMMON_BUILD_OPT) $(OPENSSL_STATIC_OPT)
+X64_BUILD_OPT= $(X64_BUILD_VOL) $(COMMON_BUILD_OPT) $(OPENSSL_STATIC_OPT_X64)
 ARM_BUILD_OPT= $(ARM_BUILD_VOL) $(COMMON_BUILD_OPT)
 AARCH64_BUILD_OPT= $(AARCH64_BUILD_VOL) $(COMMON_BUILD_OPT) $(OPENSSL_STATIC_OPT_AARCH64)
 DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
