@@ -3,6 +3,7 @@ dist:=ubuntu
 ver:=bionic
 user:=hunter
 keyfile:=id_rsa
+target:=x86_64-unknown-linux-gnu
 
 .PHONY: test-ansible test-deb up down reset
 
@@ -67,8 +68,8 @@ revert-test-conf:
 	git checkout testconf.toml
 
 setup-host-deb:
-	docker cp ../target/x86_64-unknown-linux-gnu/debian/sectora_$(VERSION)_amd64.deb host:/tmp/
-	docker exec host sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/sectora_$(VERSION)_amd64.deb"
+	docker cp ../target/$(target)/debian/sectora_$(VERSION)_*.deb host:/tmp/
+	docker exec host sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/sectora_$(VERSION)_*.deb"
 	docker cp ./testconf.toml host:/etc/sectora.conf
 	time docker exec host systemctl start sectora
 	time docker exec host systemctl restart ssh
@@ -81,7 +82,7 @@ setup-client-ansible:
 	docker cp ../ansible/templates client:/work/templates
 	docker cp ../assets/sectora.service client:/work/
 	docker cp ../assets/sectora.sh client:/work/
-	docker cp ../target/x86_64-unknown-linux-gnu/release client:/work/release
+	docker cp ../target/$(target)/release client:/work/release
 
 up:
 	@echo '::group::Starting containers'
