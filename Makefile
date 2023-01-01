@@ -99,7 +99,7 @@ $(AARCH64_RELEASE_DIR)/sectorad: src/daemon.rs $(SRCS) $(CARGO_FILES)
 $(AARCH64_RELEASE_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
 	$(DOCKER_RUN) $(AARCH64_BUILD_OPT) $(AARCH64_BUILD_IMG) cargo build --lib --release --target=$(AARCH64_TARGET)
 
-$(AARCH64_DEBIAN_DIR)/sectora_$(VERSION)_aarch64.deb: src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES) $(ASSETS)
+$(AARCH64_DEBIAN_DIR)/sectora_$(VERSION)_arm64.deb: src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES) $(ASSETS)
 	$(DOCKER_RUN) $(AARCH64_BUILD_OPT) $(AARCH64_BUILD_IMG) sh -c "cargo install -f cargo-deb --root .cargo && CARGO_HOME=.cargo cargo deb --target=$(AARCH64_TARGET)"
 
 .PHONY: clean clean-x64 clean-arm clean-exe clean-lib clean-deb clean-all
