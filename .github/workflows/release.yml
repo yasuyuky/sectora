@@ -48,6 +48,8 @@ jobs:
         arch: [amd64, arm64, armhf]
     runs-on: ubuntu-latest
     steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
       - name: Build deb
         run: make TARGET=${{ matrix.arch }} deb
       - name: Get Path of Artifact
