@@ -25,6 +25,8 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Build
         run: make TARGET=${{ matrix.arch }} ${{ matrix.target }}
+      - name: Fix cache permission
+        run: sudo chown -R $USER .cargo-${{ matrix.arch }}
       - uses: actions/upload-artifact@v3
         if: matrix.target == 'deb'
         with:
