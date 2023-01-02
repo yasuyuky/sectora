@@ -21,6 +21,8 @@ jobs:
         with:
           path: ${{ github.workspace }}/.cargo-${{ matrix.arch }}
           key: ${{ matrix.arch }}-${{ hashFiles('Cargo.lock') }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
       - name: Build
         run: make TARGET=${{ matrix.arch }} ${{ matrix.target }}
       - uses: actions/upload-artifact@v3
