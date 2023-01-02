@@ -8,6 +8,9 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.cargo_ver.outputs.version }}
+      upload: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - uses: actions/checkout@v3
 
@@ -38,25 +41,28 @@ jobs:
           draft: false
           prerelease: false
 
+  build-and-upload:
+    needs: release
+    strategy:
+      matrix:
+        arch: [amd64, arm64, armhf]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
       - name: Build deb
-        run: make deb
-
-      - name: Upload Release Asset x64
+        run: make TARGET=${{ matrix.arch }} deb
+      - name: Get Path of Artifact
+        id: getpath
+        run: |
+          ASSET_PATH=$(ls target/*/debian/sectora_${{ needs.release.outputs.version }}_${{ matrix.arch }}.deb | head -n 1)
+          echo "asset_path=$ASSET_PATH" >> $GITHUB_OUTPUT
+      - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: target/x86_64-unknown-linux-gnu/debian/sectora_${{ steps.cargo_ver.outputs.version }}_amd64.deb
-          asset_name: sectora_${{ steps.cargo_ver.outputs.version }}_amd64.deb
-          asset_content_type: application/vnd.debian.binary-package
-
-      - name: Upload Release Asset arm
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: target/arm-unknown-linux-gnueabihf/debian/sectora_${{ steps.cargo_ver.outputs.version }}_armhf.deb
-          asset_name: sectora_${{ steps.cargo_ver.outputs.version }}_armhf.deb
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: ${{ steps.getpath.outputs.asset_path }}
+          asset_name: sectora_${{ needs.release.outputs.version }}_${{ matrix.arch }}.deb
           asset_content_type: application/vnd.debian.binary-package
