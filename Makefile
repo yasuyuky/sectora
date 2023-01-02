@@ -9,9 +9,10 @@ RSTARGET=x86_64-unknown-linux-gnu
 else ifeq ($(TARGET),arm64)
 RSTARGET=aarch64-unknown-linux-gnu
 else ifeq ($(TARGET),armhf)
-RSTARGET=arm-unknown-linux-gnueabihf
+RSTARGET=armv7-unknown-linux-gnueabihf
+LIBTARGET=arm-linux-gnueabihf
 endif
-LIBTARGET=$(subst unknown-,,$(RSTARGET))
+LIBTARGET?=$(subst unknown-,,$(RSTARGET))
 RELEASE_DIR=target/$(RSTARGET)/release
 DEBIAN_DIR=target/$(RSTARGET)/debian
 COMMON_BUILD_OPT= -v ${PWD}:/source -w /source
