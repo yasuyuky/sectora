@@ -117,7 +117,7 @@ down:
 	@echo '::endgroup::'
 
 reset:
-	cd .. && make x64 LOG_LEVEL=DEBUG
+	cd .. && make TARGET=amd64 deb LOG_LEVEL=DEBUG
 	make down
 	make up
 	make setup
