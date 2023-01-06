@@ -3,3 +3,4 @@ target
 *.retry
 hosts-*
 *.local.yml
+.sccache*
