@@ -19,14 +19,14 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/cache@v3
         with:
-          path: ${{ github.workspace }}/.cargo-${{ matrix.arch }}
-          key: ${{ matrix.arch }}-${{ hashFiles('Cargo.lock') }}
+          path: ${{ github.workspace }}/.sccache-${{ matrix.arch }}
+          key: ${{ runner.os }}-${{ matrix.arch }}-sccache
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Build
         run: make TARGET=${{ matrix.arch }} ${{ matrix.target }}
       - name: Fix cache permission
-        run: sudo chown -R $USER .cargo-${{ matrix.arch }}
+        run: sudo chown -R $USER .sccache-${{ matrix.arch }}
       - uses: actions/upload-artifact@v3
         if: matrix.target == 'deb'
         with:
