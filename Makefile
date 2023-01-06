@@ -60,7 +60,7 @@ $(RELEASE_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
 	$(DOCKER_RUN) $(BUILD_OPT) $(BUILD_IMG) cargo build --lib --release --target=$(RSTARGET)
 
 $(DEBIAN_DIR)/sectora_$(VERSION)_$(TARGET).deb: src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES) $(ASSETS)
-	$(DOCKER_RUN) $(BUILD_OPT) $(BUILD_IMG) sh -c "cargo install cargo-deb --root .cargo && CARGO_HOME=.cargo cargo deb --target=$(RSTARGET)"
+	$(DOCKER_RUN) $(BUILD_OPT) $(BUILD_IMG) sh -c "cargo deb --target=$(RSTARGET) && sccache -s"
 
 .PHONY: clean clean-cargo clean-exe clean-lib clean-deb
 
