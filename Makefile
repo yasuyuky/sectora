@@ -15,9 +15,10 @@ endif
 LIBTARGET?=$(subst unknown-,,$(RSTARGET))
 RELEASE_DIR=target/$(RSTARGET)/release
 DEBIAN_DIR=target/$(RSTARGET)/debian
-COMMON_BUILD_OPT= -v ${PWD}:/source -w /source
+COMMON_BUILD_OPT= -v ${PWD}:/source -w /source -e RUSTC_WRAPPER=/usr/local/cargo/bin/sccache -e SCCACHE_DIR=/source/.sccache
 # BUILD_VOL= -v ${PWD}/.cargo-$(TARGET)/registry:/usr/local/cargo/registry -v ${PWD}/.cargo-$(TARGET)/bin:/source/.cargo/bin
-BUILD_VOL= -v ${PWD}/.cargo-$(TARGET):/source/.cargo
+# BUILD_VOL= -v ${PWD}/.cargo-$(TARGET):/source/.cargo
+BUILD_VOL= -v ${PWD}/.sccache-$(TARGET):/source/.sccache
 OPENSSL_STATIC_OPT= -e OPENSSL_STATIC=yes -e OPENSSL_LIB_DIR=/usr/lib/$(LIBTARGET)/ -e OPENSSL_INCLUDE_DIR=/usr/include -e LOG_LEVEL=$(LOG_LEVEL)
 BUILD_OPT= $(BUILD_VOL) $(COMMON_BUILD_OPT) $(OPENSSL_STATIC_OPT)
 DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
@@ -59,7 +60,7 @@ $(RELEASE_DIR)/libnss_sectora.so: src/lib.rs $(SRCS) $(CARGO_FILES)
 	$(DOCKER_RUN) $(BUILD_OPT) $(BUILD_IMG) cargo build --lib --release --target=$(RSTARGET)
 
 $(DEBIAN_DIR)/sectora_$(VERSION)_$(TARGET).deb: src/main.rs src/daemon.rs src/lib.rs $(SRCS) $(CARGO_FILES) $(ASSETS)
-	$(DOCKER_RUN) $(BUILD_OPT) $(BUILD_IMG) sh -c "cargo install cargo-deb --root .cargo && CARGO_HOME=.cargo cargo deb --target=$(RSTARGET)"
+	$(DOCKER_RUN) $(BUILD_OPT) $(BUILD_IMG) sh -c "cargo deb --target=$(RSTARGET) && sccache -s"
 
 .PHONY: clean clean-cargo clean-exe clean-lib clean-deb
 
