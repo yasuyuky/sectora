@@ -20,7 +20,7 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/.sccache-${{ matrix.arch }}
-          key: ${{ runner.os }}-${{ matrix.arch }}-sccache
+          key: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.target }}-sccache
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Build
