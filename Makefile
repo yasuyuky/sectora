@@ -17,7 +17,8 @@ RELEASE_DIR=target/$(RSTARGET)/release
 DEBIAN_DIR=target/$(RSTARGET)/debian
 COMMON_BUILD_OPT= -v ${PWD}:/source -w /source
 # BUILD_VOL= -v ${PWD}/.cargo-$(TARGET)/registry:/usr/local/cargo/registry -v ${PWD}/.cargo-$(TARGET)/bin:/source/.cargo/bin
-BUILD_VOL= -v ${PWD}/.cargo-$(TARGET):/source/.cargo
+# BUILD_VOL= -v ${PWD}/.cargo-$(TARGET):/source/.cargo
+BUILD_VOL= -v ${PWD}/.sccache-$(TARGET):/source/.sccache
 OPENSSL_STATIC_OPT= -e OPENSSL_STATIC=yes -e OPENSSL_LIB_DIR=/usr/lib/$(LIBTARGET)/ -e OPENSSL_INCLUDE_DIR=/usr/include -e LOG_LEVEL=$(LOG_LEVEL)
 BUILD_OPT= $(BUILD_VOL) $(COMMON_BUILD_OPT) $(OPENSSL_STATIC_OPT)
 DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
