@@ -15,7 +15,7 @@ endif
 LIBTARGET?=$(subst unknown-,,$(RSTARGET))
 RELEASE_DIR=target/$(RSTARGET)/release
 DEBIAN_DIR=target/$(RSTARGET)/debian
-COMMON_BUILD_OPT= -v ${PWD}:/source -w /source
+COMMON_BUILD_OPT= -v ${PWD}:/source -w /source -e RUSTC_WRAPPER=/usr/local/cargo/bin/sccache -e SCCACHE_DIR=/source/.sccache
 # BUILD_VOL= -v ${PWD}/.cargo-$(TARGET)/registry:/usr/local/cargo/registry -v ${PWD}/.cargo-$(TARGET)/bin:/source/.cargo/bin
 # BUILD_VOL= -v ${PWD}/.cargo-$(TARGET):/source/.cargo
 BUILD_VOL= -v ${PWD}/.sccache-$(TARGET):/source/.sccache
