@@ -15,6 +15,7 @@ test-ansible-stub:
 
 test-deb-stub:
 	make up
+	make create-test-conf-stub
 	make setup-deb
 	make exec-login
 	make down
@@ -55,6 +56,15 @@ setup-client-key-env:
 	docker exec client mkdir -p /work/keys/user/
 	docker cp $(keyfile) client:/work/keys/user/$(keyfile)
 	rm $(keyfile)
+
+create-test-conf-stub:
+	@echo 'token = "TESTTOKEN"'                   > testconf.toml
+	@echo 'org = "soundtribe"'                   >> testconf.toml
+	@echo 'endpoint = "http://json-server:3000"' >> testconf.toml
+	@echo                                        >> testconf.toml
+	@echo '[[team]]'                             >> testconf.toml
+	@echo 'name = "sector9"'                     >> testconf.toml
+	@echo 'gid = 2019'                           >> testconf.toml
 
 create-test-conf-env:
 	@echo "token = \"${TEST_GITHUB_TOKEN}\""  > testconf.toml
