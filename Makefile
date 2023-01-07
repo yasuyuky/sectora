@@ -68,16 +68,16 @@ clean-cargo:
 	$(DOCKER_RUN) $(BUILD_OPT) $(BUILD_IMG) cargo clean
 
 clean-exe:
-	rm -f target/*/release/sectora
+	rm -f target/$(RSTARGET)/release/sectora
 
 clean-daemon:
-	rm -f target/*/release/sectorad
+	rm -f target/$(RSTARGET)/release/sectorad
 
 clean-lib:
-	rm -f target/*/release/libnss_sectora.so
+	rm -f target/$(RSTARGET)/release/libnss_sectora.so
 
 clean-deb:
-	rm -f target/*/debian/sectora_$(VERSION)_*.deb
+	rm -f target/$(RSTARGET)/debian/sectora_$(VERSION)_*.deb
 
 clean:
 	make clean-exe
