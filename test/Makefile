@@ -20,7 +20,7 @@ test-deb-stub:
 	make exec-login
 	make down
 
-test-deb-from-env:
+test-deb:
 	make up
 	make create-test-conf-env
 	make setup-deb
