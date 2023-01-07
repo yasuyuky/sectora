@@ -1,9 +1,0 @@
-token = "TESTTOKEN"
-org = "soundtribe"
-
-endpoint = "http://json-server:3000"
-
-[[team]]
-name = "sector9"
-gid = 2019
-

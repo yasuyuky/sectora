@@ -27,7 +27,6 @@ test-deb-from-env:
 	make setup-client-key-env
 	make user=${TEST_USER} exec-login
 	make down
-	make revert-test-conf
 
 setup-deb:
 	@echo '::group::Installing deb packages'
@@ -73,9 +72,6 @@ create-test-conf-env:
 	@echo '[[team]]'                         >> testconf.toml
 	@echo "name = \"${TEST_GITHUB_TEAM}\""   >> testconf.toml
 	@echo "gid = 2022"                       >> testconf.toml
-
-revert-test-conf:
-	git checkout testconf.toml
 
 setup-host-deb:
 	docker cp ../target/$(target)/debian/sectora_$(VERSION)_*.deb host:/tmp/
