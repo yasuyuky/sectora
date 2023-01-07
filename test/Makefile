@@ -15,18 +15,18 @@ test-ansible-stub:
 
 test-deb-stub:
 	make up
+	make create-test-conf-stub
 	make setup-deb
 	make exec-login
 	make down
 
-test-deb-from-env:
+test-deb:
 	make up
 	make create-test-conf-env
 	make setup-deb
 	make setup-client-key-env
 	make user=${TEST_USER} exec-login
 	make down
-	make revert-test-conf
 
 setup-deb:
 	@echo '::group::Installing deb packages'
@@ -56,6 +56,15 @@ setup-client-key-env:
 	docker cp $(keyfile) client:/work/keys/user/$(keyfile)
 	rm $(keyfile)
 
+create-test-conf-stub:
+	@echo 'token = "TESTTOKEN"'                   > testconf.toml
+	@echo 'org = "soundtribe"'                   >> testconf.toml
+	@echo 'endpoint = "http://json-server:3000"' >> testconf.toml
+	@echo                                        >> testconf.toml
+	@echo '[[team]]'                             >> testconf.toml
+	@echo 'name = "sector9"'                     >> testconf.toml
+	@echo 'gid = 2019'                           >> testconf.toml
+
 create-test-conf-env:
 	@echo "token = \"${TEST_GITHUB_TOKEN}\""  > testconf.toml
 	@echo "org = \"${TEST_GITHUB_ORG}\""     >> testconf.toml
@@ -63,9 +72,6 @@ create-test-conf-env:
 	@echo '[[team]]'                         >> testconf.toml
 	@echo "name = \"${TEST_GITHUB_TEAM}\""   >> testconf.toml
 	@echo "gid = 2022"                       >> testconf.toml
-
-revert-test-conf:
-	git checkout testconf.toml
 
 setup-host-deb:
 	docker cp ../target/$(target)/debian/sectora_$(VERSION)_*.deb host:/tmp/
@@ -89,10 +95,10 @@ up:
 	@echo '$(shell tput setaf 6)$(dist) $(shell tput setaf 3)$(ver)$(shell tput sgr 0)'
 	docker network create -d bridge testnw
 	docker build -t json-server ./json-server
-	docker run -d --network testnw --name json-server -h json-server json-server json-server --watch db.json --host 0.0.0.0 --routes routes.json
-	docker run -d --network testnw --name host -h host --privileged --cgroupns=host -v /sys/fs/cgroup:/sys/fs/cgroup:rw yasuyuky/ssh-test:$(dist).$(ver)
+	docker run -d --network testnw --name json-server json-server json-server --watch db.json --host 0.0.0.0 --routes routes.json
+	docker run -d --network testnw --name host --privileged --cgroupns=host -v /sys/fs/cgroup:/sys/fs/cgroup:rw yasuyuky/ssh-test:$(dist).$(ver)
 	docker build -t client client
-	docker run -d --network testnw --name client -h client -w /work client sh -c 'while true; do sleep 1; done'
+	docker run -d --network testnw --name client -w /work client sh -c 'while true; do sleep 1; done'
 	@echo '::endgroup::'
 
 exec-login:
@@ -117,7 +123,7 @@ down:
 	@echo '::endgroup::'
 
 reset:
-	cd .. && make TARGET=amd64 deb LOG_LEVEL=DEBUG
+	cd .. && make TARGET=$(target) deb LOG_LEVEL=DEBUG
 	make down
 	make up
 	make setup
