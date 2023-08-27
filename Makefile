@@ -26,7 +26,7 @@ DEPLOY_TEST_IMG=yasuyuky/ubuntu-ssh
 ENTRIY_POINTS := src/main.rs src/daemon.rs src/lib.rs
 SRCS := $(filter-out $(ENTRIY_POINTS),$(wildcard src/*.rs))
 ASSETS := $(wildcard assets/*) $(wildcard assets/*/*)
-CARGO_FILES := Cargo.toml Cargo.lock rust-toolchain
+CARGO_FILES := Cargo.toml Cargo.lock
 DOCKER_RUN=docker run --rm $(PLATFORM_OPT)
 
 all:
