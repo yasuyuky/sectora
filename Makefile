@@ -1,4 +1,4 @@
-RUST_VER=$(shell cat rust-toolchain)
+RUST_VER=$(shell grep "^rust-version" Cargo.toml | cut -f 2 -d '"')
 VERSION=$(shell grep "^version" Cargo.toml | cut -f 2 -d '"')
 TARGET:=amd64
 LOG_LEVEL:=OFF
