@@ -21,7 +21,7 @@ hyper = { version = "0.14.27", features = ["http1", "client", "tcp"] }
 hyper-tls = "0.5.0"
 log = "0.4.20"
 syslog = "6.1"
-tokio = { version = "1.29", features = ["macros", "rt", "rt-multi-thread"] }
+tokio = { version = "1.32", features = ["macros", "rt", "rt-multi-thread"] }
 sd-notify = "0.4.1"
 clap = { version = "4.4.2", features = ["derive"] }
 clap_complete = "4.4.0"
