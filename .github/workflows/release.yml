@@ -12,7 +12,7 @@ jobs:
       version: ${{ steps.cargo_ver.outputs.version }}
       upload: ${{ steps.create_release.outputs.upload_url }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Get Date
         id: get_date
