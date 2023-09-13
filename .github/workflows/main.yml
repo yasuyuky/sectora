@@ -22,7 +22,7 @@ jobs:
           path: ${{ github.workspace }}/.sccache-${{ matrix.arch }}
           key: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.target }}-sccache
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       - name: Build
         run: make TARGET=${{ matrix.arch }} ${{ matrix.target }}
       - name: Fix cache permission
