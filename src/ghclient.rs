@@ -1,10 +1,7 @@
 use crate::error::Error;
 use crate::structs::{Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
 use glob::glob;
-use reqwest::{
-    blocking::{Client, Request},
-    header, Method, Url,
-};
+use reqwest::{header, Client, Method, Request, Url};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
@@ -81,8 +78,8 @@ impl GithubClient {
 
     async fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::Value>, Error> {
         let req = self.build_page_request(url, page)?;
-        let resp = self.client.execute(req).unwrap();
-        let json = resp.json::<Vec<serde_json::Value>>().unwrap();
+        let resp = self.client.execute(req).await.unwrap();
+        let json = resp.json::<Vec<serde_json::Value>>().await.unwrap();
         Ok(json)
     }
 
@@ -184,8 +181,8 @@ impl GithubClient {
     pub async fn get_rate_limit(&self) -> Result<RateLimit, Error> {
         let url = format!("{}/rate_limit", self.conf.endpoint);
         let req = self.build_request(&url)?;
-        let resp = self.client.execute(req).unwrap();
-        Ok(resp.json().unwrap())
+        let resp = self.client.execute(req).await.unwrap();
+        Ok(resp.json().await.unwrap())
     }
 
     pub async fn clear_all_caches(&self) -> Result<(), Error> {
