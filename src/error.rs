@@ -3,8 +3,6 @@ pub enum Error {
     Serde(serde_json::Error),
     Io(std::io::Error),
     Toml(toml::de::Error),
-    Http(hyper::http::Error),
-    Hyper(hyper::Error),
     ParseMessageError(ParseMessageError),
 }
 
@@ -16,12 +14,6 @@ impl From<std::io::Error> for Error {
 }
 impl From<toml::de::Error> for Error {
     fn from(err: toml::de::Error) -> Error { Error::Toml(err) }
-}
-impl From<hyper::Error> for Error {
-    fn from(err: hyper::Error) -> Error { Error::Hyper(err) }
-}
-impl From<hyper::http::Error> for Error {
-    fn from(err: hyper::http::Error) -> Error { Error::Http(err) }
 }
 
 #[derive(Debug)]
