@@ -1,16 +1,16 @@
 use crate::error::Error;
 use crate::structs::{Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
 use glob::glob;
-use hyper::body::HttpBody;
-use hyper::client::{Client, HttpConnector};
-use hyper::{header, Body, Request};
-use hyper_tls::HttpsConnector;
+use reqwest::{
+    blocking::{Client, Request},
+    header, Method, Url,
+};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 
 pub struct GithubClient {
-    client: Client<HttpsConnector<HttpConnector>>,
+    client: Client,
     pub conf: Config,
 }
 
@@ -19,7 +19,12 @@ impl GithubClient {
         if std::env::var("SSL_CERT_FILE").is_err() {
             std::env::set_var("SSL_CERT_FILE", &config.cert_path);
         }
-        let client = Client::builder().build(HttpsConnector::new());
+        let client = Client::builder();
+        let token = String::from("token ") + &config.token;
+        let mut hmap = header::HeaderMap::new();
+        hmap.insert(header::AUTHORIZATION, header::HeaderValue::from_str(&token).unwrap());
+        hmap.insert(header::USER_AGENT, header::HeaderValue::from_str("sectora").unwrap());
+        let client = client.default_headers(hmap).build().unwrap();
         GithubClient { client,
                        conf: config.clone() }
     }
@@ -64,33 +69,21 @@ impl GithubClient {
         Ok(contents)
     }
 
-    fn build_request(&self, url: &str) -> Result<Request<Body>, Error> {
-        let token = String::from("token ") + &self.conf.token;
-        Request::get(url).header(header::AUTHORIZATION, token.as_str())
-                         .header(header::USER_AGENT, "sectora")
-                         .body(Body::empty())
-                         .map_err(Error::from)
+    fn build_request(&self, url: &str) -> Result<Request, Error> {
+        Ok(Request::new(Method::GET, Url::parse(url).unwrap()))
     }
 
-    fn build_page_request(&self, url: &str, page: u64) -> Result<Request<Body>, Error> {
+    fn build_page_request(&self, url: &str, page: u64) -> Result<Request, Error> {
         let sep = if url.contains('?') { '&' } else { '?' };
         let url_p = format!("{}{}page={}", url, sep, page);
         self.build_request(&url_p)
     }
 
-    async fn run_request(&self, req: Request<Body>) -> Result<Vec<u8>, Error> {
-        let mut resp = self.client.request(req).await?;
-        let mut buff: Vec<u8> = Vec::new();
-        while let Some(chunk) = resp.body_mut().data().await {
-            buff.write_all(&chunk?)?;
-        }
-        Ok(buff)
-    }
-
     async fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::Value>, Error> {
         let req = self.build_page_request(url, page)?;
-        let resp = self.run_request(req).await?;
-        Ok(serde_json::from_slice(&resp)?)
+        let resp = self.client.execute(req).unwrap();
+        let json = resp.json::<Vec<serde_json::Value>>().unwrap();
+        Ok(json)
     }
 
     async fn get_contents(&self, url: &str) -> Result<String, Error> {
@@ -191,8 +184,8 @@ impl GithubClient {
     pub async fn get_rate_limit(&self) -> Result<RateLimit, Error> {
         let url = format!("{}/rate_limit", self.conf.endpoint);
         let req = self.build_request(&url)?;
-        let resp = futures::executor::block_on(self.run_request(req))?;
-        Ok(serde_json::from_slice(&resp)?)
+        let resp = self.client.execute(req).unwrap();
+        Ok(resp.json().unwrap())
     }
 
     pub async fn clear_all_caches(&self) -> Result<(), Error> {
