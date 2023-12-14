@@ -74,8 +74,8 @@ create-test-conf-env:
 	@echo "gid = 2022"                       >> testconf.toml
 
 setup-host-deb:
-	docker cp ../target/$(target)/debian/sectora_$(VERSION)_*.deb host:/tmp/
-	docker exec host sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/sectora_$(VERSION)_*.deb"
+	docker cp ../target/$(target)/debian/sectora_$(VERSION)*.deb host:/tmp/
+	docker exec host sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/sectora_$(VERSION)*.deb"
 	docker cp ./testconf.toml host:/etc/sectora.conf
 	time docker exec host systemctl start sectora
 	time docker exec host systemctl restart ssh
