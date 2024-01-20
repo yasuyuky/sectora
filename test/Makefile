@@ -45,6 +45,9 @@ setup-host-root:
 	docker exec host chown -R root:root /root/.ssh/
 	docker exec host chmod -R 600 /root/.ssh/
 
+enter-host:
+	docker exec -it host bash
+
 setup-client-key:
 	docker cp ./keys client:/work/keys
 
