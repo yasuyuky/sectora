@@ -17,7 +17,7 @@ jobs:
         target: [lib, exe, daemon, deb]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.sccache-${{ matrix.arch }}
           key: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.target }}-sccache
