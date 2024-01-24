@@ -3,7 +3,7 @@ pub enum Error {
     Serde(serde_json::Error),
     Io(std::io::Error),
     Toml(toml::de::Error),
-    ParseMessageError(ParseMessageError),
+    ParseMsg(ParseMessageError),
 }
 
 impl From<serde_json::Error> for Error {
@@ -42,5 +42,5 @@ pub enum ParseMessageError {
 }
 
 impl From<ParseMessageError> for Error {
-    fn from(err: ParseMessageError) -> Error { Error::ParseMessageError(err) }
+    fn from(err: ParseMessageError) -> Error { Error::ParseMsg(err) }
 }
