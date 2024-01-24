@@ -17,7 +17,8 @@ impl Buffer {
         }
         unsafe {
             let pos = self.buf.offset(self.offset);
-            std::ptr::copy(data as *mut i8, pos, len);
+            #[allow(clippy::unnecessary_cast)]
+            std::ptr::copy(data as *mut i8, pos as *mut i8, len);
             self.offset += len as isize;
             self.buflen -= len as libc::size_t;
             Ok(pos)
