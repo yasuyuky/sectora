@@ -19,7 +19,7 @@ libc = "0.2"
 nix = "0.28"
 hyper = { version = "0.14.27", features = ["http1", "client", "tcp"] }
 hyper-tls = "0.6.0"
-log = "0.4.20"
+log = "0.4.21"
 syslog = "6.1"
 tokio = { version = "1.36", features = ["macros", "rt", "rt-multi-thread"] }
 sd-notify = "0.4.1"
