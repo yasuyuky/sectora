@@ -37,7 +37,7 @@ impl GithubClient {
         let path = self.get_cache_path(url);
         let metadata = std::fs::metadata(path.to_str().unwrap())?;
         let mut f = File::open(path.to_str().unwrap())?;
-        let mut contents = String::new();
+        let mut contents = String::default();
         f.read_to_string(&mut contents)?;
         Ok((metadata, contents))
     }

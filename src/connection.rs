@@ -32,7 +32,7 @@ impl Connection {
 
     pub fn communicate(&self, msg: ClientMessage) -> Result<DaemonMessage, error::Error> {
         self.conn.send(msg.to_string().as_bytes())?;
-        let mut msgstr = String::new();
+        let mut msgstr = String::default();
         let mut buf = [0u8; 4096];
         while let Ok(cnt) = self.conn.recv(&mut buf) {
             log::debug!("msg cnt, {}", cnt);
