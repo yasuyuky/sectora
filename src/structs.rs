@@ -62,7 +62,7 @@ impl Config {
     #[allow(dead_code)]
     pub fn from_path(configpath: &std::path::Path) -> Result<Self, Error> {
         let mut file = File::open(configpath)?;
-        let mut contents = String::new();
+        let mut contents = String::default();
         file.read_to_string(&mut contents)?;
         Ok(toml::from_str::<Config>(&contents)?)
     }
@@ -91,7 +91,7 @@ impl UserConfig {
     #[allow(dead_code)]
     pub fn from_path(configpath: &std::path::Path) -> Result<Self, Error> {
         let mut file = File::open(configpath)?;
-        let mut contents = String::new();
+        let mut contents = String::default();
         file.read_to_string(&mut contents)?;
         Ok(toml::from_str::<UserConfig>(&contents)?)
     }

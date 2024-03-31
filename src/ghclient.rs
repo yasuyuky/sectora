@@ -27,7 +27,7 @@ impl GithubClient {
     }
 
     fn get_cache_path(&self, url: &str) -> std::path::PathBuf {
-        let mut path = std::path::PathBuf::new();
+        let mut path = std::path::PathBuf::default();
         path.push(&self.conf.cache_dir);
         path.push(url);
         path
@@ -37,7 +37,7 @@ impl GithubClient {
         let path = self.get_cache_path(url);
         let metadata = std::fs::metadata(path.to_str().unwrap())?;
         let mut f = File::open(path.to_str().unwrap())?;
-        let mut contents = String::new();
+        let mut contents = String::default();
         f.read_to_string(&mut contents)?;
         Ok((metadata, contents))
     }

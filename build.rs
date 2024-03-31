@@ -24,7 +24,7 @@ fn main() -> Result<(), std::io::Error> {
 fn commit_info() -> String {
     match (commit_date(), commit_hash()) {
         (Ok(date), Ok(hash)) => format!(" {} {}", date.trim_end(), hash.trim_end(),),
-        _ => String::new(),
+        _ => String::default(),
     }
 }
 
