@@ -306,7 +306,7 @@ impl FromStr for DaemonMessage {
                                           remaining,
                                           reset })
         } else if let Some(msg) = s.strip_prefix("d:sectors:") {
-            let sectors = msg.split('\n')
+            let sectors = msg.lines()
                              .filter_map(|l| l.parse::<structs::SectorGroup>().ok())
                              .collect();
             Ok(DaemonMessage::SectorGroups { sectors })
