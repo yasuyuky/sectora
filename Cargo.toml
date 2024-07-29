@@ -20,7 +20,7 @@ nix = "0.29"
 hyper = { version = "0.14.27", features = ["http1", "client", "tcp"] }
 hyper-tls = "0.6.0"
 log = "0.4.22"
-syslog = "6.1"
+syslog = "7.0"
 tokio = { version = "1.38", features = ["macros", "rt", "rt-multi-thread"] }
 sd-notify = "0.4.2"
 clap = { version = "4.5.11", features = ["derive"] }
