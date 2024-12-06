@@ -1,4 +1,4 @@
-FROM alpine:3.20.3
+FROM alpine:3.21.0
 
 RUN apk add openssh ansible
 COPY sshconfig /root/.ssh/config
