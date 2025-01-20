@@ -19,8 +19,22 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: Install unzstd
-        run: sudo apt-get install -y zstd
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang mold
+      - name: Configure cargo for mold
+        run: |
+          mkdir -p .cargo
+          echo '[target.x86_64-unknown-linux-gnu]' > .cargo/config.toml
+          echo 'linker = "clang"' >> .cargo/config.toml
+          echo 'rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]' >> .cargo/config.toml
+          echo '[target.aarch64-unknown-linux-gnu]' >> .cargo/config.toml
+          echo 'linker = "clang"' >> .cargo/config.toml
+          echo 'rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]' >> .cargo/config.toml
+          echo '[target.arm-unknown-linux-gnueabihf]' >> .cargo/config.toml
+          echo 'linker = "clang"' >> .cargo/config.toml
+          echo 'rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]' >> .cargo/config.toml
       - uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.sccache-${{ matrix.arch }}
