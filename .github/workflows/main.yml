@@ -23,6 +23,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang mold
+      - name: Check installation
+        run: clang --version
       - name: Configure cargo for mold
         run: |
           mkdir -p .cargo
