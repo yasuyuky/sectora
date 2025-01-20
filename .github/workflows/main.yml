@@ -25,6 +25,8 @@ jobs:
           sudo apt-get install -y clang mold
       - name: Check installation
         run: clang --version
+      - name: Add clang to PATH
+        run: echo 'export PATH=$PATH:/usr/bin' >> $GITHUB_ENV
       - name: Configure cargo for mold
         run: |
           mkdir -p .cargo
