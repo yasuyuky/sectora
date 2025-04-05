@@ -57,7 +57,7 @@ jobs:
       - name: Get Path of Artifact
         id: getpath
         run: |
-          ASSET_PATH=$(ls target/*/debian/sectora_${{ needs.release.outputs.version }}_${{ matrix.arch }}.deb | head -n 1)
+          ASSET_PATH=$(ls target/*/debian/sectora_${{ needs.release.outputs.version }}*_${{ matrix.arch }}.deb | head -n 1)
           echo "asset_path=$ASSET_PATH" >> $GITHUB_OUTPUT
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -66,5 +66,5 @@ jobs:
         with:
           upload_url: ${{ needs.release.outputs.upload }}
           asset_path: ${{ steps.getpath.outputs.asset_path }}
-          asset_name: sectora_${{ needs.release.outputs.version }}_${{ matrix.arch }}.deb
+          asset_name: basename(${{ steps.getpath.outputs.asset_path }})
           asset_content_type: application/vnd.debian.binary-package
