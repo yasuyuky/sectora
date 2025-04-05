@@ -62,7 +62,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.release.outputs.upload_url }}
+          upload_url: ${{ needs.release.outputs.upload }}
           asset_path: ${{ steps.getpath.outputs.asset_path }}
           asset_name: sectora_${{ needs.release.outputs.version }}_${{ matrix.arch }}.deb
           asset_content_type: application/vnd.debian.binary-package
