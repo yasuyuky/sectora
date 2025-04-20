@@ -14,7 +14,9 @@ pub struct GithubClient {
 impl GithubClient {
     pub fn new(config: &Config) -> GithubClient {
         if std::env::var("SSL_CERT_FILE").is_err() {
+            unsafe {
             std::env::set_var("SSL_CERT_FILE", &config.cert_path);
+            }
         }
         let client = Client::builder();
         let token = String::from("token ") + &config.token;
