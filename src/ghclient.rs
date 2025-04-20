@@ -1,7 +1,7 @@
 use crate::error::Error;
 use crate::structs::{Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
 use glob::glob;
-use reqwest::{header, Client, Method, Request, Url};
+use reqwest::{Client, Method, Request, Url, header};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
@@ -15,7 +15,7 @@ impl GithubClient {
     pub fn new(config: &Config) -> GithubClient {
         if std::env::var("SSL_CERT_FILE").is_err() {
             unsafe {
-            std::env::set_var("SSL_CERT_FILE", &config.cert_path);
+                std::env::set_var("SSL_CERT_FILE", &config.cert_path);
             }
         }
         let client = Client::builder();
