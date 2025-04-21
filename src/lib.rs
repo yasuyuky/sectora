@@ -82,7 +82,7 @@ macro_rules! try_unwrap {
 /// # Safety
 ///
 /// This function intended to be called from nss
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, pwptr: *mut Passwd,
                                                  buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
@@ -107,7 +107,7 @@ pub unsafe extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, 
 /// # Safety
 ///
 /// This function intended to be called from nss
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut Passwd, buf: *mut libc::c_char,
                                                  buflen: libc::size_t, errnop: *mut libc::c_int)
                                                  -> libc::c_int {
@@ -131,7 +131,7 @@ pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut P
 /// # Safety
 ///
 /// This function intended to be called from nss
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
     let conn = try_unwrap!(Connection::new("_nss_sectora_setpwent"));
     let msg = try_unwrap!(conn.communicate(CMsg::Pw(Pw::Ent(Ent::Set(process::id())))));
@@ -144,7 +144,7 @@ pub unsafe extern "C" fn _nss_sectora_setpwent() -> libc::c_int {
 /// # Safety
 ///
 /// This function intended to be called from nss
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
@@ -168,7 +168,7 @@ pub unsafe extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut l
 /// # Safety
 ///
 /// This function intended to be called from nss
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _nss_sectora_endpwent() -> libc::c_int {
     let conn = try_unwrap!(Connection::new("_nss_sectora_endpwent"));
     let msg = try_unwrap!(conn.communicate(CMsg::Pw(Pw::Ent(Ent::End(process::id())))));
@@ -181,7 +181,7 @@ pub unsafe extern "C" fn _nss_sectora_endpwent() -> libc::c_int {
 /// # Safety
 ///
 /// This function intended to be called from nss
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, spptr: *mut Spwd,
                                                  buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
@@ -201,7 +201,7 @@ pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, 
 /// # Safety
 ///
 /// This function intended to be called from nss
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _nss_sectora_setspent() -> libc::c_int {
     let conn = try_unwrap!(Connection::new("_nss_sectora_setspent"));
     let msg = try_unwrap!(conn.communicate(CMsg::Sp(Sp::Ent(Ent::Set(process::id())))));
@@ -214,7 +214,7 @@ pub unsafe extern "C" fn _nss_sectora_setspent() -> libc::c_int {
 /// # Safety
 ///
 /// This function intended to be called from nss
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
@@ -233,7 +233,7 @@ pub unsafe extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut lib
 /// # Safety
 ///
 /// This function intended to be called from nss
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _nss_sectora_endspent() -> libc::c_int {
     let conn = try_unwrap!(Connection::new("_nss_sectora_endspent"));
     let msg = try_unwrap!(conn.communicate(CMsg::Sp(Sp::Ent(Ent::End(process::id())))));
@@ -246,7 +246,7 @@ pub unsafe extern "C" fn _nss_sectora_endspent() -> libc::c_int {
 /// # Safety
 ///
 /// This function intended to be called from nss
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut Group, buf: *mut libc::c_char,
                                                  buflen: libc::size_t, errnop: *mut libc::c_int)
                                                  -> libc::c_int {
@@ -266,7 +266,7 @@ pub unsafe extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut G
 /// # Safety
 ///
 /// This function intended to be called from nss
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, grptr: *mut Group,
                                                  buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
@@ -287,7 +287,7 @@ pub unsafe extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, 
 /// # Safety
 ///
 /// This function intended to be called from nss
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
     let conn = try_unwrap!(Connection::new("_nss_sectora_setgrent"));
     let msg = try_unwrap!(conn.communicate(CMsg::Gr(Gr::Ent(Ent::Set(process::id())))));
@@ -300,7 +300,7 @@ pub unsafe extern "C" fn _nss_sectora_setgrent() -> libc::c_int {
 /// # Safety
 ///
 /// This function intended to be called from nss
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut libc::c_char, buflen: libc::size_t,
                                                  errnop: *mut libc::c_int)
                                                  -> libc::c_int {
@@ -320,7 +320,7 @@ pub unsafe extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut li
 /// # Safety
 ///
 /// This function intended to be called from nss
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn _nss_sectora_endgrent() -> libc::c_int {
     let conn = try_unwrap!(Connection::new("_nss_sectora_endgrent"));
     let msg = try_unwrap!(conn.communicate(CMsg::Gr(Gr::Ent(Ent::End(process::id())))));
