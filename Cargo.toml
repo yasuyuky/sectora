@@ -23,7 +23,7 @@ log = "0.4.28"
 syslog = "7.0"
 tokio = { version = "1.47", features = ["macros", "rt", "rt-multi-thread"] }
 sd-notify = "0.4.5"
-clap = { version = "4.5.47", features = ["derive"] }
+clap = { version = "4.5.48", features = ["derive"] }
 clap_complete = "4.5.58"
 once_cell = "1.21.3"
 reqwest = { version = "0.12.23", features = ["json"] }
