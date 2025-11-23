@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-latest' || 'ubuntu-24.04-arm' }}
     timeout-minutes: 30
     strategy:
       matrix:
@@ -24,6 +24,7 @@ jobs:
           path: ${{ github.workspace }}/.sccache-${{ matrix.arch }}
           key: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.target }}-sccache
       - name: Set up QEMU
+        if: matrix.arch == 'armhf'
         uses: docker/setup-qemu-action@v3
       - name: Build
         run: make TARGET=${{ matrix.arch }} ${{ matrix.target }}
