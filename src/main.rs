@@ -61,14 +61,14 @@ fn main() -> Result<(), Error> {
     let command = Command::parse();
     let conn = match connection::Connection::new(&format!("{:?}", command)) {
         Ok(conn) => conn,
-        Err(err) => return Err(Error::new(ErrorKind::Other, format!("{:?}", err))),
+        Err(err) => return Err(Error::other(format!("{:?}", err))),
     };
     debug!("connected to socket: {:?}", conn);
 
     match command {
         Command::Check { confpath } => match Config::from_path(&confpath) {
             Ok(_) => return Ok(()),
-            Err(_) => return Err(Error::new(ErrorKind::Other, "check failed")),
+            Err(_) => return Err(Error::other("check failed")),
         },
         Command::Key { user } => show_keys(&conn, &user)?,
         Command::Pam => match env::var("PAM_USER") {
@@ -80,13 +80,13 @@ fn main() -> Result<(), Error> {
                         return Err(Error::new(ErrorKind::NotFound, "user not found"));
                     }
                 }
-                _ => return Err(Error::new(ErrorKind::Other, "faild")),
+                _ => return Err(Error::other("faild")),
             },
             Err(_) => return Err(Error::new(ErrorKind::ConnectionRefused, "failed")),
         },
         Command::CleanUp => match conn.communicate(ClientMessage::CleanUp) {
             Ok(_) => return Ok(()),
-            Err(_) => return Err(Error::new(ErrorKind::Other, "failed")),
+            Err(_) => return Err(Error::other("failed")),
         },
         Command::RateLimit => match conn.communicate(ClientMessage::RateLimit) {
             Ok(DaemonMessage::RateLimit { limit,
@@ -94,7 +94,7 @@ fn main() -> Result<(), Error> {
                                           reset, }) => {
                 println!("remaining: {}/{}, reset:{}", remaining, limit, reset);
             }
-            _ => return Err(Error::new(ErrorKind::Other, "failed")),
+            _ => return Err(Error::other("failed")),
         },
         Command::Version => {
             println!("{}",
