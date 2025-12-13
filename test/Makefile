@@ -117,7 +117,7 @@ up:
 exec-login:
 	@echo '$(shell tput setaf 6)LOGIN TEST START$(shell tput sgr 0)'
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) SSH $(shell tput sgr 0)'
-	@docker exec client ssh $(user)@host -i keys/user/$(keyfile) \
+	@docker exec client ssh -vvv $(user)@host -i keys/user/$(keyfile) \
 		echo '"$(shell tput setaf 2)SUCCESS$(shell tput sgr 0)"'
 	@docker exec client ssh $(user)@host -i keys/user/$(keyfile) \
 		echo '::notice title=$(dist)/$(ver)::success'
