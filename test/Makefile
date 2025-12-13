@@ -4,6 +4,11 @@ ver:=bionic
 user:=hunter
 keyfile:=id_rsa
 target:=x86_64-unknown-linux-gnu
+DEB:=$(firstword $(wildcard ../target/$(target)/debian/sectora_$(VERSION)*.deb))
+
+ifeq ($(strip $(DEB)),)
+$(error deb package not found: ../target/$(target)/debian/sectora_$(VERSION)*.deb (run make TARGET=$(target) deb first))
+endif
 
 .PHONY: test-ansible test-deb up down reset
 
@@ -77,8 +82,8 @@ create-test-conf-env:
 	@echo "gid = 2022"                       >> testconf.toml
 
 setup-host-deb:
-	docker cp ../target/$(target)/debian/sectora_$(VERSION)*.deb host:/tmp/
-	docker exec host sh -c 'DEBIAN_FRONTEND=noninteractive apt-get install -y $$(ls /tmp/sectora_$(VERSION)_*.deb)'
+	docker cp $(DEB) host:/tmp/
+	docker exec host sh -c 'DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/$(notdir $(DEB))'
 	docker cp ./testconf.toml host:/etc/sectora.conf
 	time docker exec host systemctl start sectora
 	time docker exec host systemctl restart ssh
