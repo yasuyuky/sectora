@@ -88,6 +88,8 @@ setup-host-deb:
 	docker exec host sh -c 'set -e; test -f $(DEB_DST); DEBIAN_FRONTEND=noninteractive dpkg -i $(DEB_DST) || { DEBIAN_FRONTEND=noninteractive apt-get -f install -y; DEBIAN_FRONTEND=noninteractive dpkg -i $(DEB_DST); }'
 	docker cp ./testconf.toml host:/etc/sectora.conf
 	time docker exec host systemctl start sectora
+	sleep 3
+	docker exec host systemctl status sectora
 	time docker exec host systemctl restart ssh
 
 setup-client-ansible:
