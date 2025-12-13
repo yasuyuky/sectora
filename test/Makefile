@@ -5,6 +5,8 @@ user:=hunter
 keyfile:=id_rsa
 target:=x86_64-unknown-linux-gnu
 DEB:=$(firstword $(wildcard ../target/$(target)/debian/sectora_$(VERSION)*.deb))
+DEB_BASENAME:=$(notdir $(DEB))
+DEB_DST:=/root/$(DEB_BASENAME)
 
 ifeq ($(strip $(DEB)),)
 $(error deb package not found: ../target/$(target)/debian/sectora_$(VERSION)*.deb (run make TARGET=$(target) deb first))
@@ -82,8 +84,8 @@ create-test-conf-env:
 	@echo "gid = 2022"                       >> testconf.toml
 
 setup-host-deb:
-	docker cp $(DEB) host:/tmp/
-	docker exec host sh -c 'DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/$(notdir $(DEB))'
+	docker cp $(DEB) host:$(DEB_DST)
+	docker exec host sh -c 'set -e; test -f $(DEB_DST); DEBIAN_FRONTEND=noninteractive dpkg -i $(DEB_DST) || { DEBIAN_FRONTEND=noninteractive apt-get -f install -y; DEBIAN_FRONTEND=noninteractive dpkg -i $(DEB_DST); }'
 	docker cp ./testconf.toml host:/etc/sectora.conf
 	time docker exec host systemctl start sectora
 	time docker exec host systemctl restart ssh
