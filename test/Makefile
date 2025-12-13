@@ -91,6 +91,7 @@ setup-host-deb:
 	sleep 3
 	docker exec host systemctl status sectora
 	time docker exec host systemctl restart ssh
+	sleep 2
 
 setup-client-ansible:
 	make setup-client-key
