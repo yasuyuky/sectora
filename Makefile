@@ -1,6 +1,6 @@
 RUST_VER=$(shell grep "^rust-version" Cargo.toml | cut -f 2 -d '"')
 VERSION=$(shell grep "^version" Cargo.toml | cut -f 2 -d '"')
-TARGET:=amd64
+TARGET:=arm64
 LOG_LEVEL:=OFF
 BUILD_IMG=ghcr.io/yasuyuky/rust-ubuntu:jammy-${RUST_VER}
 PLATFORM_OPT=--platform=linux/$(TARGET)
