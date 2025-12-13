@@ -2,7 +2,7 @@ RUST_VER=$(shell grep "^rust-version" Cargo.toml | cut -f 2 -d '"')
 VERSION=$(shell grep "^version" Cargo.toml | cut -f 2 -d '"')
 TARGET:=amd64
 LOG_LEVEL:=OFF
-BUILD_IMG=ghcr.io/yasuyuky/rust-ubuntu:${RUST_VER}
+BUILD_IMG=ghcr.io/yasuyuky/rust-ubuntu:jammy-${RUST_VER}
 PLATFORM_OPT=--platform=linux/$(TARGET)
 ifeq ($(TARGET),amd64)
 RSTARGET=x86_64-unknown-linux-gnu
