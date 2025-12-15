@@ -95,7 +95,7 @@ setup-host-deb:
 	docker exec host getent passwd hunter
 	docker exec host cat /etc/pam.d/sshd
 	docker exec host cat /etc/pam.d/common-auth
-	docker exec host ls -la /lib/*/libnss_sectora.so*
+	docker exec host ls -la /usr/lib/libnss_sectora.so*
 	@echo '::endgroup: :'
 	time docker exec host systemctl restart ssh
 	sleep 2
