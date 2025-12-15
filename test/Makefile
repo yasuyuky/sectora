@@ -90,13 +90,13 @@ setup-host-deb:
 	time docker exec host systemctl start sectora
 	sleep 3
 	docker exec host systemctl status sectora
-	@echo ':: group::Diagnostic checks'
+	@echo '::group::Diagnostic checks'
 	docker exec host cat /etc/nsswitch.conf
 	docker exec host getent passwd hunter
 	docker exec host cat /etc/pam.d/sshd
 	docker exec host cat /etc/pam.d/common-auth
 	docker exec host sh -c "ls -la /usr/lib/libnss_sectora.so*"
-	@echo '::endgroup: :'
+	@echo '::endgroup::'
 	time docker exec host systemctl restart ssh
 	sleep 2
 
