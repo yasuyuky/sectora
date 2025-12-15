@@ -87,7 +87,6 @@ setup-host-deb:
 	docker cp $(DEB) host:$(DEB_DST)
 	docker exec host sh -c 'set -e; test -f $(DEB_DST); DEBIAN_FRONTEND=noninteractive dpkg -i $(DEB_DST) || { DEBIAN_FRONTEND=noninteractive apt-get -f install -y; DEBIAN_FRONTEND=noninteractive dpkg -i $(DEB_DST); }'
 	docker cp ./testconf.toml host:/etc/sectora.conf
-	docker exec host cat /etc/nsswitch.conf # for check
 	time docker exec host systemctl start sectora
 	sleep 3
 	docker exec host systemctl status sectora
