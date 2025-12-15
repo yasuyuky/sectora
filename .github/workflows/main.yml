@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/.sccache-${{ matrix.arch }}
           key: ${{ runner.os }}-${{ matrix.arch }}-${{ matrix.target }}-sccache
