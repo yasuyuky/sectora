@@ -68,8 +68,9 @@ EOS
             cat <<EOS >>/etc/pam.d/sshd
 
 ${settings_start}
-auth requisite pam_exec.so quiet /usr/sbin/sectora pam
+auth sufficient pam_exec.so quiet /usr/sbin/sectora pam
 auth optional pam_unix.so not_set_pass use_first_pass nodelay
+account sufficient pam_permit.so
 session required pam_mkhomedir.so skel=/etc/skel/ umask=0022
 ${settings_end}
 
