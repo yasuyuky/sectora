@@ -65,15 +65,19 @@ EOS
             if [ -e /etc/pam.d/sshd ]; then
                 cp /etc/pam.d/sshd /etc/pam.d/sshd.backup
             fi
-            cat <<EOS >>/etc/pam.d/sshd
+            tmp_sshd_conf=$(mktemp)
+            cat <<EOS >${tmp_sshd_conf}
 
 ${settings_start}
-auth requisite pam_exec.so quiet /usr/sbin/sectora pam
+account sufficient pam_permit.so
+auth sufficient pam_exec.so quiet /usr/sbin/sectora pam
 auth optional pam_unix.so not_set_pass use_first_pass nodelay
 session required pam_mkhomedir.so skel=/etc/skel/ umask=0022
 ${settings_end}
 
 EOS
+            cat /etc/pam.d/sshd >>${tmp_sshd_conf}
+            mv ${tmp_sshd_conf} /etc/pam.d/sshd
         fi
 
         # restart sshd

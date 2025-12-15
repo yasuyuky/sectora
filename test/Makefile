@@ -4,6 +4,13 @@ ver:=bionic
 user:=hunter
 keyfile:=id_rsa
 target:=x86_64-unknown-linux-gnu
+DEB:=$(firstword $(wildcard ../target/$(target)/debian/sectora_$(VERSION)*.deb))
+DEB_BASENAME:=$(notdir $(DEB))
+DEB_DST:=/root/$(DEB_BASENAME)
+
+ifeq ($(strip $(DEB)),)
+$(error deb package not found: ../target/$(target)/debian/sectora_$(VERSION)*.deb (run make TARGET=$(target) deb first))
+endif
 
 .PHONY: test-ansible test-deb up down reset
 
@@ -77,11 +84,24 @@ create-test-conf-env:
 	@echo "gid = 2022"                       >> testconf.toml
 
 setup-host-deb:
-	docker cp ../target/$(target)/debian/sectora_$(VERSION)*.deb host:/tmp/
-	docker exec host sh -c "DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/sectora_$(VERSION)*.deb"
+	docker cp $(DEB) host:$(DEB_DST)
+	docker exec host sh -c 'set -e; test -f $(DEB_DST); DEBIAN_FRONTEND=noninteractive dpkg -i $(DEB_DST) || { DEBIAN_FRONTEND=noninteractive apt-get -f install -y; DEBIAN_FRONTEND=noninteractive dpkg -i $(DEB_DST); }'
 	docker cp ./testconf.toml host:/etc/sectora.conf
 	time docker exec host systemctl start sectora
+	sleep 3
+	docker exec host systemctl status sectora
+	@echo '::group::Diagnostic checks'
+	-docker exec host cat /etc/nsswitch.conf
+	-docker exec host getent passwd hunter
+	-docker exec host cat /etc/pam.d/sshd
+	-docker exec host cat /etc/pam.d/common-auth
+	-docker exec host sh -c "ls -la /usr/lib/libnss_sectora.so*"
+	-docker exec host cat /etc/pam.d/sshd
+	-docker exec host cat /etc/pam.d/common-account
+	-docker exec host ls -la /usr/sbin/unix_chkpwd
+	@echo '::endgroup::'
 	time docker exec host systemctl restart ssh
+	sleep 2
 
 setup-client-ansible:
 	make setup-client-key
@@ -107,8 +127,12 @@ up:
 exec-login:
 	@echo '$(shell tput setaf 6)LOGIN TEST START$(shell tput sgr 0)'
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) SSH $(shell tput sgr 0)'
-	@docker exec client ssh $(user)@host -i keys/user/$(keyfile) \
-		echo '"$(shell tput setaf 2)SUCCESS$(shell tput sgr 0)"'
+	@docker exec client ssh -vvv $(user)@host -i keys/user/$(keyfile) \
+		echo '"$(shell tput setaf 2)SUCCESS$(shell tput sgr 0)"' || \
+		(echo ':: group::SSH Server Logs' && \
+		docker exec host journalctl -u ssh --no-pager -n 100 && \
+		docker exec host journalctl -u sectora --no-pager -n 100 && \
+		echo '::endgroup:: ' && exit 1)
 	@docker exec client ssh $(user)@host -i keys/user/$(keyfile) \
 		echo '::notice title=$(dist)/$(ver)::success'
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) ID $(shell tput sgr 0)'
