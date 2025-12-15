@@ -118,7 +118,11 @@ exec-login:
 	@echo '$(shell tput setaf 6)LOGIN TEST START$(shell tput sgr 0)'
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) SSH $(shell tput sgr 0)'
 	@docker exec client ssh -vvv $(user)@host -i keys/user/$(keyfile) \
-		echo '"$(shell tput setaf 2)SUCCESS$(shell tput sgr 0)"'
+		echo '"$(shell tput setaf 2)SUCCESS$(shell tput sgr 0)"' || \
+		(echo ':: group::SSH Server Logs' && \
+		docker exec host journalctl -u ssh --no-pager -n 100 && \
+		docker exec host journalctl -u sectora --no-pager -n 100 && \
+		echo '::endgroup:: ' && exit 1)
 	@docker exec client ssh $(user)@host -i keys/user/$(keyfile) \
 		echo '::notice title=$(dist)/$(ver)::success'
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) ID $(shell tput sgr 0)'
