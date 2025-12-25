@@ -1,9 +1,9 @@
 VERSION=$(shell grep "^version" ../Cargo.toml | cut -f 2 -d '"')
 dist:=ubuntu
-ver:=bionic
+ver?=jammy
 user:=hunter
 keyfile:=id_rsa
-target:=x86_64-unknown-linux-gnu
+target ?= x86_64-unknown-linux-gnu
 DEB:=$(firstword $(wildcard ../target/$(target)/debian/sectora_$(VERSION)*.deb))
 DEB_BASENAME:=$(notdir $(DEB))
 DEB_DST:=/root/$(DEB_BASENAME)
