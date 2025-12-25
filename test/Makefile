@@ -1,6 +1,6 @@
 VERSION=$(shell grep "^version" ../Cargo.toml | cut -f 2 -d '"')
 dist:=ubuntu
-ver:=jammy
+ver?=jammy
 user:=hunter
 keyfile:=id_rsa
 target:=aarch64-unknown-linux-gnu
