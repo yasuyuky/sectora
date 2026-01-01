@@ -42,9 +42,6 @@ lib: $(RELEASE_DIR)/libnss_sectora.so
 amd64:
 	make TARGET=amd64 exe daemon lib deb
 
-armhf:
-	make TARGET=armhf exe daemon lib deb
-
 arm64:
 	make TARGET=arm64 exe daemon lib deb
 
