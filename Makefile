@@ -8,9 +8,8 @@ ifeq ($(TARGET),amd64)
 RSTARGET=x86_64-unknown-linux-gnu
 else ifeq ($(TARGET),arm64)
 RSTARGET=aarch64-unknown-linux-gnu
-else ifeq ($(TARGET),armhf)
-RSTARGET=armv7-unknown-linux-gnueabihf
-LIBTARGET=arm-linux-gnueabihf
+else
+$(error Unsupported TARGET $(TARGET). Use amd64 or arm64)
 endif
 LIBTARGET?=$(subst unknown-,,$(RSTARGET))
 RELEASE_DIR=target/$(RSTARGET)/release
