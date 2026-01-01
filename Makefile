@@ -8,9 +8,8 @@ ifeq ($(TARGET),amd64)
 RSTARGET=x86_64-unknown-linux-gnu
 else ifeq ($(TARGET),arm64)
 RSTARGET=aarch64-unknown-linux-gnu
-else ifeq ($(TARGET),armhf)
-RSTARGET=armv7-unknown-linux-gnueabihf
-LIBTARGET=arm-linux-gnueabihf
+else
+$(error Unsupported TARGET $(TARGET). Use amd64 or arm64)
 endif
 LIBTARGET?=$(subst unknown-,,$(RSTARGET))
 RELEASE_DIR=target/$(RSTARGET)/release
@@ -41,9 +40,6 @@ lib: $(RELEASE_DIR)/libnss_sectora.so
 
 amd64:
 	make TARGET=amd64 exe daemon lib deb
-
-armhf:
-	make TARGET=armhf exe daemon lib deb
 
 arm64:
 	make TARGET=arm64 exe daemon lib deb
