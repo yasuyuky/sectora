@@ -23,7 +23,7 @@ pub enum ParseSectorTypeError {
 
 #[derive(Debug)]
 pub enum ParseSectorError {
-    Id(std::num::ParseIntError),
+    Id,
     Type(ParseSectorTypeError),
     BadFormat,
 }
