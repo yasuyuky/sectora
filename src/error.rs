@@ -7,13 +7,13 @@ pub enum Error {
 }
 
 impl From<serde_json::Error> for Error {
-    fn from(err: serde_json::Error) -> Error { Error::Serde }
+    fn from(_err: serde_json::Error) -> Error { Error::Serde }
 }
 impl From<std::io::Error> for Error {
-    fn from(err: std::io::Error) -> Error { Error::Io }
+    fn from(_err: std::io::Error) -> Error { Error::Io }
 }
 impl From<toml::de::Error> for Error {
-    fn from(err: toml::de::Error) -> Error { Error::Toml }
+    fn from(_err: toml::de::Error) -> Error { Error::Toml }
 }
 
 #[derive(Debug)]
