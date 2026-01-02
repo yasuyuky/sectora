@@ -30,9 +30,9 @@ pub enum ParseSectorError {
 
 #[derive(Debug)]
 pub enum ParseSectorGroupError {
-    Sector(ParseSectorError),
-    Gid(std::num::ParseIntError),
-    Member(std::num::ParseIntError),
+    Sector,
+    Gid,
+    Member,
 }
 
 #[derive(Debug)]
