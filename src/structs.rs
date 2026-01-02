@@ -225,17 +225,17 @@ impl FromStr for SectorGroup {
     type Err = ParseSectorGroupError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts = s.split('\t').collect::<Vec<&str>>();
-        let sector = parts[0].parse().map_err(ParseSectorGroupError::Sector)?;
+        let sector = parts[0].parse().map_err(|_| ParseSectorGroupError::Sector)?;
         let gid: Option<u64> = match parts[1] {
             "" => None,
-            s => Some(s.parse().map_err(ParseSectorGroupError::Gid)?),
+            s => Some(s.parse().map_err(|_| ParseSectorGroupError::Gid)?),
         };
         let group: Option<String> = match parts[2] {
             "" => None,
             s => Some(String::from(s)),
         };
         let members = parts[3].split(' ')
-                              .map(|s| s.parse::<Member>().map_err(ParseSectorGroupError::Member))
+                              .map(|s| s.parse::<Member>().map_err(|_| ParseSectorGroupError::Member))
                               .collect::<Result<Vec<Member>, _>>()?
                               .into_iter()
                               .map(|m| (m.login.clone(), m))
