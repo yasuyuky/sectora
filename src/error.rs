@@ -1,19 +1,19 @@
 #[derive(Debug)]
 pub enum Error {
-    Serde(serde_json::Error),
-    Io(std::io::Error),
-    Toml(toml::de::Error),
+    Serde,
+    Io,
+    Toml,
     ParseMsg(ParseMessageError),
 }
 
 impl From<serde_json::Error> for Error {
-    fn from(err: serde_json::Error) -> Error { Error::Serde(err) }
+    fn from(err: serde_json::Error) -> Error { Error::Serde }
 }
 impl From<std::io::Error> for Error {
-    fn from(err: std::io::Error) -> Error { Error::Io(err) }
+    fn from(err: std::io::Error) -> Error { Error::Io }
 }
 impl From<toml::de::Error> for Error {
-    fn from(err: toml::de::Error) -> Error { Error::Toml(err) }
+    fn from(err: toml::de::Error) -> Error { Error::Toml }
 }
 
 #[derive(Debug)]
