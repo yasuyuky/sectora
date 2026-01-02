@@ -1,19 +1,19 @@
 #[derive(Debug)]
 pub enum Error {
-    Serde(serde_json::Error),
-    Io(std::io::Error),
-    Toml(toml::de::Error),
-    ParseMsg(ParseMessageError),
+    Serde,
+    Io,
+    Toml,
+    ParseMsg,
 }
 
 impl From<serde_json::Error> for Error {
-    fn from(err: serde_json::Error) -> Error { Error::Serde(err) }
+    fn from(_err: serde_json::Error) -> Error { Error::Serde }
 }
 impl From<std::io::Error> for Error {
-    fn from(err: std::io::Error) -> Error { Error::Io(err) }
+    fn from(_err: std::io::Error) -> Error { Error::Io }
 }
 impl From<toml::de::Error> for Error {
-    fn from(err: toml::de::Error) -> Error { Error::Toml(err) }
+    fn from(_err: toml::de::Error) -> Error { Error::Toml }
 }
 
 #[derive(Debug)]
@@ -23,16 +23,16 @@ pub enum ParseSectorTypeError {
 
 #[derive(Debug)]
 pub enum ParseSectorError {
-    Id(std::num::ParseIntError),
+    Id,
     Type(ParseSectorTypeError),
     BadFormat,
 }
 
 #[derive(Debug)]
 pub enum ParseSectorGroupError {
-    Sector(ParseSectorError),
-    Gid(std::num::ParseIntError),
-    Member(std::num::ParseIntError),
+    Sector,
+    Gid,
+    Member,
 }
 
 #[derive(Debug)]
@@ -42,5 +42,5 @@ pub enum ParseMessageError {
 }
 
 impl From<ParseMessageError> for Error {
-    fn from(err: ParseMessageError) -> Error { Error::ParseMsg(err) }
+    fn from(_err: ParseMessageError) -> Error { Error::ParseMsg }
 }
