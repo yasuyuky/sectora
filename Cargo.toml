@@ -16,7 +16,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 glob = "0.3"
 libc = "0.2"
-nix = "0.30"
+nix = "0.31"
 hyper = { version = "0.14.27", features = ["http1", "client", "tcp"] }
 hyper-tls = "0.6.0"
 log = "0.4.29"
