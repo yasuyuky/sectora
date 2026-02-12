@@ -24,7 +24,7 @@ syslog = "7.0"
 tokio = { version = "1.49", features = ["macros", "rt", "rt-multi-thread"] }
 sd-notify = "0.4.5"
 clap = { version = "4.5.58", features = ["derive"] }
-clap_complete = "4.5.65"
+clap_complete = "4.5.66"
 once_cell = "1.21.3"
 reqwest = { version = "0.13.2", default-features = false, features = ["json", "native-tls", "charset", "http2", "system-proxy"] }
 
