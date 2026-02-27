@@ -27,7 +27,7 @@ jobs:
         run: make TARGET=${{ matrix.arch }} ${{ matrix.target }}
       - name: Fix cache permission
         run: sudo chown -R $USER .sccache-${{ matrix.arch }}
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: matrix.target == 'deb'
         with:
           name: sectora-${{ matrix.arch }}
