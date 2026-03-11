@@ -62,7 +62,7 @@ impl Daemon {
         log::info!("Rate Limit: {:?}", rl);
         let sectors = self.client.get_sectors().await.expect("get sectors");
         log::info!("{} sector[s] loaded", sectors.len());
-        let _ = sd_notify::notify(true, &[sd_notify::NotifyState::Ready]);
+        let _ = sd_notify::notify(&[sd_notify::NotifyState::Ready]);
         log::info!("Start running @ {}", &self.socket_conf.socket_path);
         loop {
             let mut buf = [0u8; 4096];
