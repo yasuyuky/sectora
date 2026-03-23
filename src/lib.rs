@@ -74,7 +74,9 @@ macro_rules! try_unwrap {
             Ok(ret) => ret,
             Err(e) => {
                 log::debug!("failed (will retry): {:?}", e);
-                *$err_no_p = Errno::EAGAIN as libc::c_int;
+                unsafe {
+                    *$err_no_p = Errno::EAGAIN as libc::c_int;
+                }
                 return libc::c_int::from(NssStatus::TryAgain);
             }
         }
