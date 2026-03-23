@@ -48,7 +48,9 @@ macro_rules! succeed {
 
 macro_rules! fail {
     ($err_no_p:ident, $err_no:expr, $return_val:expr) => {{
-        *$err_no_p = $err_no as libc::c_int;
+        unsafe {
+            *$err_no_p = $err_no as libc::c_int;
+        }
         log::debug!("Faill!");
         return libc::c_int::from($return_val);
     }};
