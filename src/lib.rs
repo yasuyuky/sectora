@@ -48,7 +48,9 @@ macro_rules! succeed {
 
 macro_rules! fail {
     ($err_no_p:ident, $err_no:expr, $return_val:expr) => {{
-        *$err_no_p = $err_no as libc::c_int;
+        unsafe {
+            *$err_no_p = $err_no as libc::c_int;
+        }
         log::debug!("Faill!");
         return libc::c_int::from($return_val);
     }};
@@ -72,7 +74,9 @@ macro_rules! try_unwrap {
             Ok(ret) => ret,
             Err(e) => {
                 log::debug!("failed (will retry): {:?}", e);
-                *$err_no_p = Errno::EAGAIN as libc::c_int;
+                unsafe {
+                    *$err_no_p = Errno::EAGAIN as libc::c_int;
+                }
                 return libc::c_int::from(NssStatus::TryAgain);
             }
         }
@@ -96,7 +100,7 @@ pub unsafe extern "C" fn _nss_sectora_getpwnam_r(cnameptr: *const libc::c_char, 
                       home,
                       sh, } = msg
     {
-        match (*pwptr).pack_args(&mut buffer, &login, uid, gid, &home, &sh) {
+        match unsafe { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &home, &sh) } {
             Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -120,7 +124,7 @@ pub unsafe extern "C" fn _nss_sectora_getpwuid_r(uid: libc::uid_t, pwptr: *mut P
                       home,
                       sh, } = msg
     {
-        match (*pwptr).pack_args(&mut buffer, &login, uid, gid, &home, &sh) {
+        match unsafe { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &home, &sh) } {
             Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -157,7 +161,7 @@ pub unsafe extern "C" fn _nss_sectora_getpwent_r(pwptr: *mut Passwd, buf: *mut l
                       home,
                       sh, } = msg
     {
-        match (*pwptr).pack_args(&mut buffer, &login, uid, gid, &home, &sh) {
+        match unsafe { (*pwptr).pack_args(&mut buffer, &login, uid, gid, &home, &sh) } {
             Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -190,7 +194,7 @@ pub unsafe extern "C" fn _nss_sectora_getspnam_r(cnameptr: *const libc::c_char, 
     let conn = try_unwrap!(Connection::new("_nss_sectora_getspnam_r"), errnop);
     let msg = try_unwrap!(conn.communicate(CMsg::Sp(Sp::Nam(string_from(cnameptr)))), errnop);
     if let DMsg::Sp { login, pass } = msg {
-        match (*spptr).pack_args(&mut buffer, &login, &pass) {
+        match unsafe { (*spptr).pack_args(&mut buffer, &login, &pass) } {
             Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -222,7 +226,7 @@ pub unsafe extern "C" fn _nss_sectora_getspent_r(spptr: *mut Spwd, buf: *mut lib
     let conn = try_unwrap!(Connection::new("_nss_sectora_getspent_r"), errnop);
     let msg = try_unwrap!(conn.communicate(CMsg::Sp(Sp::Ent(Ent::Get(process::id())))), errnop);
     if let DMsg::Sp { login, pass } = msg {
-        match (*spptr).pack_args(&mut buffer, &login, &pass) {
+        match unsafe { (*spptr).pack_args(&mut buffer, &login, &pass) } {
             Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -255,7 +259,7 @@ pub unsafe extern "C" fn _nss_sectora_getgrgid_r(gid: libc::gid_t, grptr: *mut G
     let msg = try_unwrap!(conn.communicate(CMsg::Gr(Gr::Gid(gid as u64))), errnop);
     if let DMsg::Gr { sector } = msg {
         let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
-        match (*grptr).pack_args(&mut buffer, &sector.get_group(), u64::from(gid), &members) {
+        match unsafe { (*grptr).pack_args(&mut buffer, &sector.get_group(), u64::from(gid), &members) } {
             Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -276,7 +280,7 @@ pub unsafe extern "C" fn _nss_sectora_getgrnam_r(cnameptr: *const libc::c_char, 
     let msg = try_unwrap!(conn.communicate(CMsg::Gr(Gr::Nam(string_from(cnameptr)))), errnop);
     if let DMsg::Gr { sector } = msg {
         let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
-        match (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) {
+        match unsafe { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
             Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
@@ -309,7 +313,7 @@ pub unsafe extern "C" fn _nss_sectora_getgrent_r(grptr: *mut Group, buf: *mut li
     let msg = try_unwrap!(conn.communicate(CMsg::Gr(Gr::Ent(Ent::Get(process::id())))), errnop);
     if let DMsg::Gr { sector } = msg {
         let members: Vec<&str> = sector.members.values().map(|m| m.login.as_str()).collect();
-        match (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) {
+        match unsafe { (*grptr).pack_args(&mut buffer, &sector.get_group(), sector.get_gid(), &members) } {
             Ok(_) => succeed!(),
             Err(_) => fail!(errnop, Errno::ERANGE, NssStatus::TryAgain),
         }
