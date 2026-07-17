@@ -5,6 +5,7 @@ use reqwest::{Client, Method, Request, Url, header};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
+use std::time::Duration;
 
 pub struct GithubClient {
     client: Client,
@@ -14,16 +15,22 @@ pub struct GithubClient {
 impl GithubClient {
     pub fn new(config: &Config) -> GithubClient {
         if std::env::var("SSL_CERT_FILE").is_err() {
+            // SAFETY: called once at process start before other threads use TLS
             unsafe {
                 std::env::set_var("SSL_CERT_FILE", &config.cert_path);
             }
         }
-        let client = Client::builder();
         let token = String::from("token ") + &config.token;
         let mut hmap = header::HeaderMap::new();
-        hmap.insert(header::AUTHORIZATION, header::HeaderValue::from_str(&token).unwrap());
-        hmap.insert(header::USER_AGENT, header::HeaderValue::from_str("sectora").unwrap());
-        let client = client.default_headers(hmap).build().unwrap();
+        hmap.insert(header::AUTHORIZATION,
+                    header::HeaderValue::from_str(&token).expect("valid authorization header"));
+        hmap.insert(header::USER_AGENT,
+                    header::HeaderValue::from_str("sectora").expect("valid user-agent"));
+        let client = Client::builder().default_headers(hmap)
+                                      .connect_timeout(Duration::from_secs(10))
+                                      .timeout(Duration::from_secs(30))
+                                      .build()
+                                      .expect("build HTTP client");
         GithubClient { client,
                        conf: config.clone() }
     }
@@ -69,7 +76,11 @@ impl GithubClient {
     }
 
     fn build_request(&self, url: &str) -> Result<Request, Error> {
-        Ok(Request::new(Method::GET, Url::parse(url).unwrap()))
+        let parsed = Url::parse(url).map_err(|e| {
+            log::warn!("invalid url {}: {}", url, e);
+            Error::Request
+        })?;
+        Ok(Request::new(Method::GET, parsed))
     }
 
     fn build_page_request(&self, url: &str, page: u64) -> Result<Request, Error> {
@@ -80,9 +91,27 @@ impl GithubClient {
 
     async fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::Value>, Error> {
         let req = self.build_page_request(url, page)?;
-        let resp = self.client.execute(req).await.unwrap();
-        let json = resp.json::<Vec<serde_json::Value>>().await.unwrap();
-        Ok(json)
+        let resp = self.client.execute(req).await.map_err(|e| {
+            log::warn!("GitHub request failed for {} page {}: {}", url, page, e);
+            Error::Http
+        })?;
+        let status = resp.status();
+        if !status.is_success() {
+            // Read body only for logging; 5xx/rate-limit HTML would panic on json()
+            let body = resp.text().await.unwrap_or_default();
+            let preview: String = body.chars().take(200).collect();
+            log::warn!("GitHub HTTP {} for {} page {}: {}", status.as_u16(), url, page, preview);
+            return Err(Error::Http);
+        }
+        let body = resp.text().await.map_err(|e| {
+            log::warn!("GitHub body read failed for {} page {}: {}", url, page, e);
+            Error::Http
+        })?;
+        serde_json::from_str::<Vec<serde_json::Value>>(&body).map_err(|e| {
+            let preview: String = body.chars().take(200).collect();
+            log::warn!("GitHub JSON decode failed for {} page {}: {}; body={}", url, page, e, preview);
+            Error::Serde
+        })
     }
 
     async fn get_contents(&self, url: &str) -> Result<String, Error> {
@@ -92,7 +121,10 @@ impl GithubClient {
                     if caching_duration.as_secs() > self.conf.cache_duration {
                         match self.get_contents_from_url(url).await {
                             Ok(contents_from_url) => Ok(contents_from_url),
-                            Err(_) => Ok(cache_contents),
+                            Err(e) => {
+                                log::warn!("refresh failed for {}, using stale cache: {:?}", url, e);
+                                Ok(cache_contents)
+                            }
                         }
                     } else {
                         Ok(cache_contents)
@@ -183,21 +215,44 @@ impl GithubClient {
     pub async fn get_rate_limit(&self) -> Result<RateLimit, Error> {
         let url = format!("{}/rate_limit", self.conf.endpoint);
         let req = self.build_request(&url)?;
-        let resp = self.client.execute(req).await.unwrap();
-        Ok(resp.json().await.unwrap())
+        let resp = self.client.execute(req).await.map_err(|e| {
+            log::warn!("rate_limit request failed: {}", e);
+            Error::Http
+        })?;
+        let status = resp.status();
+        if !status.is_success() {
+            let body = resp.text().await.unwrap_or_default();
+            let preview: String = body.chars().take(200).collect();
+            log::warn!("rate_limit HTTP {}: {}", status.as_u16(), preview);
+            return Err(Error::Http);
+        }
+        let body = resp.text().await.map_err(|e| {
+            log::warn!("rate_limit body read failed: {}", e);
+            Error::Http
+        })?;
+        serde_json::from_str(&body).map_err(|e| {
+            let preview: String = body.chars().take(200).collect();
+            log::warn!("rate_limit JSON decode failed: {}; body={}", e, preview);
+            Error::Serde
+        })
     }
 
     pub async fn clear_all_caches(&self) -> Result<(), Error> {
         let mut path = self.get_cache_path("");
         path.push("**/*");
-        for entry in glob(path.to_str().unwrap()).unwrap() {
+        let pattern = path.to_str().ok_or(Error::Io)?;
+        let entries = glob(pattern).map_err(|e| {
+            log::warn!("cache glob failed: {}", e);
+            Error::Io
+        })?;
+        for entry in entries {
             match entry {
                 Ok(path) => {
                     if path.is_file() {
                         std::fs::remove_file(path)?
                     }
                 }
-                Err(e) => println!("{:?}", e),
+                Err(e) => log::warn!("cache glob entry error: {:?}", e),
             }
         }
         Ok(())

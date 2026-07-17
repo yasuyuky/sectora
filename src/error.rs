@@ -4,6 +4,10 @@ pub enum Error {
     Io,
     Toml,
     ParseMsg,
+    /// HTTP transport, DNS, TLS, or non-success status from GitHub API
+    Http,
+    /// URL parse / request construction failure
+    Request,
 }
 
 impl From<serde_json::Error> for Error {
@@ -14,6 +18,9 @@ impl From<std::io::Error> for Error {
 }
 impl From<toml::de::Error> for Error {
     fn from(_err: toml::de::Error) -> Error { Error::Toml }
+}
+impl From<reqwest::Error> for Error {
+    fn from(_err: reqwest::Error) -> Error { Error::Http }
 }
 
 #[derive(Debug)]
