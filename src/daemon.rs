@@ -58,24 +58,45 @@ impl Daemon {
     }
 
     async fn run(&mut self) -> Result<(), Error> {
-        let rl = self.client.get_rate_limit().await.expect("get rate limit");
-        log::info!("Rate Limit: {:?}", rl);
-        let sectors = self.client.get_sectors().await.expect("get sectors");
-        log::info!("{} sector[s] loaded", sectors.len());
+        // GitHub outages must not prevent the daemon from starting: NSS/SSH
+        // keep working from cache once the process is up.
+        match self.client.get_rate_limit().await {
+            Ok(rl) => log::info!("Rate Limit: {:?}", rl),
+            Err(e) => log::warn!("get rate limit failed at start (continuing): {:?}", e),
+        }
+        match self.client.get_sectors().await {
+            Ok(sectors) => log::info!("{} sector[s] loaded", sectors.len()),
+            Err(e) => log::warn!("get sectors failed at start (will use cache on demand): {:?}", e),
+        }
         let _ = sd_notify::notify(&[sd_notify::NotifyState::Ready]);
         log::info!("Start running @ {}", &self.socket_conf.socket_path);
         loop {
             let mut buf = [0u8; 4096];
             let (recv_cnt, src) = self.socket.recv_from(&mut buf)?;
-            let msgstr = String::from_utf8(buf[..recv_cnt].to_vec()).expect("decode msg str");
+            let msgstr = match String::from_utf8(buf[..recv_cnt].to_vec()) {
+                Ok(s) => s,
+                Err(e) => {
+                    log::warn!("invalid utf-8 from client: {}", e);
+                    continue;
+                }
+            };
             log::debug!("recv: {}, src:{:?}", msgstr, src);
-            let response = self.handle(&msgstr.parse::<ClientMessage>().expect("parse ClientMessage"))
-                               .await;
+            let client_msg = match msgstr.parse::<ClientMessage>() {
+                Ok(m) => m,
+                Err(e) => {
+                    log::warn!("failed to parse client message {:?}: {:?}", msgstr, e);
+                    continue;
+                }
+            };
+            let response = self.handle(&client_msg).await;
             log::debug!("-> response: {}", response);
 
             let msg = response.to_string();
             let msgs = message::DividedMessage::new(&msg, 1024);
-            let src_path = src.as_pathname().expect("src");
+            let Some(src_path) = src.as_pathname() else {
+                log::warn!("client address has no pathname: {:?}", src);
+                continue;
+            };
             for (i, dividedmsg) in msgs.iter().enumerate() {
                 match self.socket.send_to(dividedmsg.to_string().as_bytes(), src_path) {
                     Ok(sendsize) => log::debug!("send: {}", sendsize),
@@ -83,11 +104,28 @@ impl Daemon {
                 }
                 if i != msgs.len() - 1 {
                     let mut buf = [0u8; 4096];
-                    let (recv_cnt, _) = self.socket.recv_from(&mut buf)?;
-                    let msgstr = String::from_utf8(buf[..recv_cnt].to_vec()).expect("decode msg str");
-                    match self.handle(&msgstr.parse::<ClientMessage>().expect("parse ClientMessage"))
-                              .await
-                    {
+                    let (recv_cnt, _) = match self.socket.recv_from(&mut buf) {
+                        Ok(v) => v,
+                        Err(e) => {
+                            log::warn!("failed to recv cont from client: {}", e);
+                            break;
+                        }
+                    };
+                    let msgstr = match String::from_utf8(buf[..recv_cnt].to_vec()) {
+                        Ok(s) => s,
+                        Err(e) => {
+                            log::warn!("invalid utf-8 cont from client: {}", e);
+                            break;
+                        }
+                    };
+                    let cont = match msgstr.parse::<ClientMessage>() {
+                        Ok(m) => m,
+                        Err(e) => {
+                            log::warn!("failed to parse cont message: {:?}", e);
+                            break;
+                        }
+                    };
+                    match self.handle(&cont).await {
                         DaemonMessage::Success => continue,
                         _ => break,
                     }
@@ -114,7 +152,7 @@ impl Daemon {
                 Ok(rl) => DaemonMessage::RateLimit { limit: rl.rate.limit,
                                                      remaining: rl.rate.remaining,
                                                      reset: rl.rate.reset },
-                Err(_) => DaemonMessage::Error { message: String::from("clean up failed") },
+                Err(_) => DaemonMessage::Error { message: String::from("get rate limit failed") },
             },
             ClientMessage::SectorGroups => match self.client.get_sectors().await {
                 Ok(sectors) => DaemonMessage::SectorGroups { sectors },

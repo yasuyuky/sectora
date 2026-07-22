@@ -1,14 +1,20 @@
 [Unit]
 Description=Sectora Daemon
-After=network-online.target
-Requires=network-online.target
+Documentation=https://github.com/yasuyuky/sectora
+After=network-online.target nss-lookup.target
+Wants=network-online.target
+# Disable start-rate limiting so a GitHub outage cannot permanently stop the unit
+StartLimitIntervalSec=0
 
 [Service]
 Type=notify
 ExecStart=/usr/sbin/sectorad
-# Environment=LOG_LEVEL=DEBUG
-# Environment=RUST_BACKTRACE=1
+Environment=RUST_BACKTRACE=1
+Environment=LOG_LEVEL=info
 Restart=always
+RestartSec=5s
+TimeoutStartSec=120
+NotifyAccess=main
 StandardOutput=journal
 StandardError=journal
 
