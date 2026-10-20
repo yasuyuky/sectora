@@ -1,15 +1,55 @@
 use crate::error::Error;
-use crate::structs::{Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
+use crate::structs::{AppConfig, Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
 use glob::glob;
+use openssl::hash::MessageDigest;
+use openssl::pkey::PKey;
+use openssl::sign::Signer;
 use reqwest::{Client, Method, Request, Url, header};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
-use std::time::Duration;
+use std::sync::Mutex;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+
+// Installation tokens expire after 1 hour
+const APP_TOKEN_TTL: Duration = Duration::from_secs(50 * 60);
+
+#[derive(Deserialize)]
+struct Installation {
+    id: u64,
+}
+
+#[derive(Deserialize)]
+struct AccessToken {
+    token: String,
+}
 
 pub struct GithubClient {
     client: Client,
     pub conf: Config,
+    app_token: Mutex<Option<(header::HeaderValue, Instant)>>,
+}
+
+fn b64url(bytes: &[u8]) -> String {
+    openssl::base64::encode_block(bytes).trim_end_matches('=')
+                                        .replace('+', "-")
+                                        .replace('/', "_")
+}
+
+fn app_jwt(app_id: u64, private_key_pem: &[u8]) -> Result<String, Error> {
+    let now = SystemTime::now().duration_since(UNIX_EPOCH)
+                               .map_err(|_| Error::Auth)?
+                               .as_secs();
+    // iat is backdated to tolerate clock drift; GitHub rejects exp more than 10 minutes ahead
+    let claims = format!(r#"{{"iat":{},"exp":{},"iss":{}}}"#, now - 60, now + 540, app_id);
+    let msg = format!("{}.{}",
+                      b64url(br#"{"alg":"RS256","typ":"JWT"}"#),
+                      b64url(claims.as_bytes()));
+    let key = PKey::private_key_from_pem(private_key_pem)?;
+    let mut signer = Signer::new(MessageDigest::sha256(), &key)?;
+    signer.update(msg.as_bytes())?;
+    Ok(format!("{}.{}", msg, b64url(&signer.sign_to_vec()?)))
 }
 
 impl GithubClient {
@@ -20,10 +60,12 @@ impl GithubClient {
                 std::env::set_var("SSL_CERT_FILE", &config.cert_path);
             }
         }
-        let token = String::from("token ") + &config.token;
         let mut hmap = header::HeaderMap::new();
-        hmap.insert(header::AUTHORIZATION,
-                    header::HeaderValue::from_str(&token).expect("valid authorization header"));
+        if config.app.is_none() {
+            let token = String::from("token ") + &config.token;
+            hmap.insert(header::AUTHORIZATION,
+                        header::HeaderValue::from_str(&token).expect("valid authorization header"));
+        }
         hmap.insert(header::USER_AGENT,
                     header::HeaderValue::from_str("sectora").expect("valid user-agent"));
         let client = Client::builder().default_headers(hmap)
@@ -32,7 +74,46 @@ impl GithubClient {
                                       .build()
                                       .expect("build HTTP client");
         GithubClient { client,
-                       conf: config.clone() }
+                       conf: config.clone(),
+                       app_token: Mutex::new(None) }
+    }
+
+    async fn app_token(&self, app: &AppConfig) -> Result<header::HeaderValue, Error> {
+        if let Some((token, fetched_at)) = &*self.app_token.lock().unwrap_or_else(|e| e.into_inner())
+           && fetched_at.elapsed() < APP_TOKEN_TTL
+        {
+            return Ok(token.clone());
+        }
+        let pem = std::fs::read(&app.private_key_path).map_err(|e| {
+            log::warn!("failed to read GitHub App private key {}: {}", app.private_key_path, e);
+            Error::Io
+        })?;
+        let bearer = format!("Bearer {}", app_jwt(app.id, &pem)?);
+        let url = format!("{}/orgs/{}/installation", self.conf.endpoint, self.conf.org);
+        let installation: Installation = self.app_request(Method::GET, &url, &bearer).await?;
+        let url = format!("{}/app/installations/{}/access_tokens",
+                          self.conf.endpoint, installation.id);
+        let access: AccessToken = self.app_request(Method::POST, &url, &bearer).await?;
+        let token = header::HeaderValue::from_str(&format!("token {}", access.token)).map_err(|_| Error::Auth)?;
+        *self.app_token.lock().unwrap_or_else(|e| e.into_inner()) = Some((token.clone(), Instant::now()));
+        Ok(token)
+    }
+
+    async fn app_request<T: serde::de::DeserializeOwned>(&self, method: Method, url: &str, bearer: &str)
+                                                         -> Result<T, Error> {
+        let req = self.client.request(method, url).header(header::AUTHORIZATION, bearer);
+        let resp = req.send().await.map_err(|e| {
+            log::warn!("GitHub App request failed for {}: {}", url, e);
+            Error::Http
+        })?;
+        let status = resp.status();
+        let body = resp.text().await?;
+        if !status.is_success() {
+            let preview: String = body.chars().take(200).collect();
+            log::warn!("GitHub App HTTP {} for {}: {}", status.as_u16(), url, preview);
+            return Err(Error::Http);
+        }
+        Ok(serde_json::from_str(&body)?)
     }
 
     fn get_cache_path(&self, url: &str) -> std::path::PathBuf {
@@ -75,22 +156,27 @@ impl GithubClient {
         Ok(contents)
     }
 
-    fn build_request(&self, url: &str) -> Result<Request, Error> {
+    async fn build_request(&self, url: &str) -> Result<Request, Error> {
         let parsed = Url::parse(url).map_err(|e| {
             log::warn!("invalid url {}: {}", url, e);
             Error::Request
         })?;
-        Ok(Request::new(Method::GET, parsed))
+        let mut req = Request::new(Method::GET, parsed);
+        if let Some(app) = &self.conf.app {
+            req.headers_mut()
+               .insert(header::AUTHORIZATION, self.app_token(app).await?);
+        }
+        Ok(req)
     }
 
-    fn build_page_request(&self, url: &str, page: u64) -> Result<Request, Error> {
+    async fn build_page_request(&self, url: &str, page: u64) -> Result<Request, Error> {
         let sep = if url.contains('?') { '&' } else { '?' };
         let url_p = format!("{}{}page={}", url, sep, page);
-        self.build_request(&url_p)
+        self.build_request(&url_p).await
     }
 
     async fn get_contents_from_url_page(&self, url: &str, page: u64) -> Result<Vec<serde_json::Value>, Error> {
-        let req = self.build_page_request(url, page)?;
+        let req = self.build_page_request(url, page).await?;
         let resp = self.client.execute(req).await.map_err(|e| {
             log::warn!("GitHub request failed for {} page {}: {}", url, page, e);
             Error::Http
@@ -214,7 +300,7 @@ impl GithubClient {
 
     pub async fn get_rate_limit(&self) -> Result<RateLimit, Error> {
         let url = format!("{}/rate_limit", self.conf.endpoint);
-        let req = self.build_request(&url)?;
+        let req = self.build_request(&url).await?;
         let resp = self.client.execute(req).await.map_err(|e| {
             log::warn!("rate_limit request failed: {}", e);
             Error::Http
@@ -256,5 +342,47 @@ impl GithubClient {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use openssl::rsa::Rsa;
+    use openssl::sign::Verifier;
+
+    fn b64url_decode(s: &str) -> Vec<u8> {
+        let mut b64 = s.replace('-', "+").replace('_', "/");
+        while !b64.len().is_multiple_of(4) {
+            b64.push('=');
+        }
+        openssl::base64::decode_block(&b64).unwrap()
+    }
+
+    #[test]
+    fn app_jwt_is_rs256_signed_for_github() {
+        let rsa = Rsa::generate(2048).unwrap();
+        // GitHub hands out PKCS#1 ("BEGIN RSA PRIVATE KEY") PEM files
+        let jwt = app_jwt(12345, &rsa.private_key_to_pem().unwrap()).unwrap();
+        let parts: Vec<&str> = jwt.split('.').collect();
+        assert_eq!(parts.len(), 3);
+        assert!(!jwt.contains(['=', '+', '/']));
+
+        let header: serde_json::Value = serde_json::from_slice(&b64url_decode(parts[0])).unwrap();
+        assert_eq!(header["alg"], "RS256");
+        let claims: serde_json::Value = serde_json::from_slice(&b64url_decode(parts[1])).unwrap();
+        assert_eq!(claims["iss"], 12345);
+        assert_eq!(claims["exp"].as_u64().unwrap() - claims["iat"].as_u64().unwrap(), 600);
+
+        let key = PKey::from_rsa(rsa).unwrap();
+        let mut verifier = Verifier::new(MessageDigest::sha256(), &key).unwrap();
+        verifier.update(format!("{}.{}", parts[0], parts[1]).as_bytes())
+                .unwrap();
+        assert!(verifier.verify(&b64url_decode(parts[2])).unwrap());
+    }
+
+    #[test]
+    fn app_jwt_rejects_invalid_key() {
+        assert!(matches!(app_jwt(1, b"not a pem"), Err(Error::Auth)));
     }
 }
