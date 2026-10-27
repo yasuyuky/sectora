@@ -8,6 +8,8 @@ pub enum Error {
     Http,
     /// URL parse / request construction failure
     Request,
+    /// GitHub App JWT signing failure
+    Auth,
 }
 
 impl From<serde_json::Error> for Error {
@@ -21,6 +23,9 @@ impl From<toml::de::Error> for Error {
 }
 impl From<reqwest::Error> for Error {
     fn from(_err: reqwest::Error) -> Error { Error::Http }
+}
+impl From<openssl::error::ErrorStack> for Error {
+    fn from(_err: openssl::error::ErrorStack) -> Error { Error::Auth }
 }
 
 #[derive(Debug)]
