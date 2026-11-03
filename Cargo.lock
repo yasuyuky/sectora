@@ -978,6 +978,7 @@ dependencies = [
  "libc",
  "log",
  "nix",
+ "openssl",
  "reqwest",
  "sd-notify",
  "serde",

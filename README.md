@@ -80,6 +80,23 @@ name = "YOUR_REPO_NAME"
 
 See `struct Config` on `structs.rs` for details.
 
+#### Authenticate as a GitHub App
+
+Instead of `token`, sectora can authenticate as a GitHub App installed on your organization.
+Installation tokens have their own rate limit, so sectora does not compete with other uses of a personal access token.
+
+```toml
+org = "YOUR_ORGANIZATION"
+
+[app]
+id = 123456  # App ID
+private_key_path = "/etc/sectora-app.pem"
+```
+
+The app needs the organization permission `Members: Read`, and `Metadata: Read` on the repositories used in `[[repo]]`.
+sectorad finds the installation for `org` and refreshes the installation token by itself.
+Keep the private key readable only by root.
+
 ### Register sectora daemon to systemd
 
 Put `/etc/systemd/system/sectora.service`
