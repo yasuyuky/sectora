@@ -128,6 +128,18 @@ shadow: files sectora
 group:  files sectora
 ```
 
+On AppArmor hosts, confined PAM helpers also need access to sectora's NSS sockets.
+The Debian package installs the nameservice abstraction and reloads the active
+`unix-chkpwd` profile automatically. For manual installations where that profile exists:
+
+```sh
+sudo install -D -m 644 assets/apparmor/sectora /etc/apparmor.d/abstractions/nameservice.d/sectora
+sudo apparmor_parser -r -T /etc/apparmor.d/unix-chkpwd
+```
+
+Containers share their host's AppArmor policy, so install and reload the abstraction
+on the container host as well.
+
 ### Configure sshd
 
 Add the following lines to `/etc/ssh/sshd_config`.

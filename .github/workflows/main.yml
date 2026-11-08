@@ -56,8 +56,23 @@ jobs:
         with:
           name: sectora-amd64
           path: target
+      - name: Allow sectora NSS in the runner's PAM helper profile
+        run: |
+          # Containers share the runner's AppArmor policy.
+          sudo install -D -m 644 assets/apparmor/sectora /etc/apparmor.d/abstractions/nameservice.d/sectora
+          if [ -f /etc/apparmor.d/unix-chkpwd ]; then
+            sudo apparmor_parser -r -T /etc/apparmor.d/unix-chkpwd
+            sudo grep -Fx 'unix-chkpwd (enforce)' /sys/kernel/security/apparmor/profiles
+          fi
       - name: Run tests
         run: make test-deb-stub dist=${{ matrix.dist }} ver=${{ matrix.ver }}
         working-directory: test
         env:
           TERM: xterm-256color
+      - name: Diagnose PAM failures
+        if: failure()
+        run: |
+          sudo journalctl -k --no-pager --since '-10 minutes'
+          docker exec host sh -c 'getent shadow hunter >/dev/null; echo "shadow lookup status: $?"'
+          docker exec host sh -c '/usr/sbin/unix_chkpwd hunter chkexpiry </dev/null; echo "PAM helper status: $?"'
+          docker exec host journalctl -u ssh -u sectora --no-pager -n 100

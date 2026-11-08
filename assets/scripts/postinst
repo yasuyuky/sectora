@@ -25,9 +25,23 @@ if [ "$1" = "configure" ] && [ -e /usr/share/debconf/confmodule ]; then
 
     systemctl daemon-reload
 
+    # Older packages installed rules that bypass authentication and account checks.
+    if [ -f /etc/pam.d/sshd ]; then
+        sed -E -i "/^${settings_start}$/,/^${settings_end}$/ {
+            /^[[:blank:]]*auth[[:blank:]]+sufficient[[:blank:]]+pam_exec[.]so[[:blank:]]+quiet[[:blank:]]+\/usr\/sbin\/sectora[[:blank:]]+pam[[:blank:]]*(#.*)?$/d
+            /^[[:blank:]]*account[[:blank:]]+sufficient[[:blank:]]+pam_permit[.]so[[:blank:]]*(#.*)?$/d
+        }" /etc/pam.d/sshd
+    fi
+
     db_get sectora/init_config
     init_config=$RET
     db_stop
+
+    # PAM 1.7 uses unix_chkpwd for account checks, including NSS lookups.
+    if [ -f /etc/apparmor.d/unix-chkpwd ] && command -v apparmor_parser >/dev/null && aa-enabled --quiet 2>/dev/null; then
+        apparmor_parser -r -T /etc/apparmor.d/unix-chkpwd
+    fi
+
     if [ "$init_config" = "true" ]; then
         echo "Appending settings...(Please restore configs from *.backup files when you get some error)"
 
@@ -69,8 +83,6 @@ EOS
             cat <<EOS >${tmp_sshd_conf}
 
 ${settings_start}
-account sufficient pam_permit.so
-auth sufficient pam_exec.so quiet /usr/sbin/sectora pam
 auth optional pam_unix.so not_set_pass use_first_pass nodelay
 session required pam_mkhomedir.so skel=/etc/skel/ umask=0022
 ${settings_end}
