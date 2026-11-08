@@ -9,8 +9,11 @@ use std::string::ToString;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
+    #[serde(default)]
     pub token: String,
     pub org: String,
+    /// Authenticate as a GitHub App installation instead of with `token`
+    pub app: Option<AppConfig>,
     #[serde(default = "default_team")]
     pub team: Vec<TeamConfig>,
     #[serde(default = "default_repo")]
@@ -30,6 +33,12 @@ pub struct Config {
     #[serde(default = "default_cache_dir")]
     pub cache_dir: String,
     pub proxy_url: Option<String>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct AppConfig {
+    pub id: u64,
+    pub private_key_path: String,
 }
 
 fn default_team() -> Vec<TeamConfig> { Vec::new() }
