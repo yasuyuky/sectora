@@ -25,9 +25,9 @@ if [ "$1" = "configure" ] && [ -e /usr/share/debconf/confmodule ]; then
 
     systemctl daemon-reload
 
-    # Older packages installed a membership check that bypasses password authentication.
+    # Older packages installed rules that bypass authentication and account checks.
     if [ -f /etc/pam.d/sshd ]; then
-        sed -i "/^${settings_start}$/,/^${settings_end}$/ { /^auth sufficient pam_exec.so quiet \/usr\/sbin\/sectora pam$/d; }" /etc/pam.d/sshd
+        sed -i "/^${settings_start}$/,/^${settings_end}$/ { /^auth sufficient pam_exec.so quiet \/usr\/sbin\/sectora pam$/d; /^account sufficient pam_permit.so$/d; }" /etc/pam.d/sshd
     fi
 
     db_get sectora/init_config
@@ -74,7 +74,6 @@ EOS
             cat <<EOS >${tmp_sshd_conf}
 
 ${settings_start}
-account sufficient pam_permit.so
 auth optional pam_unix.so not_set_pass use_first_pass nodelay
 session required pam_mkhomedir.so skel=/etc/skel/ umask=0022
 ${settings_end}
