@@ -33,4 +33,9 @@ if [ "$1" = purge ] && [ -e /usr/share/debconf/confmodule ]; then
     rm -rf /etc/sectora.conf
 
     systemctl daemon-reload
+
+    # Drop the packaged NSS socket permissions after the conffile is purged.
+    if [ -f /etc/apparmor.d/unix-chkpwd ] && command -v apparmor_parser >/dev/null && aa-enabled --quiet 2>/dev/null; then
+        apparmor_parser -r -T /etc/apparmor.d/unix-chkpwd
+    fi
 fi

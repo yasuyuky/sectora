@@ -1,0 +1,4 @@
+# NSS lookups need a reply socket and access to sectorad.
+# unix-chkpwd may re-root disconnected paths under /att/unix-chkpwd.
+owner /{,att/unix-chkpwd/}tmp/sectora/[0-9]* rw,
+/{,att/unix-chkpwd/}tmp/sectorad rw,

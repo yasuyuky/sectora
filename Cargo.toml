@@ -57,6 +57,7 @@ assets = [
     ["assets/conf-files/sectora.conf", "etc/sectora.conf", "644"],
     ["assets/sectora.sh", "usr/sbin/", "755"],
     ["assets/sectora.service", "etc/systemd/system/", "644"],
+    ["assets/apparmor/sectora", "etc/apparmor.d/abstractions/nameservice.d/sectora", "644"],
 ]
-conf-files = ["/etc/sectora.conf"]
+conf-files = ["/etc/sectora.conf", "/etc/apparmor.d/abstractions/nameservice.d/sectora"]
 maintainer-scripts = "assets/scripts"
