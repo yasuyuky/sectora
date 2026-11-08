@@ -25,6 +25,11 @@ if [ "$1" = "configure" ] && [ -e /usr/share/debconf/confmodule ]; then
 
     systemctl daemon-reload
 
+    # Older packages installed a membership check that bypasses password authentication.
+    if [ -f /etc/pam.d/sshd ]; then
+        sed -i "/^${settings_start}$/,/^${settings_end}$/ { /^auth sufficient pam_exec.so quiet \/usr\/sbin\/sectora pam$/d; }" /etc/pam.d/sshd
+    fi
+
     db_get sectora/init_config
     init_config=$RET
     db_stop
@@ -70,7 +75,6 @@ EOS
 
 ${settings_start}
 account sufficient pam_permit.so
-auth sufficient pam_exec.so quiet /usr/sbin/sectora pam
 auth optional pam_unix.so not_set_pass use_first_pass nodelay
 session required pam_mkhomedir.so skel=/etc/skel/ umask=0022
 ${settings_end}
