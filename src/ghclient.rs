@@ -1,14 +1,12 @@
+use crate::cache::Cache;
 use crate::error::Error;
 use crate::structs::{AppConfig, Config, Member, PublicKey, RateLimit, Repo, Sector, SectorGroup, Team};
-use glob::glob;
 use openssl::hash::MessageDigest;
 use openssl::pkey::PKey;
 use openssl::sign::Signer;
 use reqwest::{Client, Method, Request, Url, header};
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::prelude::*;
 use std::sync::Mutex;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -27,6 +25,7 @@ struct AccessToken {
 
 pub struct GithubClient {
     client: Client,
+    cache: Cache,
     pub conf: Config,
     app_token: Mutex<Option<(header::HeaderValue, Instant)>>,
 }
@@ -53,7 +52,8 @@ fn app_jwt(app_id: u64, private_key_pem: &[u8]) -> Result<String, Error> {
 }
 
 impl GithubClient {
-    pub fn new(config: &Config) -> GithubClient {
+    pub fn new(config: &Config) -> std::io::Result<GithubClient> {
+        let cache = Cache::new(std::path::Path::new(&config.cache_dir))?;
         if std::env::var("SSL_CERT_FILE").is_err() {
             // SAFETY: called once at process start before other threads use TLS
             unsafe {
@@ -73,9 +73,10 @@ impl GithubClient {
                                       .timeout(Duration::from_secs(30))
                                       .build()
                                       .expect("build HTTP client");
-        GithubClient { client,
-                       conf: config.clone(),
-                       app_token: Mutex::new(None) }
+        Ok(GithubClient { client,
+                          cache,
+                          conf: config.clone(),
+                          app_token: Mutex::new(None) })
     }
 
     async fn app_token(&self, app: &AppConfig) -> Result<header::HeaderValue, Error> {
@@ -116,30 +117,6 @@ impl GithubClient {
         Ok(serde_json::from_str(&body)?)
     }
 
-    fn get_cache_path(&self, url: &str) -> std::path::PathBuf {
-        let mut path = std::path::PathBuf::default();
-        path.push(&self.conf.cache_dir);
-        path.push(url);
-        path
-    }
-
-    fn load_contents_from_cache(&self, url: &str) -> Result<(std::fs::Metadata, String), Error> {
-        let path = self.get_cache_path(url);
-        let metadata = std::fs::metadata(path.to_str().unwrap())?;
-        let mut f = File::open(path.to_str().unwrap())?;
-        let mut contents = String::default();
-        f.read_to_string(&mut contents)?;
-        Ok((metadata, contents))
-    }
-
-    fn store_contents_to_cache(&self, url: &str, contents: &str) -> Result<(), Error> {
-        let path = self.get_cache_path(url);
-        std::fs::create_dir_all(path.parent().unwrap_or(std::path::Path::new("/")))?;
-        let mut f = File::create(path.to_str().unwrap())?;
-        f.write_all(contents.as_bytes())?;
-        Ok(())
-    }
-
     async fn get_contents_from_url(&self, url: &str) -> Result<String, Error> {
         let mut all_contents: Vec<serde_json::value::Value> = Vec::new();
         let mut page = 1;
@@ -152,7 +129,7 @@ impl GithubClient {
             page += 1;
         }
         let contents = serde_json::ser::to_string(&all_contents)?;
-        self.store_contents_to_cache(url, &contents)?;
+        self.cache.store(url, &contents)?;
         Ok(contents)
     }
 
@@ -201,7 +178,7 @@ impl GithubClient {
     }
 
     async fn get_contents(&self, url: &str) -> Result<String, Error> {
-        match self.load_contents_from_cache(url) {
+        match self.cache.load(url) {
             Ok((metadata, cache_contents)) => match std::time::SystemTime::now().duration_since(metadata.modified()?) {
                 Ok(caching_duration) => {
                     if caching_duration.as_secs() > self.conf.cache_duration {
@@ -324,23 +301,7 @@ impl GithubClient {
     }
 
     pub async fn clear_all_caches(&self) -> Result<(), Error> {
-        let mut path = self.get_cache_path("");
-        path.push("**/*");
-        let pattern = path.to_str().ok_or(Error::Io)?;
-        let entries = glob(pattern).map_err(|e| {
-            log::warn!("cache glob failed: {}", e);
-            Error::Io
-        })?;
-        for entry in entries {
-            match entry {
-                Ok(path) => {
-                    if path.is_file() {
-                        std::fs::remove_file(path)?
-                    }
-                }
-                Err(e) => log::warn!("cache glob entry error: {:?}", e),
-            }
-        }
+        self.cache.clear()?;
         Ok(())
     }
 }
