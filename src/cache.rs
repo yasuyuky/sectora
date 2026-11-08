@@ -91,7 +91,7 @@ impl Cache {
     pub fn load(&self, url: &str) -> io::Result<(Metadata, String)> {
         let mut file = self.open(url, OFlag::O_RDONLY)?;
         let metadata = file.metadata()?;
-        let mut contents = String::new();
+        let mut contents = String::default();
         file.read_to_string(&mut contents)?;
         Ok((metadata, contents))
     }
