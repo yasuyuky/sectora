@@ -25,6 +25,8 @@ test-deb-stub:
 	make create-test-conf-stub
 	make setup-deb
 	make exec-login
+	make exec-password-denied
+	make exec-password-denied-upgrade
 	make down
 
 test-deb:
@@ -33,6 +35,7 @@ test-deb:
 	make setup-deb
 	make setup-client-key-env
 	make user=${TEST_USER} exec-login
+	make user=${TEST_USER} exec-password-denied
 	make down
 
 setup-deb:
@@ -140,6 +143,18 @@ exec-login:
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) VERSION $(shell tput sgr 0)'
 	@docker exec client ssh $(user)@host -i keys/user/$(keyfile) /usr/sbin/sectora version
 	@echo '$(shell tput setaf 6)LOGIN TEST END$(shell tput sgr 0)'
+
+exec-password-denied:
+	@docker exec host sh -c "sshd -T | grep -qx 'usepam yes'"
+	@docker exec host sh -c "sshd -T | grep -qx 'passwordauthentication yes'"
+	@docker exec host sh -c "sshd -T | grep -qx 'authenticationmethods any'"
+	@docker exec client ssh -o BatchMode=yes -o IdentitiesOnly=yes -i keys/user/$(keyfile) $(user)@host true
+	@output=$$(docker exec client sshpass -p deliberately-wrong-password ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o KbdInteractiveAuthentication=no -o NumberOfPasswordPrompts=1 -o ConnectTimeout=10 $(user)@host true 2>&1); status=$$?; test "$$status" -ne 0 && printf '%s\n' "$$output" | grep -q 'Permission denied'
+
+exec-password-denied-upgrade:
+	@docker exec host sed -i '/^account sufficient pam_permit.so$$/a auth sufficient pam_exec.so quiet /usr/sbin/sectora pam' /etc/pam.d/sshd
+	@docker exec -e DEBIAN_FRONTEND=noninteractive host /var/lib/dpkg/info/sectora.postinst configure
+	@$(MAKE) exec-password-denied
 
 down:
 	@echo '::group::Stopping containers'
