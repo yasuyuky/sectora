@@ -26,6 +26,7 @@ test-deb-stub:
 	make setup-deb
 	make exec-login
 	make exec-password-denied
+	make exec-account-denied
 	make exec-password-denied-upgrade
 	make down
 
@@ -36,6 +37,7 @@ test-deb:
 	make setup-client-key-env
 	make user=${TEST_USER} exec-login
 	make user=${TEST_USER} exec-password-denied
+	make user=${TEST_USER} exec-account-denied
 	make down
 
 setup-deb:
@@ -152,9 +154,18 @@ exec-password-denied:
 	@output=$$(docker exec client sshpass -p deliberately-wrong-password ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o KbdInteractiveAuthentication=no -o NumberOfPasswordPrompts=1 -o ConnectTimeout=10 $(user)@host true 2>&1); status=$$?; test "$$status" -ne 0 && printf '%s\n' "$$output" | grep -q 'Permission denied'
 
 exec-password-denied-upgrade:
-	@docker exec host sed -i '/^account sufficient pam_permit.so$$/a auth sufficient pam_exec.so quiet /usr/sbin/sectora pam' /etc/pam.d/sshd
+	@docker exec host sed -i '/^### DO NOT REMOVE! SECTORA SETTINGS START ###$$/a auth sufficient pam_exec.so quiet /usr/sbin/sectora pam' /etc/pam.d/sshd
+	@docker exec host sed -i '/^### DO NOT REMOVE! SECTORA SETTINGS START ###$$/a account sufficient pam_permit.so' /etc/pam.d/sshd
 	@docker exec -e DEBIAN_FRONTEND=noninteractive host /var/lib/dpkg/info/sectora.postinst configure
 	@$(MAKE) exec-password-denied
+	@$(MAKE) exec-account-denied
+
+exec-account-denied:
+	@docker exec host sh -c "grep -qx '@include common-account' /etc/pam.d/sshd"
+	@docker exec client ssh -o BatchMode=yes -o IdentitiesOnly=yes -i keys/user/$(keyfile) $(user)@host true
+	@docker exec host sed -i '/^@include common-account$$/i account requisite pam_deny.so' /etc/pam.d/sshd
+	@status=0; docker exec client ssh -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=10 -i keys/user/$(keyfile) $(user)@host true || status=$$?; docker exec host sed -i '/^account requisite pam_deny.so$$/d' /etc/pam.d/sshd && test $$status -ne 0
+	@docker exec client ssh -o BatchMode=yes -o IdentitiesOnly=yes -i keys/user/$(keyfile) $(user)@host true
 
 down:
 	@echo '::group::Stopping containers'
