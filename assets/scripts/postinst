@@ -27,7 +27,10 @@ if [ "$1" = "configure" ] && [ -e /usr/share/debconf/confmodule ]; then
 
     # Older packages installed rules that bypass authentication and account checks.
     if [ -f /etc/pam.d/sshd ]; then
-        sed -i "/^${settings_start}$/,/^${settings_end}$/ { /^auth sufficient pam_exec.so quiet \/usr\/sbin\/sectora pam$/d; /^account sufficient pam_permit.so$/d; }" /etc/pam.d/sshd
+        sed -E -i "/^${settings_start}$/,/^${settings_end}$/ {
+            /^[[:blank:]]*auth[[:blank:]]+sufficient[[:blank:]]+pam_exec[.]so[[:blank:]]+quiet[[:blank:]]+\/usr\/sbin\/sectora[[:blank:]]+pam[[:blank:]]*(#.*)?$/d
+            /^[[:blank:]]*account[[:blank:]]+sufficient[[:blank:]]+pam_permit[.]so[[:blank:]]*(#.*)?$/d
+        }" /etc/pam.d/sshd
     fi
 
     db_get sectora/init_config
