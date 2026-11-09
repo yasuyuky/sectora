@@ -1,4 +1,5 @@
 mod applog;
+mod cache;
 mod error;
 mod ghclient;
 mod message;
@@ -49,7 +50,7 @@ impl Daemon {
         }
         let socket = unix::net::UnixDatagram::bind(&socket_conf.socket_path).expect("bind socket");
         fs::set_permissions(&socket_conf.socket_path, unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
-        let client = GithubClient::new(&config);
+        let client = GithubClient::new(&config).expect("secure cache directory");
         log::debug!("Initialised");
         Daemon { client,
                  socket_conf,

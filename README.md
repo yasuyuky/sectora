@@ -80,6 +80,17 @@ name = "YOUR_REPO_NAME"
 
 See `struct Config` on `structs.rs` for details.
 
+### Cache
+
+The daemon creates a private cache at `/var/cache/sectora` by default. If you set
+`cache_dir`, its directory must be owned by the daemon user, accessible only to
+that user, and under trusted parent directories. Symlinked directories and
+user-writable parents without the sticky bit are rejected.
+
+Older URL-shaped cache files are not imported or removed. After upgrading,
+refresh from GitHub once before relying on cached access during an outage.
+Remove the old cache only after checking its location and contents.
+
 #### Authenticate as a GitHub App
 
 Instead of `token`, sectora can authenticate as a GitHub App installed on your organization.

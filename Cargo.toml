@@ -13,9 +13,8 @@ rust-version = "1.97.1"
 toml = "1.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-glob = "0.3"
 libc = "0.2"
-nix = "0.31"
+nix = { version = "0.31", features = ["dir", "fs", "user"] }
 log = "0.4"
 syslog = "7.0"
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread"] }
