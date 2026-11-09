@@ -25,7 +25,11 @@ impl Cache {
         if path.as_os_str().is_empty() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "empty cache directory"));
         }
-        let path = std::env::current_dir()?.join(path);
+        let path = if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            std::env::current_dir()?.join(path)
+        };
         let uid = geteuid().as_raw();
         let mut dir = File::open("/")?;
         for component in path.components() {
@@ -300,5 +304,28 @@ mod tests {
         assert!(original.join(filename("url")).exists());
         cache.clear().unwrap();
         assert!(!original.join(filename("url")).exists());
+    }
+
+    #[test]
+    fn absolute_path_works_without_current_directory() {
+        const CHILD: &str = "SECTORA_CACHE_NO_CWD_CHILD";
+        if std::env::var_os(CHILD).is_none() {
+            let status = std::process::Command::new(std::env::current_exe().unwrap())
+                .arg("--exact")
+                .arg("cache::tests::absolute_path_works_without_current_directory")
+                .env(CHILD, "1")
+                .status()
+                .unwrap();
+            assert!(status.success());
+            return;
+        }
+
+        let temp = TempDir::new();
+        let cwd = temp.0.join("cwd");
+        fs::create_dir(&cwd).unwrap();
+        std::env::set_current_dir(&cwd).unwrap();
+        fs::remove_dir(&cwd).unwrap();
+        assert!(std::env::current_dir().is_err());
+        Cache::new(&temp.0.join("cache")).unwrap();
     }
 }
