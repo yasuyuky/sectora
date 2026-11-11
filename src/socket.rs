@@ -141,4 +141,30 @@ mod tests {
         assert!(bind(&config).is_err());
         assert_eq!(fs::read_to_string(&config.socket_dir).unwrap(), "keep");
     }
+
+    #[test]
+    fn rejects_untrusted_parents_and_owners() {
+        let temp = TempDir::new();
+        let config = temp.config();
+        fs::set_permissions(&temp.0, fs::Permissions::from_mode(0o777)).unwrap();
+        assert!(bind(&config).is_err());
+        assert!(!Path::new(&config.socket_dir).exists());
+        fs::set_permissions(&temp.0, fs::Permissions::from_mode(0o1777)).unwrap();
+        drop(bind(&config).unwrap());
+        fs::remove_file(&config.socket_path).unwrap();
+
+        if geteuid().is_root() {
+            chown(Path::new(&config.socket_dir), Some(Uid::from_raw(65534)), None).unwrap();
+            assert!(bind(&config).is_err());
+            assert_eq!(fs::metadata(&config.socket_dir).unwrap().uid(), 65534);
+            chown(&temp.0, Some(Uid::from_raw(65534)), None).unwrap();
+            assert!(bind(&config).is_err());
+            chown(&temp.0, Some(geteuid()), None).unwrap();
+            chown(Path::new(&config.socket_dir), Some(geteuid()), None).unwrap();
+            drop(bind(&config).unwrap());
+            chown(Path::new(&config.socket_path), Some(Uid::from_raw(65534)), None).unwrap();
+            assert!(bind(&config).is_err());
+            assert_eq!(fs::metadata(&config.socket_path).unwrap().uid(), 65534);
+        }
+    }
 }
