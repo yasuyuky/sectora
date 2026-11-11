@@ -18,6 +18,8 @@ test-ansible-stub:
 	make up
 	make setup-ansible
 	make exec-login
+	make exec-password-denied
+	make exec-account-denied
 	make down
 
 test-deb-stub:
