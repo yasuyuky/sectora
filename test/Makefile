@@ -20,6 +20,7 @@ test-ansible-stub:
 	make exec-login
 	make exec-password-denied
 	make exec-account-denied
+	make exec-ansible-upgrade
 	make down
 
 test-deb-stub:
@@ -161,6 +162,12 @@ exec-password-denied:
 
 exec-socket-safety:
 	docker exec -i host bash < socket-startup.sh
+
+exec-ansible-upgrade:
+	@docker exec host sed -i '1i account sufficient pam_exec.so quiet /usr/sbin/sectora pam\n\taccount  sufficient\tpam_exec.so  quiet /usr/sbin/sectora pam  # legacy rule\nsession required pam_mkhomedir.so skel: /etc/skel/ umask: 0022' /etc/pam.d/sshd
+	docker exec client ansible-playbook -i hosts localtest.yml
+	@$(MAKE) exec-password-denied
+	@$(MAKE) exec-account-denied
 
 exec-password-denied-upgrade:
 	@docker exec host sed -i '/^### DO NOT REMOVE! SECTORA SETTINGS START ###$$/a auth sufficient pam_exec.so quiet /usr/sbin/sectora pam\n\tauth  sufficient\tpam_exec.so  quiet /usr/sbin/sectora pam  # legacy rule' /etc/pam.d/sshd
