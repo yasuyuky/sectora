@@ -117,7 +117,10 @@ setup-client-ansible:
 	docker cp ../ansible/templates client:/work/templates
 	docker cp ../assets/sectora.service client:/work/
 	docker cp ../assets/sectora.sh client:/work/
-	docker cp ../target/$(target)/release client:/work/release
+	docker exec client mkdir -p /work/release
+	docker cp ../target/$(target)/release/sectora client:/work/release/
+	docker cp ../target/$(target)/release/sectorad client:/work/release/
+	docker cp ../target/$(target)/release/libnss_sectora.so client:/work/release/
 
 up:
 	@echo '::group::Starting containers'
