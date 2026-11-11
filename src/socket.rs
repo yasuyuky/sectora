@@ -167,4 +167,25 @@ mod tests {
             assert_eq!(fs::metadata(&config.socket_path).unwrap().uid(), 65534);
         }
     }
+
+    #[test]
+    fn rejects_symlinked_parent_and_preserves_unexpected_socket_entries() {
+        let temp = TempDir::new();
+        let config = temp.config();
+        let alias = temp.0.join("alias");
+        symlink(&temp.0, &alias).unwrap();
+        let mut aliased = config.clone();
+        aliased.socket_dir = alias.join("clients").to_str().unwrap().to_owned();
+        assert!(bind(&aliased).is_err());
+
+        fs::write(&config.socket_path, "keep").unwrap();
+        assert!(bind(&config).is_err());
+        assert_eq!(fs::read_to_string(&config.socket_path).unwrap(), "keep");
+        fs::remove_file(&config.socket_path).unwrap();
+        symlink(temp.0.join("missing"), &config.socket_path).unwrap();
+        assert!(bind(&config).is_err());
+        assert!(fs::symlink_metadata(&config.socket_path).unwrap()
+                                                         .file_type()
+                                                         .is_symlink());
+    }
 }
