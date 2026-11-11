@@ -85,12 +85,17 @@
     - {regexp: '^shadow:\s+(.*)$', line: 'shadow: files sectora'}
     - {regexp: '^group:\s+(.*)$',  line: 'group:  files sectora'}
 
+- name: remove legacy sectora PAM account rule
+  lineinfile:
+    path: /etc/pam.d/sshd
+    regexp: '^\s*account\s+(sufficient|requisite)\s+pam_exec\.so\s+quiet\s+/usr/sbin/sectora\s+pam\s*(#.*)?$'
+    state: absent
+
 - name: pam configuration
   lineinfile:
     path: /etc/pam.d/sshd
     line: '{{ item.line }}'
     state: '{{ item.state }}'
   with_items:
-    - {line: 'account sufficient pam_exec.so quiet /usr/sbin/sectora pam', state: 'present'}
     - {line: 'auth optional pam_unix.so not_set_pass use_first_pass nodelay', state: 'present'}
     - {line: 'session required pam_mkhomedir.so skel: /etc/skel/ umask: 0022', state: 'present'}

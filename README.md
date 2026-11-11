@@ -192,16 +192,25 @@ UsePAM yes
 Add the following lines to `/etc/pam.d/sshd`.
 
 ```
-account requisite pam_exec.so quiet /usr/sbin/sectora pam
 auth optional pam_unix.so not_set_pass use_first_pass nodelay
 session required pam_mkhomedir.so skel=/etc/skel/ umask=0022
 ```
 
-Also, comment out the following line.
+Keep the distribution's existing PAM rules, including these lines on Debian and Ubuntu:
 
 ```
-# @include common-auth
+@include common-auth
+@include common-account
 ```
+
+Sectora provides accounts through NSS and SSH keys through `AuthorizedKeysCommand`.
+PAM must still enforce the host's authentication and account restrictions.
+When upgrading a manual installation, remove old `auth sufficient pam_exec.so`
+or `account sufficient pam_permit.so` rules added for sectora, and remove the old
+`account sufficient` or `account requisite` invocation of `/usr/sbin/sectora pam`.
+Restore `@include common-auth` if it was commented out following older instructions.
+The Debian package migrates the legacy rules in its managed block; the Ansible role
+removes its old account rule when reapplied.
 
 ## Personal settings
 
