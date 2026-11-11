@@ -91,6 +91,12 @@
     regexp: '^\s*account\s+(sufficient|requisite)\s+pam_exec\.so\s+quiet\s+/usr/sbin/sectora\s+pam\s*(#.*)?$'
     state: absent
 
+- name: remove malformed sectora home directory rule
+  lineinfile:
+    path: /etc/pam.d/sshd
+    line: 'session required pam_mkhomedir.so skel: /etc/skel/ umask: 0022'
+    state: absent
+
 - name: pam configuration
   lineinfile:
     path: /etc/pam.d/sshd
@@ -98,4 +104,4 @@
     state: '{{ item.state }}'
   with_items:
     - {line: 'auth optional pam_unix.so not_set_pass use_first_pass nodelay', state: 'present'}
-    - {line: 'session required pam_mkhomedir.so skel: /etc/skel/ umask: 0022', state: 'present'}
+    - {line: 'session required pam_mkhomedir.so skel=/etc/skel/ umask=0022', state: 'present'}
