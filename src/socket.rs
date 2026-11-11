@@ -76,3 +76,52 @@ pub fn bind(config: &SocketConfig) -> io::Result<UnixDatagram> {
     fs::set_permissions(path, fs::Permissions::from_mode(0o666))?;
     Ok(socket)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use nix::unistd::{Uid, chown, mkdtemp};
+    use std::os::unix::fs::symlink;
+    use std::path::PathBuf;
+    use std::time::Duration;
+
+    struct TempDir(PathBuf);
+
+    impl TempDir {
+        fn new() -> Self {
+            let parent = std::env::temp_dir().canonicalize().unwrap();
+            Self(mkdtemp(&parent.join("socket.XXXXXX")).unwrap())
+        }
+
+        fn config(&self) -> SocketConfig {
+            SocketConfig { socket_dir: self.0.join("clients").to_str().unwrap().to_owned(),
+                           socket_path: self.0.join("daemon").to_str().unwrap().to_owned() }
+        }
+    }
+
+    impl Drop for TempDir {
+        fn drop(&mut self) { fs::remove_dir_all(&self.0).unwrap(); }
+    }
+
+    #[test]
+    fn creates_sticky_directory_and_exchanges_datagrams_after_restart() {
+        let temp = TempDir::new();
+        let config = temp.config();
+        drop(bind(&config).unwrap());
+        fs::set_permissions(&config.socket_dir, fs::Permissions::from_mode(0o777)).unwrap();
+        let server = bind(&config).unwrap();
+        let client = UnixDatagram::bind(Path::new(&config.socket_dir).join("client")).unwrap();
+        server.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
+        client.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
+        client.connect(&config.socket_path).unwrap();
+        client.send(b"request").unwrap();
+        let mut buf = [0; 16];
+        let (count, sender) = server.recv_from(&mut buf).unwrap();
+        assert_eq!(&buf[..count], b"request");
+        server.send_to(b"reply", sender.as_pathname().unwrap()).unwrap();
+        let count = client.recv(&mut buf).unwrap();
+        assert_eq!(&buf[..count], b"reply");
+        assert_eq!(fs::metadata(&config.socket_dir).unwrap().mode() & 0o7777, 0o1777);
+        assert_eq!(fs::metadata(&config.socket_path).unwrap().mode() & 0o777, 0o666);
+    }
+}
