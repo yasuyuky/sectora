@@ -124,4 +124,21 @@ mod tests {
         assert_eq!(fs::metadata(&config.socket_dir).unwrap().mode() & 0o7777, 0o1777);
         assert_eq!(fs::metadata(&config.socket_path).unwrap().mode() & 0o777, 0o666);
     }
+
+    #[test]
+    fn rejects_symlinked_directory_without_changing_its_target() {
+        let temp = TempDir::new();
+        let config = temp.config();
+        let outside = temp.0.join("outside");
+        fs::create_dir(&outside).unwrap();
+        fs::set_permissions(&outside, fs::Permissions::from_mode(0o700)).unwrap();
+        symlink(&outside, &config.socket_dir).unwrap();
+        assert!(bind(&config).is_err());
+        assert_eq!(fs::metadata(&outside).unwrap().mode() & 0o777, 0o700);
+        assert!(!Path::new(&config.socket_path).exists());
+        fs::remove_file(&config.socket_dir).unwrap();
+        fs::write(&config.socket_dir, "keep").unwrap();
+        assert!(bind(&config).is_err());
+        assert_eq!(fs::read_to_string(&config.socket_dir).unwrap(), "keep");
+    }
 }
