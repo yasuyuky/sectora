@@ -91,7 +91,16 @@ Older URL-shaped cache files are not imported or removed. After upgrading,
 refresh from GitHub once before relying on cached access during an outage.
 Remove the old cache only after checking its location and contents.
 
-#### Authenticate as a GitHub App
+### Local sockets
+
+The daemon creates `/tmp/sectora` for client reply sockets with mode `1777`,
+so users can create their own sockets but cannot remove another user's entries.
+It rejects symlinked or foreign-owned socket directories and untrusted parent
+directories. An existing `/tmp/sectorad` must be a socket owned by the daemon user.
+If startup rejects an old path, inspect its ownership and contents before removing
+it and restarting the daemon. The daemon does not repair untrusted paths.
+
+### Authenticate as a GitHub App
 
 Instead of `token`, sectora can authenticate as a GitHub App installed on your organization.
 Installation tokens have their own rate limit, so sectora does not compete with other uses of a personal access token.
