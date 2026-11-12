@@ -5,66 +5,68 @@ on:
     tags:
       - v*
 
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  release:
+  prepare:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.cargo_ver.outputs.version }}
-      upload: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v7
-
-      - name: Get Date
-        id: get_date
+      - name: Verify release version
+        id: version
         run: |
-          date +'%Y.%m.%d'
-          echo date=$(date +'%Y.%m.%d') >>$GITHUB_OUTPUT
+          VERSION=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["version"])')
+          if [ "$GITHUB_REF_NAME" != "v$VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match Cargo.toml version v$VERSION"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Get the version in cargo
-        id: cargo_ver
-        run: |
-          VERSION=$(grep '^version' Cargo.toml | cut -d '"' -f 2)
-          echo ${VERSION}
-          echo version=${VERSION} >>$GITHUB_OUTPUT
-          echo v=v${VERSION} >>$GITHUB_OUTPUT
-          test ${GITHUB_REF/refs\/tags\//} = v${VERSION}
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.cargo_ver.outputs.v }}
-          release_name: Release ${{ steps.cargo_ver.outputs.v }} (${{ steps.get_date.outputs.date }})
-          body: Automated release
-          draft: false
-          prerelease: false
-
-  build-and-upload:
-    needs: release
+  build:
+    needs: prepare
+    runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-latest' || 'ubuntu-24.04-arm' }}
+    timeout-minutes: 30
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+      fail-fast: false
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
+      - uses: actions/checkout@v7
       - name: Build deb
         run: make TARGET=${{ matrix.arch }} deb
-      - name: Get Path of Artifact
-        id: getpath
+      - name: Collect package
         run: |
-          ASSET_PATH=$(ls target/*/debian/sectora_${{ needs.release.outputs.version }}*_${{ matrix.arch }}.deb | head -n 1)
-          echo "asset_path=$ASSET_PATH" >> $GITHUB_OUTPUT
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          mkdir dist
+          cp target/*/debian/*.deb dist/
+      - uses: actions/upload-artifact@v7
         with:
-          upload_url: ${{ needs.release.outputs.upload }}
-          asset_path: ${{ steps.getpath.outputs.asset_path }}
-          asset_name: basename(${{ steps.getpath.outputs.asset_path }})
-          asset_content_type: application/vnd.debian.binary-package
+          name: sectora-${{ matrix.arch }}
+          path: dist/*.deb
+          if-no-files-found: error
+          overwrite: true
+
+  release:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: sectora-*
+          path: dist
+          merge-multiple: true
+      - name: Publish release
+        run: bash .github/scripts/publish-release.sh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.prepare.outputs.version }}

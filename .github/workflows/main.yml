@@ -9,6 +9,13 @@ on:
       - main
 
 jobs:
+  release-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Test release publishing
+        run: python3 -m unittest discover -s test -p 'test_release.py' -v
+
   build:
     runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-latest' || 'ubuntu-24.04-arm' }}
     timeout-minutes: 30
