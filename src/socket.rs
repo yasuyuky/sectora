@@ -108,6 +108,8 @@ mod tests {
         let temp = TempDir::new();
         let config = temp.config();
         drop(bind(&config).unwrap());
+        // Reproduce the legacy mode to verify startup restores the sticky bit.
+        // skipcq: RS-A1001
         fs::set_permissions(&config.socket_dir, fs::Permissions::from_mode(0o777)).unwrap();
         let server = bind(&config).unwrap();
         let client = UnixDatagram::bind(Path::new(&config.socket_dir).join("client")).unwrap();
@@ -130,6 +132,8 @@ mod tests {
         let temp = TempDir::new();
         let config = temp.config();
         let outside = temp.0.join("outside");
+        // The parent exists; unexpected pre-existing targets should fail this test.
+        // skipcq: RS-W1032
         fs::create_dir(&outside).unwrap();
         fs::set_permissions(&outside, fs::Permissions::from_mode(0o700)).unwrap();
         symlink(&outside, &config.socket_dir).unwrap();
@@ -144,8 +148,12 @@ mod tests {
 
     #[test]
     fn rejects_untrusted_parents_and_owners() {
-        let temp = TempDir::new();
+        // Keep unsafe fixtures behind a private directory, including during ownership changes.
+        let outer = TempDir::new();
+        let temp = TempDir(mkdtemp(&outer.0.join("parent.XXXXXX")).unwrap());
         let config = temp.config();
+        // Verify rejection of a world-writable parent without the sticky bit.
+        // skipcq: RS-A1001
         fs::set_permissions(&temp.0, fs::Permissions::from_mode(0o777)).unwrap();
         assert!(bind(&config).is_err());
         assert!(!Path::new(&config.socket_dir).exists());
