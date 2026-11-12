@@ -1,2 +1,2 @@
 #!/bin/bash
-sectora key $1
+exec /usr/sbin/sectora key "$1"
