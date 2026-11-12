@@ -3,6 +3,7 @@ mod cache;
 mod error;
 mod ghclient;
 mod message;
+mod socket;
 mod statics;
 mod structs;
 
@@ -43,13 +44,7 @@ impl Daemon {
     fn new() -> Self {
         let config = Config::from_path(&CONF_PATH).expect("valid config");
         let socket_conf = SocketConfig::new();
-        fs::create_dir_all(&socket_conf.socket_dir).expect("create socket dir");
-        fs::set_permissions(&socket_conf.socket_dir, unix::fs::PermissionsExt::from_mode(0o777)).unwrap_or_default();
-        if fs::metadata(&socket_conf.socket_path).is_ok() {
-            std::fs::remove_file(&socket_conf.socket_path).expect("remove socket before bind");
-        }
-        let socket = unix::net::UnixDatagram::bind(&socket_conf.socket_path).expect("bind socket");
-        fs::set_permissions(&socket_conf.socket_path, unix::fs::PermissionsExt::from_mode(0o666)).unwrap_or_default();
+        let socket = socket::bind(&socket_conf).expect("secure socket paths");
         let client = GithubClient::new(&config).expect("secure cache directory");
         log::debug!("Initialised");
         Daemon { client,

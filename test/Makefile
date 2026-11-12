@@ -18,12 +18,16 @@ test-ansible-stub:
 	make up
 	make setup-ansible
 	make exec-login
+	make exec-password-denied
+	make exec-account-denied
+	make exec-ansible-upgrade
 	make down
 
 test-deb-stub:
 	make up
 	make create-test-conf-stub
 	make setup-deb
+	make exec-socket-safety
 	make exec-login
 	make exec-password-denied
 	make exec-account-denied
@@ -116,7 +120,10 @@ setup-client-ansible:
 	docker cp ../ansible/templates client:/work/templates
 	docker cp ../assets/sectora.service client:/work/
 	docker cp ../assets/sectora.sh client:/work/
-	docker cp ../target/$(target)/release client:/work/release
+	docker exec client mkdir -p /work/release
+	docker cp ../target/$(target)/release/sectora client:/work/release/
+	docker cp ../target/$(target)/release/sectorad client:/work/release/
+	docker cp ../target/$(target)/release/libnss_sectora.so client:/work/release/
 
 up:
 	@echo '::group::Starting containers'
@@ -152,6 +159,15 @@ exec-password-denied:
 	@docker exec host sh -c "sshd -T | grep -qx 'authenticationmethods any'"
 	@docker exec client ssh -o BatchMode=yes -o IdentitiesOnly=yes -i keys/user/$(keyfile) $(user)@host true
 	@output=$$(docker exec client sshpass -p deliberately-wrong-password ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no -o KbdInteractiveAuthentication=no -o NumberOfPasswordPrompts=1 -o ConnectTimeout=10 $(user)@host true 2>&1); status=$$?; test "$$status" -ne 0 && printf '%s\n' "$$output" | grep -q 'Permission denied'
+
+exec-socket-safety:
+	docker exec -i host bash < socket-startup.sh
+
+exec-ansible-upgrade:
+	@docker exec host sed -i '1i account sufficient pam_exec.so quiet /usr/sbin/sectora pam\n\taccount  sufficient\tpam_exec.so  quiet /usr/sbin/sectora pam  # legacy rule\nsession required pam_mkhomedir.so skel: /etc/skel/ umask: 0022' /etc/pam.d/sshd
+	docker exec client ansible-playbook -i hosts localtest.yml
+	@$(MAKE) exec-password-denied
+	@$(MAKE) exec-account-denied
 
 exec-password-denied-upgrade:
 	@docker exec host sed -i '/^### DO NOT REMOVE! SECTORA SETTINGS START ###$$/a auth sufficient pam_exec.so quiet /usr/sbin/sectora pam\n\tauth  sufficient\tpam_exec.so  quiet /usr/sbin/sectora pam  # legacy rule' /etc/pam.d/sshd

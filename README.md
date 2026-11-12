@@ -91,7 +91,16 @@ Older URL-shaped cache files are not imported or removed. After upgrading,
 refresh from GitHub once before relying on cached access during an outage.
 Remove the old cache only after checking its location and contents.
 
-#### Authenticate as a GitHub App
+### Local sockets
+
+The daemon creates `/tmp/sectora` for client reply sockets with mode `1777`,
+so users can create their own sockets but cannot remove another user's entries.
+It rejects symlinked or foreign-owned socket directories and untrusted parent
+directories. An existing `/tmp/sectorad` must be a socket owned by the daemon user.
+If startup rejects an old path, inspect its ownership and contents before removing
+it and restarting the daemon. The daemon does not repair untrusted paths.
+
+### Authenticate as a GitHub App
 
 Instead of `token`, sectora can authenticate as a GitHub App installed on your organization.
 Installation tokens have their own rate limit, so sectora does not compete with other uses of a personal access token.
@@ -183,16 +192,25 @@ UsePAM yes
 Add the following lines to `/etc/pam.d/sshd`.
 
 ```
-account requisite pam_exec.so quiet /usr/sbin/sectora pam
 auth optional pam_unix.so not_set_pass use_first_pass nodelay
 session required pam_mkhomedir.so skel=/etc/skel/ umask=0022
 ```
 
-Also, comment out the following line.
+Keep the distribution's existing PAM rules, including these lines on Debian and Ubuntu:
 
 ```
-# @include common-auth
+@include common-auth
+@include common-account
 ```
+
+Sectora provides accounts through NSS and SSH keys through `AuthorizedKeysCommand`.
+PAM must still enforce the host's authentication and account restrictions.
+When upgrading a manual installation, remove old `auth sufficient pam_exec.so`
+or `account sufficient pam_permit.so` rules added for sectora, and remove the old
+`account sufficient` or `account requisite` invocation of `/usr/sbin/sectora pam`.
+Restore `@include common-auth` if it was commented out following older instructions.
+The Debian package migrates the legacy rules in its managed block; the Ansible role
+removes its old account rule when reapplied.
 
 ## Personal settings
 
