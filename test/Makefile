@@ -52,6 +52,8 @@ setup-deb:
 setup-ansible:
 	@echo '::group::Installing ansible packages'
 	make -j 2 setup-host-root setup-client-ansible
+	# Minimal Debian test images do not include Ansible's target-side Python.
+	docker exec host sh -c 'command -v python3 >/dev/null || { apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3; }'
 	docker exec client ansible-playbook -i hosts localtest.yml
 	sleep 1
 	@echo '::endgroup::'
@@ -138,6 +140,8 @@ up:
 
 exec-login:
 	@echo '$(shell tput setaf 6)LOGIN TEST START$(shell tput sgr 0)'
+	# SSH may omit /usr/sbin from the key command's PATH.
+	@docker exec -e PATH=/usr/bin:/bin host /usr/sbin/sectora.sh $(user) >/dev/null
 	@echo '$(shell tput setab 7)$(shell tput setaf 0) SSH $(shell tput sgr 0)'
 	@docker exec client ssh -vvv $(user)@host -i keys/user/$(keyfile) \
 		echo '"$(shell tput setaf 2)SUCCESS$(shell tput sgr 0)"' || \
